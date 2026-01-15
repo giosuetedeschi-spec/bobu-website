@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Sarah Jenkins",
+    "role": "Product Manager",
+    "text": "Bobu is an exceptional developer who bridges the gap between design and engineering perfectly. His attention to detail is unmatched."
+  },
+  {
+    "id": 2,
+    "name": "David Chen",
+    "role": "CTO, StartUp Inc",
+    "text": "The way he implements complex algorithms in Rust and visualizes them on the web is mind-blowing. Highly recommended."
+  },
+  {
+    "id": 3,
+    "name": "Elena Rossi",
+    "role": "Art Director",
+    "text": "A true creative coder. He doesn't just write code, he crafts digital experiences that feel alive."
+  }
+]
