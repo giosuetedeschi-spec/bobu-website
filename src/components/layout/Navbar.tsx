@@ -42,24 +42,27 @@ export function Navbar() {
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-6">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "text-sm font-medium transition-colors hover:text-white relative",
-                                pathname === item.href ? "text-white" : "text-white/60"
-                            )}
-                        >
-                            {item.name}
-                            {pathname === item.href && (
-                                <motion.div
-                                    layoutId="navbar-indicator"
-                                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
-                                />
-                            )}
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "text-sm font-medium transition-colors hover:text-white relative",
+                                    isActive ? "text-white" : "text-white/60"
+                                )}
+                            >
+                                {item.name}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="navbar-indicator"
+                                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                                    />
+                                )}
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -71,19 +74,22 @@ export function Navbar() {
                     exit={{ opacity: 0, y: -20 }}
                     className="absolute top-20 left-4 right-4 glass-card rounded-2xl p-6 flex flex-col gap-4 md:hidden"
                 >
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setIsOpen(false)}
-                            className={cn(
-                                "text-lg font-medium transition-colors hover:text-white",
-                                pathname === item.href ? "text-primary" : "text-white/60"
-                            )}
-                        >
-                            {item.name}
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setIsOpen(false)}
+                                className={cn(
+                                    "text-lg font-medium transition-colors hover:text-white",
+                                    isActive ? "text-primary" : "text-white/60"
+                                )}
+                            >
+                                {item.name}
+                            </Link>
+                        );
+                    })}
                 </motion.div>
             )}
         </motion.nav>
