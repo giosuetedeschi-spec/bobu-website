@@ -9,7 +9,12 @@ declare global {
     }
 }
 
-export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
+interface PyodideRunnerProps {
+    scriptPath: string;
+    fileMapping?: Record<string, string>; // path -> url to fetch
+}
+
+export function PyodideRunner({ scriptPath, fileMapping }: PyodideRunnerProps) {
     const [output, setOutput] = useState<string[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [pyodide, setPyodide] = useState<any>(null);
@@ -37,7 +42,35 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
         if (!pyodide) return;
 
         try {
-            // Fetch the script content
+            // Load file mappings if provided
+            if (fileMapping) {
+                console.log("Loading file mappings...");
+                for (const [fsPath, url] of Object.entries(fileMapping)) {
+                    console.log(`Fetching ${url} -> ${fsPath}`);
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+                    const text = await res.text();
+
+                    // Ensure directory exists
+                    const dirs = fsPath.split('/');
+                    dirs.pop(); // remove filename
+                    if (dirs.length > 0) {
+                        let currentDir = "";
+                        for (const dir of dirs) {
+                            if (dir === "." || dir === "") continue;
+                            currentDir += dir;
+                            if (!pyodide.FS.analyzePath(currentDir).exists) {
+                                pyodide.FS.mkdir(currentDir);
+                            }
+                            currentDir += "/";
+                        }
+                    }
+
+                    pyodide.FS.writeFile(fsPath, text);
+                }
+            }
+
+            // Fetch the entry script content
             const response = await fetch(scriptPath);
             const scriptText = await response.text();
 
@@ -86,7 +119,9 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
                             ))}
                             {output.length === 0 && <div className="text-white/20 italic">Ready for input...</div>}
                         </div>
-                        <canvas ref={canvasRef} id="canvas" className="hidden" />
+                        <div className="flex justify-center">
+                            <canvas ref={canvasRef} id="canvas" onContextMenu={(e) => e.preventDefault()} />
+                        </div>
                     </div>
                 )}
             </div>
