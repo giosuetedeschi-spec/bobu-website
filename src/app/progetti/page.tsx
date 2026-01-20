@@ -49,6 +49,14 @@ const projects = [
         icon: <Cpu className="text-blue-400 w-8 h-8" />,
         gradient: "from-blue-400/20 to-cyan-400/20",
         status: "Demo"
+    },
+    {
+        title: "Sudoku Solver",
+        description: "Interactive Python Sudoku solver with multiple algorithms, running in browser.",
+        href: "/progetti/sudoku",
+        icon: <Code2 className="text-pink-500 w-8 h-8" />,
+        gradient: "from-pink-500/20 to-purple-500/20",
+        status: "Playable"
     }
 ];
 
