@@ -26,7 +26,10 @@ export function Navbar() {
             transition={{ duration: 0.5 }}
             className="fixed top-0 left-0 right-0 z-50 flex justify-center p-4"
         >
-            <div className="glass-panel rounded-full px-6 py-3 flex items-center justify-between gap-8 md:gap-12 min-w-[300px] md:min-w-fit">
+            <div className={cn(
+                "rounded-full px-6 py-3 flex items-center justify-between gap-8 md:gap-12 min-w-[300px] md:min-w-fit transition-colors duration-300",
+                pathname.startsWith("/ecommerce") ? "bg-black/90 border border-white/10" : "glass-panel"
+            )}>
                 {/* Mobile Menu Toggle */}
                 <button
                     className="md:hidden p-2 text-white/80 hover:text-white"

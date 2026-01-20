@@ -6,9 +6,9 @@ export function Footer() {
                     © {new Date().getFullYear()} Bobu Website. All rights reserved.
                 </p>
                 <div className="mt-4 flex justify-center gap-6 text-white/40 text-xs">
-                    <a href="#" className="hover:text-white transition-colors">Github</a>
-                    <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
-                    <a href="#" className="hover:text-white transition-colors">Twitter</a>
+                    <a href="https://github.com/giosuetedeschi-spec" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">Github</a>
+                    <a href="https://it.linkedin.com/in/giosu%C3%A8-tedeschi-b287b9225?trk=public_post_feed-actor-name" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    <a href="https://tagembed.com/it/blog/twitter-rebranding-x/" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">Twitter</a>
                 </div>
             </div>
         </footer>

@@ -11,7 +11,7 @@ export default function Home() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative"
       >
-        <div className="absolute -inset-4 bg-gradient-to-r from-primary to-secondary rounded-full blur-2xl opacity-20 animate-pulse" />
+        <div className="absolute -inset-20 bg-gradient-to-r from-primary to-secondary rounded-full blur-3xl opacity-20 animate-pulse" />
         <h1 className="relative font-heading text-6xl md:text-8xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">
           BOBU
         </h1>
