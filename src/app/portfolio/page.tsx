@@ -10,7 +10,7 @@ export default function PortfolioPage() {
         <div className="space-y-20 py-8">
             {/* Header */}
             <div className="text-center space-y-4">
-                <h1 className="font-heading text-5xl font-bold tracking-tighter text-white">Selected Works</h1>
+                <h1 className="font-heading text-5xl font-bold tracking-tighter text-white">Selected <span className="text-accent">Works</span></h1>
                 <p className="text-white/60 max-w-2xl mx-auto">
                     A collection of web applications, experiments, and visual explorations.
                 </p>
@@ -26,7 +26,7 @@ export default function PortfolioPage() {
                         title: "Twin Drift",
                         category: "React + Three.js",
                         description: "A high-octane racing game built with React and Three.js, featuring physics-based drifting mechanics.",
-                        image: "/assets/projects/twin-drift.png",
+                        image: "/projects/twins.webp",
                         href: "/progetti/twin-drift"
                     },
                     {
@@ -34,7 +34,7 @@ export default function PortfolioPage() {
                         title: "Breakout WASM",
                         category: "Rust + Bevy",
                         description: "Classic arcade action reimplemented in Rust using the Bevy engine, compiled to WebAssembly for the browser.",
-                        image: "/assets/projects/breakout.png",
+                        image: "/projects/breakout.png",
                         href: "/progetti/breakout"
                     },
                     {
@@ -42,7 +42,7 @@ export default function PortfolioPage() {
                         title: "Kalaha AI",
                         category: "Python + Pyodide",
                         description: "Ancient board game played against a Python AI agent running fully in the browser via Pyodide.",
-                        image: "/assets/projects/kalaha.png",
+                        image: "/projects/kalaha.webp",
                         href: "/progetti/kalaha"
                     }
                 ].map((project) => (
@@ -79,15 +79,17 @@ export default function PortfolioPage() {
                 <h2 className="font-heading text-3xl font-bold text-white mb-10 text-center">Testimonials</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {testimonials.map((t) => (
-                        <div key={t.id} className="glass-panel p-8 rounded-2xl relative">
-                            <div className="absolute top-8 right-8 text-yellow-500 flex gap-0.5">
-                                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                        <div key={t.id} className="glass-panel p-8 rounded-2xl flex flex-col gap-4 border border-white/5 hover:border-accent/20 transition-colors">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h4 className="text-white font-medium">{t.name}</h4>
+                                    <p className="text-primary text-sm">{t.role}</p>
+                                </div>
+                                <div className="text-yellow-500 flex gap-0.5">
+                                    {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                                </div>
                             </div>
-                            <p className="text-white/80 leading-relaxed mb-6 italic">"{t.text}"</p>
-                            <div>
-                                <h4 className="text-white font-medium">{t.name}</h4>
-                                <p className="text-primary text-sm">{t.role}</p>
-                            </div>
+                            <p className="text-white/80 leading-relaxed italic">"{t.text}"</p>
                         </div>
                     ))}
                 </div>
