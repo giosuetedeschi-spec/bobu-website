@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
 declare global {
@@ -32,6 +32,13 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
             setOutput((prev) => [...prev, "Failed to initialize Python environment."]);
         }
     }
+
+    // Auto-start when pyodide is ready
+    useEffect(() => {
+        if (isPlaying && pyodide) {
+            runGame();
+        }
+    }, [isPlaying, pyodide]);
 
     async function runGame() {
         if (!pyodide) return;

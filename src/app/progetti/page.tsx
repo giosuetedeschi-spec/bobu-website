@@ -1,4 +1,4 @@
-import { ArrowRight, Gamepad2, Code2, Cpu } from "lucide-react";
+import { ArrowRight, Gamepad2, Code2, Cpu, Calculator } from "lucide-react";
 import Link from "next/link";
 
 const projects = [
@@ -57,6 +57,22 @@ const projects = [
         icon: <Code2 className="text-pink-500 w-8 h-8" />,
         gradient: "from-pink-500/20 to-purple-500/20",
         status: "Playable"
+    },
+    {
+        title: "Interpolation Engine",
+        description: "Declarative interpolation engine for smooth state transitions.",
+        href: "#",
+        icon: <Code2 className="text-cyan-500 w-8 h-8" />,
+        gradient: "from-cyan-500/20 to-blue-500/20",
+        status: "Library"
+    },
+    {
+        title: "Pygame Calculator",
+        description: "Calculator with GUI built in Pygame.",
+        href: "#",
+        icon: <Calculator className="text-yellow-500 w-8 h-8" />,
+        gradient: "from-yellow-500/20 to-orange-500/20",
+        status: "Desktop App"
     }
 ];
 
