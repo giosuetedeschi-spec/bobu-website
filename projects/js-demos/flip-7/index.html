@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip 7 - Neon Parlor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-app">
+        <!-- Ambient Background -->
+        <div class="background-effect"></div>
+
+        <!-- Header / Stats -->
+        <header class="game-header">
+            <div class="logo">FLIP <span class="accent">7</span></div>
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="label">Total Score</span>
+                    <span id="total-score" class="value">0</span>
+                </div>
+                <div class="stat-box target">
+                    <span class="label">Target</span>
+                    <span class="value">200</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="game-board">
+            
+            <!-- Turn Display -->
+            <div class="turn-info">
+                <div class="current-round-score">
+                    Current Hand: <span id="hand-score" class="neon-text">0</span>
+                    <div id="multiplier-badge" class="multiplier hidden">2x ACTIVE</div>
+                </div>
+                <div id="message-area" class="message">FLIP to Start</div>
+            </div>
+
+            <!-- Card Field -->
+            <div id="card-container" class="card-container">
+                <!-- Cards will be injected here -->
+                <div class="card-slot empty"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button id="btn-flip" class="btn primary">FLIP</button>
+                <button id="btn-stay" class="btn secondary" disabled>STAY</button>
+                <button id="btn-reset" class="btn danger hidden">NEW GAME</button>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+</html>

@@ -59,6 +59,14 @@ const projects = [
         status: "Playable"
     },
     {
+        title: "Flip 7",
+        description: "Neon-noir push-your-luck card game. Don't bust!",
+        href: "/progetti/flip-7",
+        icon: <Gamepad2 className="text-cyan-500 w-8 h-8" />,
+        gradient: "from-cyan-500/20 to-blue-500/20",
+        status: "New!"
+    },
+    {
         title: "Interpolation Engine",
         description: "Declarative interpolation engine for smooth state transitions.",
         href: "#",
