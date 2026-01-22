@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze Generator - Peaceful Gardens</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>Maze Generator</h1>
+            <div class="controls">
+                <select id="algo-select">
+                    <option value="backtracker">Recursive Backtracker</option>
+                    <option value="prims">Prim's Algorithm</option>
+                    <option value="division">Recursive Division</option>
+                </select>
+                <div class="control-group">
+                    <label>Export</label>
+                    <div class="export-buttons">
+                        <button class="small" id="btn-export-png">PNG</button>
+                        <button class="small" id="btn-export-json">JSON</button>
+                        <button class="small" id="btn-export-csv">CSV</button>
+                        <button class="small" id="btn-export-txt">TXT</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Speed</label>
+                    <input type="range" id="speed-range" min="1" max="50" value="10">
+                </div>
+                <button id="btn-generate">Generate</button>
+            </div>
+        </header>
+        <main>
+            <canvas id="maze-canvas"></canvas>
+        </main>
+        <footer>
+            <p>Peaceful Algorithms &bull; Native JS Visualization</p>
+        </footer>
+    </div>
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>

@@ -67,6 +67,22 @@ const projects = [
         status: "New!"
     },
     {
+        title: "Maze Generator",
+        description: "Garden-themed visualization of maze generation algorithms.",
+        href: "/progetti/maze-generator",
+        icon: <Code2 className="text-green-500 w-8 h-8" />,
+        gradient: "from-green-500/20 to-emerald-500/20",
+        status: "Native JS"
+    },
+    {
+        title: "Maze Solver",
+        description: "Flow-based visualization of pathfinding algorithms.",
+        href: "/progetti/maze-solver",
+        icon: <Code2 className="text-blue-500 w-8 h-8" />,
+        gradient: "from-blue-500/20 to-indigo-500/20",
+        status: "Native JS"
+    },
+    {
         title: "Interpolation Engine",
         description: "Declarative interpolation engine for smooth state transitions.",
         href: "#",

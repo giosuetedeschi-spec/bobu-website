@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze Solver - Pathfinding Flow</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>Maze Solver</h1>
+            <div class="controls">
+                <button id="btn-new-maze" class="secondary">New Maze</button>
+                <div class="divider"></div>
+                <select id="algo-select">
+                    <option value="dfs">Depth-First Search (DFS)</option>
+                    <option value="bfs">Breadth-First Search (BFS)</option>
+                    <option value="astar">A* (A-Star)</option>
+                </select>
+                <button id="btn-solve">Solve</button>
+                <button id="btn-clear" class="danger">Clear Path</button>
+            </div>
+        </header>
+        <main>
+            <canvas id="canvas"></canvas>
+        </main>
+        <footer>
+            <p>Interactive Pathfinding &bull; Native JS Visualization</p>
+        </footer>
+    </div>
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>
