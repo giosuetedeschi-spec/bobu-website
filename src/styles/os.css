@@ -1,0 +1,112 @@
+/* BobuOS Design Tokens and Shell Styles */
+
+:root {
+  /* Z-Index Hierarchy */
+  --z-os-desktop: 10;
+  --z-os-wallpaper: 5;
+  --z-os-window-base: 100;
+  --z-os-taskbar: 1000;
+  --z-os-start-menu: 1001;
+  --z-os-modal: 2000;
+
+  /* Colors & Blurs */
+  --os-glass-bg: rgba(15, 17, 26, 0.6);
+  --os-glass-border: rgba(255, 255, 255, 0.1);
+  --os-glass-blur: blur(12px);
+  
+  --os-accent-primary: #6366f1; /* Indigo 500 */
+  --os-titlebar-bg: rgba(30, 32, 44, 0.8);
+  
+  /* Dimensions */
+  --os-taskbar-height: 48px;
+}
+
+/* Glassmorphism Base */
+.os-glass {
+  background: var(--os-glass-bg);
+  backdrop-filter: var(--os-glass-blur);
+  -webkit-backdrop-filter: var(--os-glass-blur);
+  border: 1px solid var(--os-glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.os-glass-bright {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: var(--os-glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Desktop Canvas */
+.os-desktop {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px); /* Adjust based on navbar/footer if needed */
+  overflow: hidden;
+  background: transparent;
+  z-index: var(--z-os-desktop);
+}
+
+/* Window Frame Styles */
+.os-window {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.os-window-active {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.os-window-titlebar {
+  height: 32px;
+  background: var(--os-titlebar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  cursor: grab;
+  user-select: none;
+  font-family: var(--font-outfit);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.os-window-titlebar:active {
+  cursor: grabbing;
+}
+
+.os-window-content {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: auto;
+}
+
+/* Animations */
+@keyframes os-window-appear {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.os-animate-appear {
+  animation: os-window-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Taskbar Styles */
+.os-taskbar {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: var(--os-taskbar-height);
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: var(--z-os-taskbar);
+}

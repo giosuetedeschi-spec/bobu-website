@@ -18,6 +18,7 @@
     "next": "^16.1.1-canary.35",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-rnd": "^10.5.2",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
