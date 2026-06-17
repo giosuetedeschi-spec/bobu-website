@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: #111;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            font-size: 24px;
+            color: #555;
+            pointer-events: none;
+        }
+        #message {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #444;
+            font-size: 14px;
+        }
+        #start-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="pong" width="800" height="500"></canvas>
+        <div id="ui">
+            <span id="score-p1">0</span>
+            <span id="score-p2">0</span>
+        </div>
+        <div id="message">W/S to move | First to 5 wins</div>
+        <div id="start-msg">Press SPACE to start</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pong');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+
+        // Game state
+        let gameRunning = false;
+        let gameOver = false;
+        let winner = '';
+
+        // Paddles
+        const paddleW = 12, paddleH = 80, paddleSpeed = 6;
+        let p1 = { x: 20, y: H/2 - paddleH/2, score: 0 };
+        let p2 = { x: W - 20 - paddleW, y: H/2 - paddleH/2, score: 0 };
+
+        // Ball
+        const ballSize = 10;
+        let ball = { x: W/2, y: H/2, vx: 5, vy: 3, speed: 5 };
+
+        // Input
+        const keys = {};
+
+        document.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ' && !gameRunning) {
+                gameRunning = true;
+                gameOver = false;
+                document.getElementById('start-msg').style.display = 'none';
+            }
+            if (e.key === ' ' && gameOver) {
+                resetGame();
+            }
+        });
+        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        function resetBall() {
+            ball.x = W/2;
+            ball.y = H/2;
+            ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
+            ball.vy = (Math.random() - 0.5) * 4;
+        }
+
+        function resetGame() {
+            p1.score = 0;
+            p2.score = 0;
+            p1.y = H/2 - paddleH/2;
+            p2.y = H/2 - paddleH/2;
+            gameOver = false;
+            winner = '';
+            document.getElementById('start-msg').style.display = 'none';
+            resetBall();
+            gameRunning = true;
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            // P1 movement (W/S)
+            if (keys['w'] && p1.y > 0) p1.y -= paddleSpeed;
+            if (keys['s'] && p1.y < H - paddleH) p1.y += paddleSpeed;
+
+            // P2 movement (Arrow keys)
+            if (keys['arrowup'] && p2.y > 0) p2.y -= paddleSpeed;
+            if (keys['arrowdown'] && p2.y < H - paddleH) p2.y += paddleSpeed;
+
+            // Ball movement
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Top/bottom bounce
+            if (ball.y <= 0 || ball.y >= H - ballSize) {
+                ball.vy *= -1;
+                ball.y = Math.max(0, Math.min(H - ballSize, ball.y));
+            }
+
+            // Paddle collision
+            if (ball.x <= p1.x + paddleW && ball.x >= p1.x &&
+                ball.y + ballSize >= p1.y && ball.y <= p1.y + paddleH) {
+                ball.vx = Math.abs(ball.vx) * 1.05;
+                const hitPos = (ball.y + ballSize/2 - p1.y) / paddleH - 0.5;
+                ball.vy = hitPos * 8;
+                ball.x = p1.x + paddleW + 1;
+            }
+            if (ball.x + ballSize >= p2.x && ball.x <= p2.x + paddleW &&
+                ball.y + ballSize >= p2.y && ball.y <= p2.y + paddleH) {
+                ball.vx = -Math.abs(ball.vx) * 1.05;
+                const hitPos = (ball.y + ballSize/2 - p2.y) / paddleH - 0.5;
+                ball.vy = hitPos * 8;
+                ball.x = p2.x - ballSize - 1;
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                p2.score++;
+                checkWin();
+                if (!gameOver) resetBall();
+            }
+            if (ball.x > W) {
+                p1.score++;
+                checkWin();
+                if (!gameOver) resetBall();
+            }
+
+            // Update score display
+            document.getElementById('score-p1').textContent = p1.score;
+            document.getElementById('score-p2').textContent = p2.score;
+        }
+
+        function checkWin() {
+            if (p1.score >= 5 || p2.score >= 5) {
+                gameOver = true;
+                gameRunning = false;
+                winner = p1.score >= 5 ? 'Player 1' : 'Player 2';
+                document.getElementById('start-msg').textContent = winner + ' wins! Press SPACE to restart';
+                document.getElementById('start-msg').style.display = 'block';
+            }
+        }
+
+        function draw() {
+            // Clear
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, W, H);
+
+            // Center line
+            ctx.setLineDash([8, 8]);
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(W/2, 0);
+            ctx.lineTo(W/2, H);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Paddles
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(p1.x, p1.y, paddleW, paddleH);
+            ctx.fillRect(p2.x, p2.y, paddleW, paddleH);
+
+            // Ball
+            ctx.beginPath();
+            ctx.arc(ball.x + ballSize/2, ball.y + ballSize/2, ballSize/2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>

@@ -1,99 +1,194 @@
 "use client";
 
-import testimonials from "@/data/testimonials.json";
-import { ArrowRight, Star } from "lucide-react";
-import Image from "next/image";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
+import Grid from "@mui/material/Grid";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Link from "next/link";
 
+const projects = [
+  {
+    id: "twin-drift",
+    title: "Twin Drift",
+    category: "React + Three.js",
+    description: "A high-octane racing game built with React and Three.js, featuring physics-based drifting mechanics.",
+    image: "/projects/twins.webp",
+    href: "/progetti/twin-drift",
+  },
+  {
+    id: "breakout",
+    title: "Breakout WASM",
+    category: "Rust + Bevy",
+    description: "Classic arcade action reimplemented in Rust using the Bevy engine, compiled to WebAssembly.",
+    image: "/projects/breakout.png",
+    href: "/progetti/breakout",
+  },
+  {
+    id: "kalaha",
+    title: "Kalaha AI",
+    category: "Python + Pyodide",
+    description: "Ancient board game played against a Python AI agent running fully in the browser via Pyodide.",
+    image: "/projects/kalaha.webp",
+    href: "/progetti/kalaha",
+  },
+  {
+    id: "abalone",
+    title: "Abalone",
+    category: "Strategy Board",
+    description: "Hexagonal marble board game with AI opponent using minimax + alpha-beta pruning.",
+    image: "/projects/breakout.png",
+    href: "/progetti/abalone",
+  },
+  {
+    id: "mastermind",
+    title: "Mastermind",
+    category: "Puzzle",
+    description: "Classic code-breaking game. Crack the secret color sequence in 10 guesses.",
+    image: "/projects/kalaha.webp",
+    href: "/progetti/mastermind",
+  },
+  {
+    id: "azul",
+    title: "Azul",
+    category: "Tile Drafting",
+    description: "Beautiful tile drafting and mosaic building game.",
+    image: "/projects/twins.webp",
+    href: "/progetti/azul",
+  },
+];
+
 export default function PortfolioPage() {
-    return (
-        <div className="space-y-20 py-8">
-            {/* Header */}
-            <div className="text-center space-y-4">
-                <h1 className="font-heading text-5xl font-bold tracking-tighter text-white">Selected <span className="text-accent">Works</span></h1>
-                <p className="text-white/60 max-w-2xl mx-auto">
-                    A collection of web applications, experiments, and visual explorations.
-                </p>
-            </div>
+  return (
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Box sx={{ textAlign: "center", mb: 6 }}>
+        <Typography
+          variant="h2"
+          sx={{
+            fontSize: { xs: "2.5rem", md: "3rem" },
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            mb: 2,
+          }}
+        >
+          Selected Works
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: "auto" }}>
+          A collection of web applications, experiments, and visual explorations.
+        </Typography>
+      </Box>
 
-            {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Placeholder for Coding Projects */}
-                {/* Coding Projects */}
-                {[
-                    {
-                        id: "twin-drift",
-                        title: "Twin Drift",
-                        category: "React + Three.js",
-                        description: "A high-octane racing game built with React and Three.js, featuring physics-based drifting mechanics.",
-                        image: "/projects/twins.webp",
-                        href: "/progetti/twin-drift"
-                    },
-                    {
-                        id: "breakout",
-                        title: "Breakout WASM",
-                        category: "Rust + Bevy",
-                        description: "Classic arcade action reimplemented in Rust using the Bevy engine, compiled to WebAssembly for the browser.",
-                        image: "/projects/breakout.png",
-                        href: "/progetti/breakout"
-                    },
-                    {
-                        id: "kalaha",
-                        title: "Kalaha AI",
-                        category: "Python + Pyodide",
-                        description: "Ancient board game played against a Python AI agent running fully in the browser via Pyodide.",
-                        image: "/projects/kalaha.webp",
-                        href: "/progetti/kalaha"
-                    }
-                ].map((project) => (
-                    <div key={project.id} className="group relative glass-card rounded-2xl overflow-hidden aspect-[4/5] hover:scale-[1.02] transition-transform duration-500 cursor-pointer">
-                        <Link href={project.href} className="absolute inset-0 z-30" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
-                        <Image
-                            src={project.image}
-                            alt={project.title}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                            <p className="text-primary text-xs font-mono mb-1 uppercase">{project.category}</p>
-                            <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
-                            <p className="text-white/60 text-sm line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
-                                {project.description}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-                {/* Coding Projects Link Card */}
-                <a href="/progetti" className="glass-card rounded-2xl flex flex-col items-center justify-center aspect-[4/5] p-6 hover:bg-white/5 transition-colors group">
-                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        <ArrowRight className="text-white group-hover:text-primary transition-colors" size={32} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Coding Games</h3>
-                    <p className="text-white/60 text-center text-sm">Check out my playable Passion Projects (Rust, Python, JS)</p>
-                </a>
-            </div>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {projects.map((project) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
+            <Card
+              variant="outlined"
+              sx={{
+                borderRadius: 3,
+                height: "100%",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              <Link
+                href={project.href}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={project.image}
+                  alt={project.title}
+                  sx={{ objectFit: "cover" }}
+                />
+                <CardContent sx={{ p: 3, flex: 1 }}>
+                  <Chip
+                    label={project.category}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ mb: 1.5, fontSize: "0.75rem" }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                    {project.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    {project.description}
+                  </Typography>
+                </CardContent>
+              </Link>
+            </Card>
+          </Grid>
+        ))}
 
-            {/* Testimonials */}
-            <section className="py-12 border-t border-white/5">
-                <h2 className="font-heading text-3xl font-bold text-white mb-10 text-center">Testimonials</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {testimonials.map((t) => (
-                        <div key={t.id} className="glass-panel p-8 rounded-2xl flex flex-col gap-4 border border-white/5 hover:border-accent/20 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h4 className="text-white font-medium">{t.name}</h4>
-                                    <p className="text-primary text-sm">{t.role}</p>
-                                </div>
-                                <div className="text-yellow-500 flex gap-0.5">
-                                    {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                                </div>
-                            </div>
-                            <p className="text-white/80 leading-relaxed italic">"{t.text}"</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-        </div>
-    );
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 300,
+              border: "2px dashed",
+              borderColor: "divider",
+              bgcolor: "transparent",
+              transition: "border-color 0.2s",
+              "&:hover": {
+                borderColor: "primary.main",
+              },
+            }}
+          >
+            <Link
+              href="/progetti"
+              style={{
+                textDecoration: "none",
+                color: "inherit",
+                display: "block",
+                padding: 32,
+                textAlign: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ArrowForwardIcon sx={{ color: "#fff", fontSize: 28 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  View All Projects
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+                  Explore games, tools, and experiments
+                </Typography>
+              </Box>
+            </Link>
+          </Card>
+        </Grid>
+      </Grid>
+    </Container>
+  );
 }

@@ -1,97 +1,184 @@
-import { ExternalLink } from "lucide-react";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
+import Divider from "@mui/material/Divider";
+import WorkIcon from "@mui/icons-material/Work";
+import SchoolIcon from "@mui/icons-material/School";
+import CodeIcon from "@mui/icons-material/Code";
+
+const skills = [
+  { label: "Languages", items: ["TypeScript", "Rust", "Python", "C++", "Java"] },
+  { label: "Frontend", items: ["Next.js", "React", "Tailwind CSS", "Framer Motion"] },
+  { label: "Backend", items: ["Spring Boot", "Node.js", "PostgreSQL", "MongoDB"] },
+  { label: "Tools", items: ["Git", "Docker", "Linux", "WASM"] },
+];
+
+const experience = [
+  {
+    title: "Full Stack Developer",
+    period: "2023 - Present",
+    description:
+      "Building modern web applications with Next.js and Spring Boot. Leading frontend architecture decisions and implementing performance-critical modules.",
+  },
+  {
+    title: "Creative Coder",
+    period: "2021 - 2023",
+    description:
+      "Developed interactive websites, generative art pieces, and browser-based games using Three.js, React, and Rust.",
+  },
+  {
+    title: "ITS Student",
+    period: "2021 - Present",
+    description:
+      "Studying software engineering and web technologies at ITS Piemonte. Focus on full-stack development and system design.",
+  },
+];
+
+const education = [
+  {
+    title: "ITS Piemonte",
+    period: "2021 - Present",
+    description:
+      "Higher Education in Software Engineering and Web Development.",
+  },
+];
 
 export default function ResumePage() {
-    return (
-        <div className="max-w-3xl mx-auto space-y-16 py-12">
-            {/* Header */}
-            <section className="space-y-4">
-                <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tighter text-white">
-                    Giosuè "Bobu" Tedeschi
-                </h1>
-                <p className="text-xl text-white/60 font-light">
-                    Full Stack Engineer & Creative Technologist
-                </p>
-                <div className="flex gap-4 text-sm text-white/40">
-                    <span>Milan, Italy</span>
-                    <span>•</span>
-                    <span>giosue@example.com</span>
-                </div>
-            </section>
+  return (
+    <Container maxWidth="md" sx={{ py: 6 }}>
+      {/* Header */}
+      <Box sx={{ mb: 6 }}>
+        <Typography
+          variant="h2"
+          sx={{
+            fontSize: { xs: "2.5rem", md: "3.5rem" },
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            mb: 1,
+          }}
+        >
+          Giosu&egrave; &quot;Bobu&quot; Tedeschi
+        </Typography>
+        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, mb: 2 }}>
+          Full Stack Engineer & Creative Technologist
+        </Typography>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+          <Chip icon={<WorkIcon sx={{ fontSize: 16 }} />} label="Milan, IT" size="small" variant="outlined" />
+          <Chip label="giosue.tedeschi@edu-its.it" size="small" variant="outlined" />
+        </Box>
+      </Box>
 
-            {/* Experience */}
-            <section className="space-y-8">
-                <h2 className="font-heading text-2xl font-semibold text-primary border-b border-white/10 pb-2">
-                    Experience
-                </h2>
+      <Divider sx={{ mb: 5 }} />
 
-                <div className="space-y-4">
-                    <div className="flex justify-between items-baseline">
-                        <h3 className="text-xl font-medium text-white">Senior Frontend Developer</h3>
-                        <span className="text-sm text-white/40 font-mono">2023 - Present</span>
-                    </div>
-                    <p className="text-white/60 leading-relaxed">
-                        Leading the frontend architecture for high-scale web applications. Implementing WASM modules for performance-critical tasks.
-                    </p>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="flex justify-between items-baseline">
-                        <h3 className="text-xl font-medium text-white">Freelance Creative Coder</h3>
-                        <span className="text-sm text-white/40 font-mono">2021 - 2023</span>
-                    </div>
-                    <p className="text-white/60 leading-relaxed">
-                        Developed interactive websites and generative art pieces for various clients using Three.js, React, and Rust.
-                    </p>
-                </div>
-            </section>
-
-            {/* Education */}
-            <section className="space-y-8">
-                <h2 className="font-heading text-2xl font-semibold text-secondary border-b border-white/10 pb-2">
-                    Education
-                </h2>
-
-                <div className="space-y-4">
-                    <div className="flex justify-between items-baseline">
-                        <h3 className="text-xl font-medium text-white">BSc Computer Science</h3>
-                        <span className="text-sm text-white/40 font-mono">2018 - 2021</span>
-                    </div>
-                    <p className="text-white/60 leading-relaxed">
-                        Politecnico di Milano. Thesis on "WebAssembly in Modern Game Development".
-                    </p>
-                </div>
-            </section>
-
-            {/* Skills */}
-            <section className="space-y-8">
-                <h2 className="font-heading text-2xl font-semibold text-accent border-b border-white/10 pb-2">
-                    Technical Skills
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="glass-panel p-4 rounded-xl">
-                        <h4 className="font-medium text-white mb-2">Languages</h4>
-                        <p className="text-sm text-white/60">TypeScript, Rust, Python, C++</p>
-                    </div>
-                    <div className="glass-panel p-4 rounded-xl">
-                        <h4 className="font-medium text-white mb-2">Frontend</h4>
-                        <p className="text-sm text-white/60">Next.js, React, Tailwind, Framer Motion, GSAP</p>
-                    </div>
-                    <div className="glass-panel p-4 rounded-xl">
-                        <h4 className="font-medium text-white mb-2">Backend & Tools</h4>
-                        <p className="text-sm text-white/60">Node.js, MongoDB, Docker, Git</p>
-                    </div>
-                </div>
-            </section>
-
-            <div className="pt-8 text-center">
-                <a
-                    href="/cv.pdf"
-                    target="_blank"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-medium hover:scale-105 transition-transform"
+      {/* Experience */}
+      <Box sx={{ mb: 6 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+          <WorkIcon color="primary" />
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Experience
+          </Typography>
+        </Box>
+        <Stack spacing={3}>
+          {experience.map((exp, i) => (
+            <Card key={i} variant="outlined" sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    alignItems: { sm: "center" },
+                    mb: 1,
+                  }}
                 >
-                    Download Full CV <ExternalLink size={16} />
-                </a>
-            </div>
-        </div>
-    );
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {exp.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "monospace" }}>
+                    {exp.period}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                  {exp.description}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Education */}
+      <Box sx={{ mb: 6 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+          <SchoolIcon color="secondary" />
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Education
+          </Typography>
+        </Box>
+        <Stack spacing={3}>
+          {education.map((edu, i) => (
+            <Card key={i} variant="outlined" sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    alignItems: { sm: "center" },
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {edu.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "monospace" }}>
+                    {edu.period}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                  {edu.description}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Skills */}
+      <Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+          <CodeIcon sx={{ color: "#0ea5e9" }} />
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Technical Skills
+          </Typography>
+        </Box>
+        <Grid container spacing={2}>
+          {skills.map((skill) => (
+            <Grid size={{xs: 12, sm: 6}} key={skill.label}>
+              <Card variant="outlined" sx={{ borderRadius: 3, height: "100%" }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 600, mb: 1.5, color: "primary.main" }}
+                  >
+                    {skill.label}
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {skill.items.map((item) => (
+                      <Chip key={item} label={item} size="small" variant="outlined" />
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    </Container>
+  );
 }

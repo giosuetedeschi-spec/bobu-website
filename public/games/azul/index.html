@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azul</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
+h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+#game-area{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.panel{background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.08)}
+#factories{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:400px}
+.factory{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:8px;background:rgba(0,0,0,0.2);border-radius:10px;min-width:70px;min-height:70px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s}
+.factory:hover{box-shadow:0 0 12px rgba(96,165,250,0.3)}
+.factory.selected{border-color:#60a5fa;box-shadow:0 0 16px rgba(96,165,250,0.4)}
+.factory .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
+#center{display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:rgba(0,0,0,0.15);border-radius:10px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s}
+#center:hover{box-shadow:0 0 12px rgba(52,211,153,0.3)}
+#center.selected{border-color:#34d399}
+#center .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
+.tile.blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
+.tile.yellow{background:linear-gradient(135deg,#fbbf24,#d97706)}
+.tile.red{background:linear-gradient(135deg,#ef4444,#b91c1c)}
+.tile.green{background:linear-gradient(135deg,#22c55e,#15803d)}
+.tile.white{background:linear-gradient(135deg,#f8fafc,#cbd5e1)}
+.tile.first{background:linear-gradient(135deg,#a3e635,#65a30d)}
+#player-board{width:300px}
+.board-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.row-label{font-size:0.65rem;color:#64748b;width:14px}
+.pattern-row{display:flex;gap:2px}
+.pc{width:28px;height:28px;border-radius:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:border-color 0.2s}
+.pc:hover{border-color:#60a5fa}
+.pc.filled{cursor:default;border-color:transparent}
+.wc{width:28px;height:28px;border-radius:4px;border:1px solid transparent}
+.wc.scored{box-shadow:inset 0 0 6px rgba(255,255,255,0.3)}
+#floor{display:flex;gap:2px;margin-top:6px;padding:4px;background:rgba(0,0,0,0.15);border-radius:6px}
+.fc{width:26px;height:26px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.1)}
+#sidebar{width:200px;font-size:0.8rem}
+#sidebar h3{font-size:0.9rem;margin-bottom:6px;color:#94a3b8}
+.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.stat-val{font-weight:600;color:#e2e8f0}
+#message{margin-top:8px;padding:8px 16px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:0.85rem;text-align:center;min-height:36px;display:flex;align-items:center;justify-content:center}
+#message .hl{color:#60a5fa;font-weight:600}
+#color-picker{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.cpt{width:34px;height:34px;border-radius:6px;cursor:pointer;border:3px solid transparent;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.cpt:hover{transform:scale(1.15)}
+.cpt.sel{border-color:#fff;transform:scale(1.15)}
+.cpt.dis{opacity:0.2;cursor:not-allowed}
+#controls{display:flex;gap:8px;margin-top:8px;justify-content:center}
+.btn{padding:6px 18px;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-p{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff}
+.btn-s{background:rgba(255,255,255,0.08);color:#94a3b8}
+#round-info{font-size:0.75rem;color:#64748b;text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+<h1>AZUL</h1>
+<div id="game-area">
+  <div class="panel">
+    <div id="factories"></div>
+    <div style="text-align:center;font-size:0.7rem;color:#64748b;margin:4px 0">Factories</div>
+    <div style="display:flex;justify-content:center"><div id="center"></div></div>
+    <div style="text-align:center;font-size:0.7rem;color:#64748b;margin:4px 0">Center</div>
+    <div id="color-picker"></div>
+  </div>
+  <div class="panel" id="player-board"><div id="board-rows"></div><div id="floor"></div></div>
+  <div class="panel" id="sidebar">
+    <h3>Score</h3><div id="score-display"></div>
+    <div id="round-info"></div>
+    <div id="controls"><button class="btn btn-p" id="btn-new">New Game</button></div>
+  </div>
+</div>
+<div id="message">Select a factory or center</div>
+<script>
+const E=0,B=1,Y=2,R=3,G=4,W=5,FP=-1;
+const CN=['','blue','yellow','red','green','white','first'];
+const WP=[[B,Y,R,G,W],[W,B,Y,R,G],[G,W,B,Y,R],[R,G,W,B,Y],[Y,R,G,W,B]];
+let game={bag:[],box:[],factories:[],center:[],players:[],cp:0,round:1,src:null,color:null,phase:'pick'};
+function init(){
+  game.bag=[];for(let c=1;c<=5;c++)for(let i=0;i<20;i++)game.bag.push(c);
+  shuffle(game.bag);game.box=[];game.factories=Array.from({length:5},()=>[]);game.center=[];
+  game.players=[{pat:[[null,null,null,null,null],[null,null,null,null],[null,null,null],[null,null],[null],wall:Array(25).fill(null),floor:[],score:0},{pat:[[null,null,null,null,null],[null,null,null,null],[null,null,null],[null,null],[null],wall:Array(25).fill(null),floor:[],score:0}];
+  game.cp=0;game.round=1;game.src=null;game.color=null;game.phase='pick';setupRound();render();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+function setupRound(){game.center=[FP];for(let f of game.factories){f.length=0;for(let i=0;i<4;i++){if(!game.bag.length){game.bag=[...game.box];game.box=[];shuffle(game.bag);if(!game.bag.length)break;}f.push(game.bag.pop());}}game.src=null;game.color=null;game.phase='pick';}
+function render(){renderFactories();renderCenter();renderBoard();renderPicker();renderScore();updateMsg();}
+function renderFactories(){const el=document.getElementById('factories');el.innerHTML='';for(let i=0;i<5;i++){const f=game.factories[i];const d=document.createElement('div');d.className='factory'+(game.src==='f'+i?' selected':'');for(const t of f){const tl=document.createElement('div');tl.className='tile '+CN[t];d.appendChild(tl);}d.onclick=()=>{if(game.phase!=='pick')return;const v=f.filter(t=>t!==FP);if(v.length){game.src='f'+i;game.phase='color';render();}};el.appendChild(d);}}
+function renderCenter(){const el=document.getElementById('center');el.innerHTML='';el.className=game.src==='center'?'selected':'';for(const t of game.center){const tl=document.createElement('div');tl.className='tile '+CN[t];el.appendChild(tl);}el.onclick=()=>{if(game.phase!=='pick')return;const v=game.center.filter(t=>t!==FP);if(v.length){game.src='center';game.phase='color';render();}};}
+function renderPicker(){const el=document.getElementById('color-picker');el.innerHTML='';if(!game.src)return;const tiles=game.src==='center'?game.center:game.factories[parseInt(game.src[1])];const av=new Set(tiles.filter(t=>t!==FP));for(let c=1;c<=5;c++){const d=document.createElement('div');d.className='tile cpt '+CN[c]+(!av.has(c)?' dis':'');if(av.has(c)){d.onclick=()=>{game.color=c;game.phase='place';render();};if(game.color===c)d.classList.add('sel');}el.appendChild(d);}}
+function renderBoard(){const p=game.players[game.cp];const el=document.getElementById('board-rows');el.innerHTML='';for(let r=0;r<5;r++){const rd=document.createElement('div');rd.className='board-row';rd.innerHTML='<span class="row-label">'+(r+1)+'</span>';const pr=document.createElement('div');pr.className='pattern-row';for(let c=0;c<=r;c++){const cell=document.createElement('div');cell.className='pc'+(p.pat[r][c]!==null?' filled':'');if(p.pat[r][c]!==null)cell.classList.add(CN[p.pat[r][c]]);if(game.phase==='place'&&p.pat[r][c]===null){cell.style.borderColor='#60a5fa';cell.onclick=()=>place(r,c);}pr.appendChild(cell);}rd.appendChild(pr);const wr=document.createElement('div');wr.className='pattern-row';for(let c=0;c<5;c++){const wc=document.createElement('div');wc.className='wc'+(p.wall[r*5+c]!==null?' filled':'');if(p.wall[r*5+c]!==null){wc.classList.add(CN[p.wall[r*5+c]]);wc.classList.add('scored');}wr.appendChild(wc);}rd.appendChild(wr);el.appendChild(rd);}const fl=document.getElementById('floor');fl.innerHTML='';for(let i=0;i<7;i++){const fc=document.createElement('div');fc.className='fc'+(p.floor[i]!==null?' filled':'');if(p.floor[i]!==null)fc.classList.add(CN[p.floor[i]]);if(game.phase==='place'&&p.floor.length<7){fc.style.borderColor='#fbbf24';fc.style.cursor='pointer';fc.onclick=()=>placeFloor();}fl.appendChild(fc);}}
+function place(r,c){if(game.phase!=='place'||!game.color)return;const p=game.players[game.cp];if(p.wall[r*5+game.color-1]!==null){msg('Color already in wall!');return;}for(let i=0;i<=r;i++)if(p.pat[r][i]!==null&&p.pat[r][i]!==game.color){msg('Row has different color!');return;}const n=takeTiles();for(let i=0;i<n&&p.pat[r][c]===null;i++)p.pat[r][c]=game.color;endPlace();}
+function placeFloor(){if(game.phase!=='place'||!game.color)return;const p=game.players[game.cp];const n=takeTiles();for(let i=0;i<n&&p.floor.length<7;i++)p.floor.push(game.color);endPlace();}
+function takeTiles(){let tiles;const src=game.src;if(src==='center'){tiles=game.center;game.center=[];}else{const f=game.factories[parseInt(src[1])];tiles=f;f.length=0;}let n=0;for(const t of tiles){if(t===game.color)n++;else if(t===FP)game.center.push(t);else game.center.push(t);}return n;}
+function endPlace(){game.src=null;game.color=null;game.phase='pick';if(game.factories.every(f=>!f.length)&&!game.center.length){game.phase='end';msg('Round over! Scoring...');setTimeout(scoreRound,500);}else{game.cp=(game.cp+1)%2;render();}}
+function scoreRound(){for(const p of game.players){for(let r=0;r<5;r++){if(p.pat[r].every(c=>c!==null)){const col=p.pat[r][p.pat[r].length-1];p.wall[r*5+col-1]=col;p.score+=scoreWall(p.wall,r*5+col-1);for(let c=0;c<p.pat[r].length;c++)p.pat[r][c]=null;}}const pen=[1,1,2,2,2,3,3];for(let i=0;i<p.floor.length;i++)p.score-=pen[i];p.floor=[];if(p.score<0)p.score=0;}game.round++;if(game.round>6||game.players.some(p=>p.wall.filter(w=>w!==null).length>=5))endGame();else{setupRound();render();}}
+function scoreWall(w,i){const r=Math.floor(i/5),c=i%5;let s=0,h=1,v=1;for(let j=c-1;j>=0&&w[r*5+j]!==null;j--)h++;for(let j=c+1;j<5&&w[r*5+j]!==null;j++)h++;for(let j=r-1;j>=0&&w[j*5+c]!==null;j--)v++;for(let j=r+1;j<5&&w[j*5+c]!==null;j++)v++;if(h>1)s+=h;if(v>1)s+=v;if(!s)s=1;return s;}
+function endGame(){game.phase='over';const s1=game.players[0].score,s2=game.players[1].score;msg(s1>s2?'You Win!':s2>s1?'AI Wins!':'Draw!');}
+function renderScore(){const el=document.getElementById('score-display');el.innerHTML='';for(let i=0;i<2;i++){const d=document.createElement('div');d.className='stat';d.innerHTML='<span>P'+(i+1)+(i===0?'(You)':'(')+'(AI)</span><span class="stat-val">'+game.players[i].score+'</span>';el.appendChild(d);}document.getElementById('round-info').textContent='Round '+game.round;}
+function updateMsg(){const el=document.getElementById('message');if(game.phase==='pick')el.innerHTML='Select a <span class="hl">factory</span> or <span class="hl">center</span>';else if(game.phase==='color')el.innerHTML='Pick a <span class="hl">color</span>';else if(game.phase==='place')el.innerHTML='Place on <span class="hl">pattern</span> or <span class="hl">floor</span>';else if(game.phase==='over')el.innerHTML='Game Over!';}
+function msg(m){document.getElementById('message').textContent=m;}
+document.getElementById('btn-new').onclick=init;
+init();
+</script>
+</body>
+</html>

@@ -1,13 +1,19 @@
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import { GameIframe } from "@/components/games/GameIframe";
 
 export default function PongPage() {
-    return (
-        <div className="space-y-8 max-w-5xl mx-auto">
-            <div className="flex items-baseline justify-between">
-                <h1 className="font-heading text-4xl font-bold text-white">Pong</h1>
-                <span className="text-white/40 font-mono">Vanilla JS</span>
-            </div>
-            <GameIframe src="/games/pong/index.html" />
-        </div>
-    );
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Pong
+        </Typography>
+        <Chip label="Vanilla JS" size="small" variant="outlined" />
+      </Box>
+      <GameIframe src="/games/pong/index.html" />
+    </Container>
+  );
 }

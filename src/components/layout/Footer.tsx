@@ -1,16 +1,69 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Container from "@mui/material/Container";
+import Divider from "@mui/material/Divider";
+
 export function Footer() {
-    return (
-        <footer className="py-8 md:py-12 border-t border-white/5 mt-20">
-            <div className="container mx-auto px-4 text-center">
-                <p className="text-white/40 text-sm">
-                    © {new Date().getFullYear()} Bobu Website. All rights reserved.
-                </p>
-                <div className="mt-4 flex justify-center gap-6 text-white/40 text-xs">
-                    <a href="https://github.com/giosuetedeschi-spec" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">Github</a>
-                    <a href="https://it.linkedin.com/in/giosu%C3%A8-tedeschi-b287b9225?trk=public_post_feed-actor-name" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-                    <a href="https://tagembed.com/it/blog/twitter-rebranding-x/" className="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">Twitter</a>
-                </div>
-            </div>
-        </footer>
-    );
+  return (
+    <Box
+      component="footer"
+      sx={{
+        py: 4,
+        bgcolor: "background.paper",
+        borderTop: "1px solid",
+        borderColor: "divider",
+        mt: 8,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Divider sx={{ mb: 3 }} />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            &copy; {new Date().getFullYear()} Bobu. All rights reserved.
+          </Typography>
+          <Box sx={{ display: "flex", gap: 3 }}>
+            <Link
+              href="https://github.com/giosuetedeschi-spec"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              color="text.secondary"
+              underline="hover"
+            >
+              GitHub
+            </Link>
+            <Link
+              href="https://it.linkedin.com/in/giosu%C3%A8-tedeschi-b287b9225"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              color="text.secondary"
+              underline="hover"
+            >
+              LinkedIn
+            </Link>
+            <Link
+              href="https://x.com/Pizzibarbaro"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              color="text.secondary"
+              underline="hover"
+            >
+              Twitter
+            </Link>
+          </Box>
+        </Box>
+      </Container>
+    </Box>
+  );
 }

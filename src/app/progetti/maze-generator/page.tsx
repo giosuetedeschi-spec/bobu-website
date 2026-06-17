@@ -1,41 +1,51 @@
 "use client";
 
-import React from "react";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
 import { GameIframe } from "@/components/games/GameIframe";
 
 export default function MazeGeneratorPage() {
-    return (
-        <div className="w-full max-w-6xl mx-auto space-y-8">
-            <div className="flex items-baseline justify-between">
-                <h1 className="font-heading text-4xl font-bold text-white">Maze Generator</h1>
-                <span className="text-white/40 font-mono">JS Native</span>
-            </div>
-
-            <div className="glass-panel p-6 rounded-xl space-y-4">
-                <p className="text-white/60">
-                    Explore different maze generation algorithms in a peaceful, garden-like visualization.
-                    Includes export options to save your mazes.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                        <h3 className="font-bold text-primary-300 text-sm">Recursive Backtracker</h3>
-                        <p className="text-xs text-white/50">Long, winding corridors perfect for exploring.</p>
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                        <h3 className="font-bold text-primary-300 text-sm">Prim's Algorithm</h3>
-                        <p className="text-xs text-white/50">Organic, short-branching paths that grow like crystal.</p>
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                        <h3 className="font-bold text-primary-300 text-sm">Recursive Division</h3>
-                        <p className="text-xs text-white/50">Structured, rectangular rooms created by slicing space.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-black/40 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-                <GameIframe src="/projects/js-demos/maze-generator/index.html" />
-            </div>
-        </div>
-    );
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Maze Generator
+        </Typography>
+        <Chip label="JS Native" size="small" variant="outlined" />
+      </Box>
+      <Card variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Explore different maze generation algorithms in a peaceful, garden-like visualization.
+          </Typography>
+          <Grid container spacing={2}>
+            {[
+              { name: "Recursive Backtracker", desc: "Long, winding corridors perfect for exploring." },
+              { name: "Prim's Algorithm", desc: "Organic, short-branching paths that grow like crystal." },
+              { name: "Recursive Division", desc: "Structured, rectangular rooms created by slicing space." },
+            ].map((algo) => (
+              <Grid size={{xs: 12, md: 4}} key={algo.name}>
+                <Box sx={{ p: 2, bgcolor: "primary.main" + "08", borderRadius: 2, height: "100%" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+                    {algo.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {algo.desc}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </CardContent>
+      </Card>
+      <Box sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+        <GameIframe src="/projects/js-demos/maze-generator/index.html" />
+      </Box>
+    </Container>
+  );
 }

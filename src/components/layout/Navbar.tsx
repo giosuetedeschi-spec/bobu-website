@@ -2,99 +2,114 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import { useState } from "react";
 
 const navItems = [
-    { name: "Home", href: "/" },
-    { name: "CV", href: "/cv" },
-    { name: "Portfolio", href: "/portfolio" },
-    { name: "Progetti", href: "/progetti" },
-    { name: "Shop", href: "/ecommerce" },
+  { name: "Home", href: "/" },
+  { name: "CV", href: "/cv" },
+  { name: "Portfolio", href: "/portfolio" },
+  { name: "Progetti", href: "/progetti" },
 ];
 
 export function Navbar() {
-    const pathname = usePathname();
-    const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-    return (
-        <motion.nav
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="fixed top-0 left-0 right-0 z-50 flex justify-center p-4"
-        >
-            <div className={cn(
-                "rounded-full px-6 py-3 flex items-center justify-between gap-8 md:gap-12 min-w-[300px] md:min-w-fit transition-colors duration-300",
-                pathname.startsWith("/ecommerce") ? "bg-black/90 border border-white/10" : "glass-panel"
-            )}>
-                {/* Mobile Menu Toggle */}
-                <button
-                    className="md:hidden p-2 text-white/80 hover:text-white"
-                    onClick={() => setIsOpen(!isOpen)}
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <>
+      <AppBar
+        position="fixed"
+        color="default"
+        elevation={0}
+        sx={{
+          bgcolor: "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Toolbar sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <Button sx={{
+              fontFamily: '"Outfit", sans-serif',
+              fontWeight: 700,
+              fontSize: "1.25rem",
+              letterSpacing: "-0.025em",
+              color: "text.primary",
+              mr: "auto",
+              "&:hover": { bgcolor: "transparent", color: "primary.main" },
+            }}
+          >
+            BOBU
+          </Button>
+          </Link>
+
+          {/* Desktop nav */}
+          <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1 }}>
+            {navItems.map((item) => (
+              <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
+                <Button sx={{
+                  color: isActive(item.href) ? "primary.main" : "text.secondary",
+                  fontWeight: isActive(item.href) ? 600 : 500,
+                  "&:hover": { bgcolor: "primary.main", color: "#fff" },
+                }}
+              >
+                {item.name}
+              </Button>
+              </Link>
+            ))}
+          </Box>
+
+          {/* Mobile menu button */}
+          <IconButton
+            sx={{ display: { md: "none" } }}
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      {/* Mobile drawer */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        <Box sx={{ width: 250, pt: 4 }}>
+          <List>
+            {navItems.map((item) => (
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  component="a"
+                  href={item.href}
+                  selected={isActive(item.href)}
+                  onClick={() => setDrawerOpen(false)}
                 >
-                    {isOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-
-                {/* Logo / Brand */}
-                <Link href="/" className="font-heading font-bold text-xl tracking-tighter hover:text-primary transition-colors">
-                    BOBU
-                </Link>
-
-                {/* Desktop Nav */}
-                <div className="hidden md:flex items-center gap-6">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "text-sm font-medium transition-colors hover:text-white relative",
-                                    isActive ? "text-white" : "text-white/60"
-                                )}
-                            >
-                                {item.name}
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="navbar-indicator"
-                                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
-                                    />
-                                )}
-                            </Link>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Mobile Menu Dropdown */}
-            {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="absolute top-20 left-4 right-4 glass-card rounded-2xl p-6 flex flex-col gap-4 md:hidden"
-                >
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={() => setIsOpen(false)}
-                                className={cn(
-                                    "text-lg font-medium transition-colors hover:text-white",
-                                    isActive ? "text-primary" : "text-white/60"
-                                )}
-                            >
-                                {item.name}
-                            </Link>
-                        );
-                    })}
-                </motion.div>
-            )}
-        </motion.nav>
-    );
+                  <ListItemText primary={item.name} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+    </>
+  );
 }

@@ -1,32 +1,39 @@
-"use client";
-
-import Link from "next/link";
-import { Construction } from "lucide-react";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import ConstructionIcon from "@mui/icons-material/Construction";
+import NextLink from "next/link";
 
 export default function EcommercePage() {
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center space-y-8">
-            <div className="p-6 rounded-full bg-white/5 border border-white/10 animate-pulse">
-                <Construction size={48} className="text-white/60" />
-            </div>
-
-            <div className="space-y-4 max-w-md">
-                <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tighter">
-                    Work in Progress
-                </h1>
-                <p className="text-white/60 leading-relaxed">
-                    The shop is currently being built. We are crafting a curated experience for high-quality digital and physical goods.
-                </p>
-            </div>
-
-            <div className="flex gap-4">
-                <Link
-                    href="/"
-                    className="px-6 py-3 rounded-full glass-panel hover:bg-white/10 transition-colors"
-                >
-                    Back Home
-                </Link>
-            </div>
-        </div>
-    );
+  return (
+    <Container maxWidth="sm" sx={{ py: 12 }}>
+      <Box sx={{ textAlign: "center" }}>
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            bgcolor: "primary.main" + "15",
+            color: "primary.main",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mx: "auto",
+            mb: 3,
+          }}
+        >
+          <ConstructionIcon sx={{ fontSize: 40 }} />
+        </Box>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
+          Work in Progress
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          The shop is currently being built. We are crafting a curated experience for high-quality digital and physical goods.
+        </Typography>
+        <NextLink href="/" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "underline" }}>
+          Back Home
+        </NextLink>
+      </Box>
+    </Container>
+  );
 }

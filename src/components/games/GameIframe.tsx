@@ -1,9 +1,26 @@
 export function GameIframe({ src }: { src: string }) {
   return (
-    <div className="w-full relative aspect-video glass-panel rounded-xl overflow-hidden shadow-2xl">
+    <div
+      style={{
+        width: "100%",
+        position: "relative",
+        aspectRatio: "16/9",
+        borderRadius: 16,
+        overflow: "hidden",
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        background: "#fff",
+      }}
+    >
       <iframe
         src={src}
-        className="absolute inset-0 w-full h-full border-none"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          border: "none",
+        }}
         title="Game"
         allowFullScreen
       />

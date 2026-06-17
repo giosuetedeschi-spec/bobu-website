@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mastermind</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#0f0f1a 0%,#1a1030 100%);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow:hidden;user-select:none}
+#game-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:900px;padding:10px;gap:6px;height:100vh}
+h1{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,#f472b6,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+#board{display:flex;flex-direction:column;gap:3px;width:100%;max-width:380px}
+.row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;transition:background 0.2s}
+.row.active{background:rgba(255,255,255,0.06)}
+.row-label{font-size:0.7rem;color:#64748b;width:16px;text-align:center}
+.pegs{display:flex;gap:6px;flex:1}
+.peg{width:36px;height:36px;border-radius:50%;border:2px solid #334155;background:#1e293b;cursor:pointer;transition:transform 0.15s,border-color 0.2s;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.peg:hover{transform:scale(1.1);border-color:#60a5fa}
+.peg.filled{border-color:#475569}
+.hints{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;margin-left:8px}
+.hint{width:14px;height:14px;border-radius:50%;background:#0f172a;border:1px solid #1e293b}
+.hint.black{background:#e2e8f0;border-color:#94a3b8}
+.hint.white{background:#1e293b;border-color:#64748b}
+.hint.correct{background:#22c55e;border-color:#16a34a}
+#selector{display:flex;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:12px;margin-top:4px}
+.swatch{width:38px;height:38px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform 0.15s,border-color 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.swatch:hover{transform:scale(1.15)}
+.swatch.sel{border-color:#fff;transform:scale(1.15)}
+#controls{display:flex;gap:10px;margin-top:6px}
+.btn{padding:8px 24px;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-submit{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff}
+.btn-submit:disabled{opacity:0.3;cursor:not-allowed}
+.btn-submit:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,0.4)}
+.btn-reset{background:rgba(255,255,255,0.08);color:#94a3b8}
+.btn-reset:hover{background:rgba(255,255,255,0.12)}
+#message{text-align:center;font-size:0.85rem;color:#94a3b8;min-height:20px}
+#message.win{color:#22c55e;font-weight:600}
+#message.lose{color:#ef4444;font-weight:600}
+#secret-reveal{display:flex;gap:6px;margin-top:4px}
+#secret-reveal .peg{width:28px;height:28px;border-radius:50%;border:2px solid #334155;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <h1>MASTERMIND</h1>
+  <div id="board"></div>
+  <div id="selector"></div>
+  <div id="controls">
+    <button class="btn btn-submit" id="btn-submit" disabled>Submit</button>
+    <button class="btn btn-reset" id="btn-reset">New Game</button>
+  </div>
+  <div id="message">Click a peg slot, then pick a color</div>
+  <div id="secret-reveal" style="display:none"></div>
+</div>
+
+<script>
+const NUM_COLORS=6, CODE_LENGTH=4, MAX_GUESSES=10;
+const COLORS=['#dc3232','#32b432','#3278dc','#f0c832','#dc5adc','#f08c1e'];
+const COLOR_NAMES=['Red','Green','Blue','Yellow','Pink','Orange'];
+
+let secret=[],rows=[],currentRow=0,selectedSlot=null,gameOver=false;
+
+function initGame(){
+  secret=Array.from({length:CODE_LENGTH},()=>Math.floor(Math.random()*NUM_COLORS));
+  rows=Array.from({length:MAX_GUESSES},()=>({pegs:Array(CODE_LENGTH).fill(null),black:0,white:0,submitted:false}));
+  currentRow=0;selectedSlot=null;gameOver=false;
+  renderBoard();renderSelector();updateUI();
+  document.getElementById('secret-reveal').style.display='none';
+  document.getElementById('message').textContent='Click a peg slot, then pick a color';
+  document.getElementById('message').className='';
+}
+
+function scoreGuess(guess){
+  let black=0,white=0;
+  const sCopy=[...secret],gCopy=[...guess];
+  for(let i=0;i<CODE_LENGTH;i++)if(gCopy[i]===sCopy[i]){black++;sCopy[i]=-1;gCopy[i]=-2;}
+  for(let i=0;i<CODE_LENGTH;i++)if(gCopy[i]>=0){
+    const idx=sCopy.indexOf(gCopy[i]);
+    if(idx>=0){white++;sCopy[idx]=-1;}
+  }
+  return[black,white];
+}
+
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<MAX_GUESSES;r++){
+    const row=rows[r];
+    const div=document.createElement('div');
+    div.className='row'+(r===currentRow&&!gameOver?' active':'');
+    div.innerHTML=`<span class="row-label">${r+1}</span><div class="pegs" id="pegs-${r}"></div><div class="hints" id="hints-${r}"></div>`;
+    const pegsDiv=div.querySelector(`#pegs-${r}`);
+    for(let p=0;p<CODE_LENGTH;p++){
+      const peg=document.createElement('div');
+      peg.className='peg'+(row.pegs[p]!==null?' filled':'');
+      peg.dataset.row=r;peg.dataset.slot=p;
+      if(row.pegs[p]!==null)peg.style.background=COLORS[row.pegs[p]];
+      if(r===currentRow&&!gameOver){
+        peg.onclick=()=>selectSlot(p);
+      }
+      pegsDiv.appendChild(peg);
+    }
+    const hintsDiv=div.querySelector(`#hints-${r}`);
+    if(row.submitted){
+      for(let h=0;h<row.black;h++){const d=document.createElement('div');d.className='hint black';hintsDiv.appendChild(d);}
+      for(let h=0;h<row.white;h++){const d=document.createElement('div');d.className='hint white';hintsDiv.appendChild(d);}
+      const empty=CODE_LENGTH-row.black-row.white;
+      for(let h=0;h<empty;h++){const d=document.createElement('div');d.className='hint';hintsDiv.appendChild(d);}
+    } else {
+      for(let h=0;h<CODE_LENGTH;h++){const d=document.createElement('div');d.className='hint';hintsDiv.appendChild(d);}
+    }
+    board.appendChild(div);
+  }
+}
+
+function renderSelector(){
+  const sel=document.getElementById('selector');
+  sel.innerHTML='';
+  for(let c=0;c<NUM_COLORS;c++){
+    const sw=document.createElement('div');
+    sw.className='swatch';
+    sw.style.background=COLORS[c];
+    sw.title=COLOR_NAMES[c];
+    sw.onclick=()=>selectColor(c);
+    sel.appendChild(sw);
+  }
+}
+
+function selectSlot(slot){
+  if(gameOver)return;
+  selectedSlot=slot;
+  // Highlight the slot
+  const pegs=document.querySelectorAll(`#pegs-${currentRow} .peg`);
+  pegs.forEach((p,i)=>{
+    if(i===slot)p.style.borderColor='#60a5fa';
+    else p.style.borderColor=rows[currentRow].pegs[i]!==null?'#475569':'#334155';
+  });
+  document.getElementById('message').textContent=`Slot ${slot+1} selected - pick a color`;
+}
+
+function selectColor(color){
+  if(gameOver||selectedSlot===null)return;
+  rows[currentRow].pegs[selectedSlot]=color;
+  selectedSlot=null;
+  renderBoard();
+  updateUI();
+  // Auto-advance to next empty slot
+  const nextEmpty=rows[currentRow].pegs.indexOf(null);
+  if(nextEmpty>=0&&rows[currentRow].pegs.filter(p=>p!==null).length<CODE_LENGTH){
+    // Don't auto-select, let user click
+  }
+}
+
+function updateUI(){
+  const canSubmit=rows[currentRow].pegs.every(p=>p!==null)&&!gameOver;
+  document.getElementById('btn-submit').disabled=!canSubmit;
+  if(gameOver)return;
+  const filled=rows[currentRow].pegs.filter(p=>p!==null).length;
+  if(filled===CODE_LENGTH) document.getElementById('message').textContent='Ready to submit!';
+  else if(selectedSlot===null) document.getElementById('message').textContent=`Slot ${filled+1} of ${CODE_LENGTH} - click a peg slot`;
+}
+
+document.getElementById('btn-submit').onclick=()=>{
+  if(gameOver)return;
+  const row=rows[currentRow];
+  if(!row.pegs.every(p=>p!==null))return;
+  const[b,w]=scoreGuess(row.pegs);
+  row.black=b;row.white=w;row.submitted=true;
+  if(b===CODE_LENGTH){
+    gameOver=true;
+    document.getElementById('message').textContent='🎉 You cracked the code!';
+    document.getElementById('message').className='win';
+    revealSecret();
+  } else if(currentRow===MAX_GUESSES-1){
+    gameOver=true;
+    document.getElementById('message').textContent='Out of guesses!';
+    document.getElementById('message').className='lose';
+    revealSecret();
+  } else {
+    currentRow++;
+    selectedSlot=null;
+    document.getElementById('message').textContent=`${b} exact, ${b+w} correct color`;
+  }
+  renderBoard();updateUI();
+};
+
+document.getElementById('btn-reset').onclick=initGame;
+
+function revealSecret(){
+  const div=document.getElementById('secret-reveal');
+  div.style.display='flex';
+  div.innerHTML='<span style="font-size:0.75rem;color:#64748b">Secret:</span>';
+  for(let i=0;i<CODE_LENGTH;i++){
+    const p=document.createElement('div');
+    p.className='peg';
+    p.style.background=COLORS[secret[i]];
+    div.appendChild(p);
+  }
+}
+
+initGame();
+</script>
+</body>
+</html>
