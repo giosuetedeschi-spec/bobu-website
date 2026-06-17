@@ -25,9 +25,10 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-        env:
-          NODE_ENV: production
-      - uses: actions/upload-pages-artifact@v3
+      - run: ls -la out/ || echo "No out dir"
+      - run: touch out/.nojekyll
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
   deploy:
