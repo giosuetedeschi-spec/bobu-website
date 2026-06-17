@@ -1,0 +1,8 @@
+1:"$Sreact.fragment"
+2:I[66919,["/_next/static/chunks/b0b15b0dde8ae912.js","/_next/static/chunks/0ea8d37429ee78c4.js"],"default"]
+3:I[53488,["/_next/static/chunks/b0b15b0dde8ae912.js","/_next/static/chunks/0ea8d37429ee78c4.js"],"default"]
+4:I[22016,["/_next/static/chunks/b0b15b0dde8ae912.js","/_next/static/chunks/0ea8d37429ee78c4.js"],""]
+5:I[97367,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/4890d644c3dbe53d.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+0:{"buildId":"NEMALHxu-k3fpoNQsDJjx","rsc":["$","$1","c",{"children":[["$","$L2",null,{"maxWidth":"lg","sx":{"py":6},"children":[["$","$L3",null,{"variant":"h4","sx":{"fontWeight":700,"mb":2},"children":"Collection"}],["$","$L3",null,{"variant":"body1","color":"text.secondary","sx":{"mb":4},"children":"Coming soon. Stay tuned."}],["$","$L4",null,{"href":"/","style":{"color":"#2563eb","fontWeight":600,"textDecoration":"underline"},"children":"Back Home"}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/b0b15b0dde8ae912.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/0ea8d37429ee78c4.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"isPartial":false}
+7:null
