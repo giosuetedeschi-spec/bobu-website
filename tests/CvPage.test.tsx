@@ -4,7 +4,8 @@ import { render, screen } from '@testing-library/react';
 import CvPage from '@/app/cv/page';
 
 describe('CvPage', () => {
-  it('renders without crashing', () => {
+  it('renders the resume heading', () => {
     render(<CvPage />);
+    expect(screen.getByText('Full Stack Engineer & Creative Technologist')).toBeInTheDocument();
   });
 });

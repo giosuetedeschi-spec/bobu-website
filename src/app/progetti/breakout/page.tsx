@@ -3,18 +3,13 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import MemoryIcon from "@mui/icons-material/Memory";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
 
 export default function BreakoutPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Breakout
-        </Typography>
-        <Chip label="Rust + Bevy + WASM" size="small" variant="outlined" />
-      </Box>
+      <GamePageHeader title="Breakout" tag="Rust + Bevy + WASM" />
       <Card variant="outlined" sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 6, textAlign: "center" }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>

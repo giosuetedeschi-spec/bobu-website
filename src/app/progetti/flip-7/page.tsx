@@ -5,19 +5,14 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import { GameIframe } from "@/components/games/GameIframe";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
 
 export default function Flip7Page() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Flip 7
-        </Typography>
-        <Chip label="Vanilla JS + Canvas" size="small" variant="outlined" />
-      </Box>
+      <GamePageHeader title="Flip 7" tag="Vanilla JS + Canvas" />
       <Box sx={{ mb: 3, borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
         <GameIframe src="/projects/js-demos/flip-7/index.html" />
       </Box>

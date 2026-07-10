@@ -1,19 +1,5 @@
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import { GameIframe } from "@/components/games/GameIframe";
+import { GameIframePage } from "@/components/games/GameIframePage";
 
 export default function AzulPage() {
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Azul
-        </Typography>
-        <Chip label="Tile Drafting" size="small" variant="outlined" />
-      </Box>
-      <GameIframe src="/games/azul/index.html" />
-    </Container>
-  );
+  return <GameIframePage title="Azul" tag="Tile Drafting" src="/games/azul/index.html" />;
 }

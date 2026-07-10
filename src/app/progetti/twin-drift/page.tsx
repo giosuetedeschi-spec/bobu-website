@@ -3,18 +3,13 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
 
 export default function TwinDriftPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Twin Drift
-        </Typography>
-        <Chip label="React + Three.js" size="small" variant="outlined" />
-      </Box>
+      <GamePageHeader title="Twin Drift" tag="React + Three.js" />
       <Card variant="outlined" sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 6, textAlign: "center" }}>
           <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>

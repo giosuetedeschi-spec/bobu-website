@@ -5,19 +5,14 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import { GameIframe } from "@/components/games/GameIframe";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
 
 export default function MazeSolverPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Maze Solver
-        </Typography>
-        <Chip label="JS Native" size="small" variant="outlined" />
-      </Box>
+      <GamePageHeader title="Maze Solver" tag="JS Native" />
       <Card variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
