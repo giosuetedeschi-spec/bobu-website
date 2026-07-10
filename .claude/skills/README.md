@@ -6,22 +6,25 @@
 
 ```
 .
-├── .agent/
-│   └── skills/             # Antigravity Skills 技能库
-│       ├── skill-name/   # 独立技能目录
-│       │   ├── SKILL.md    # 技能核心定义与Prompt（必须）
-│       │   ├── scripts/    # 技能依赖的脚本（可选）
-│       │   ├── examples/   # 技能使用示例（可选）
-│       │   └── resources/  # 技能依赖的模板与资源（可选）
+├── .claude/
+│   ├── skills/              # Antigravity Skills 技能库
+│   │   ├── skill-name/    # 独立技能目录
+│   │   │   ├── SKILL.md    # 技能核心定义与Prompt（必须）
+│   │   │   ├── scripts/    # 技能依赖的脚本（可选）
+│   │   │   ├── examples/   # 技能使用示例（可选）
+│   │   │   └── resources/  # 技能依赖的模板与资源（可选）
+│   │   └── README.md       # 本文件
+│   ├── scripts/             # 索引生成/校验/启停工具（generate_index.py 等）
+│   └── skills_index.json    # 由 generate_index.py 生成的技能索引
 ├── skill-guide/            # 用户手册与文档指南
 │   └── Antigravity_Skills_Manual_CN.md  # 中文使用手册
 └── README.md
 ```
 
 ## 📖 快速开始
-1. 将`.agent/`目录复制到你的工作区：
+1. 将`.claude/`目录复制到你的工作区：
 ```bash
-cp -r .agent/ /path/to/your/workspace/
+cp -r .claude/ /path/to/your/workspace/
 ```
 2. **调用 Skill**: 在对话框输入 `@[skill-name]` 或 `/skill-name`来进行调用，例如：
 ```text

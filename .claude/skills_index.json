@@ -258,12 +258,6 @@
     "description": "When the user wants to set up, improve, or audit analytics tracking and measurement. Also use when the user mentions \"set up tracking,\" \"GA4,\" \"Google Analytics,\" \"conversion tracking,\" \"event tracking,\" \"UTM parameters,\" \"tag manager,\" \"GTM,\" \"analytics implementation,\" or \"tracking plan.\" For A/B test measurement, see ab-test-setup."
   },
   {
-    "id": "app-store-optimization",
-    "path": "skills\\app-store-optimization",
-    "name": "app-store-optimization",
-    "description": "Complete App Store Optimization (ASO) toolkit for researching, optimizing, and tracking mobile app performance on Apple App Store and Google Play Store"
-  },
-  {
     "id": "autonomous-agent-patterns",
     "path": "skills\\autonomous-agent-patterns",
     "name": "autonomous-agent-patterns",
@@ -346,6 +340,12 @@
     "path": "skills\\canvas-design",
     "name": "canvas-design",
     "description": "Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, design, or other static piece. Create original visual designs, never copying existing artists' work to avoid copyright violations."
+  },
+  {
+    "id": "caveman",
+    "path": "skills\\caveman",
+    "name": "caveman",
+    "description": ">"
   },
   {
     "id": "clerk-auth",
@@ -712,6 +712,12 @@
     "path": "skills\\playwright-skill",
     "name": "playwright-skill",
     "description": "Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp. Test pages, fill forms, take screenshots, check responsive design, validate UX, test login flows, check links, automate any browser task. Use when user wants to test websites, automate browser interactions, validate web functionality, or perform any browser-based testing."
+  },
+  {
+    "id": "ponytail",
+    "path": "skills\\ponytail",
+    "name": "ponytail",
+    "description": ">"
   },
   {
     "id": "popup-cro",
