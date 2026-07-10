@@ -19,5 +19,8 @@ jest.mock('next/navigation', () => ({
   })),
 }));
 
-// Explicitly mock globals.css
-jest.mock('@/app/globals.css', () => ({}));
+// Mock next/font/google
+jest.mock('next/font/google', () => ({
+  Inter: () => ({ className: '', variable: '--font-inter' }),
+  Outfit: () => ({ className: '', variable: '--font-outfit' }),
+}));

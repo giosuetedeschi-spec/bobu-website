@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "postbuild": "touch out/.nojekyll"
+    "postbuild": "test -d out && touch out/.nojekyll || true"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

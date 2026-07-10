@@ -5,6 +5,6 @@ import { PyodideRunner } from '@/components/games/PyodideRunner';
 
 describe('PyodideRunner', () => {
   it('renders without crashing', () => {
-    render(<PyodideRunner />);
+    render(<PyodideRunner scriptPath="/games/kalaha/main.py" />);
   });
 });

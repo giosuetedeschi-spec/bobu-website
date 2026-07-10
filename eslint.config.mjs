@@ -17,6 +17,13 @@ const eslintConfig = defineConfig([
     "projects/**",
     "BobuOS_Design/**",
   ]),
+  {
+    // CommonJS Node config files, not app source.
+    files: ["jest.config.js", "jest.setup.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

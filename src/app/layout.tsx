@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "@/lib/theme";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body style={{ margin: 0, padding: 0, overflow: "hidden", background: "#0a0a0a" }}>
-        {children}
+        <ThemeProvider theme={theme}>{children}</ThemeProvider>
       </body>
     </html>
   );

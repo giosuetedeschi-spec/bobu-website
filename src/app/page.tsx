@@ -17,7 +17,8 @@ interface WindowState {
   minimized: boolean;
   maximized: boolean;
   content: "game" | "terminal" | "files" | "about" | "cv" | "browser";
-  payload?: string; // game path, folder path, etc.\n  color?: string;
+  payload?: string; // game path, folder path, etc.
+  color?: string;
   status?: string;
 }
 
@@ -31,6 +32,15 @@ interface DesktopIcon {
   folder?: string;
   color?: string;
   status?: string;
+}
+
+declare global {
+  interface Window {
+    __openApp?: (app: DesktopIcon) => void;
+  }
+  interface Navigator {
+    deviceMemory?: number;
+  }
 }
 
 // ─── App Registry ────────────────────────────────────────────
@@ -126,10 +136,9 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
-  const cwdRef = useRef("/home/bobu");
+  const [cwd, setCwd] = useState("/home/bobu");
 
   const processCommand = (cmd: string) => {
-    const cwd = cwdRef.current;
     const parts = cmd.trim().split(/\s+/);
     const command = parts[0]?.toLowerCase() || "";
     const args = parts.slice(1);
@@ -189,7 +198,7 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
           `  Resolution: ${window.innerWidth}×${window.innerHeight}`,
           `  Theme:     Material UI`,
           `  CPU:       ${navigator.hardwareConcurrency || "?"} cores`,
-          `  Memory:    ${Math.round((navigator as any).deviceMemory || 0)} GB`,
+          `  Memory:    ${Math.round(navigator.deviceMemory || 0)} GB`,
           `  Games:     ${ALL_GAMES.length} installed`,
         ];
         break;
@@ -206,15 +215,15 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
         break;
       case "cd":
         if (!args[0] || args[0] === "~") {
-          cwdRef.current = "/home/bobu";
+          setCwd("/home/bobu");
         } else if (args[0] === "..") {
           const parts2 = cwd.split("/").filter(Boolean);
           parts2.pop();
-          cwdRef.current = "/" + parts2.join("/") || "/";
+          setCwd("/" + parts2.join("/") || "/");
         } else if (args[0].startsWith("/")) {
-          cwdRef.current = args[0];
+          setCwd(args[0]);
         } else {
-          cwdRef.current = cwd === "/" ? `/${args[0]}` : `${cwd}/${args[0]}`;
+          setCwd(cwd === "/" ? `/${args[0]}` : `${cwd}/${args[0]}`);
         }
         break;
       case "games":
@@ -227,9 +236,12 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
           output = [`Opening ${args[0]}...`];
           // Signal parent to open app
           setTimeout(() => {
-            const game = ALL_GAMES.find(g => g.label.toLowerCase().includes(args[0].toLowerCase()));
-            if (game && (window as any).__openApp) {
-              (window as any).__openApp(game);
+            const query = args[0].toLowerCase();
+            const app = [...APPS, ...ALL_GAMES].find(
+              a => a.id.toLowerCase() === query || a.label.toLowerCase().includes(query)
+            );
+            if (app && window.__openApp) {
+              window.__openApp(app);
             }
           }, 300);
         }
@@ -253,7 +265,7 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
         setHistIdx(-1);
         processCommand(input);
       } else {
-        setLines(prev => [...prev, `bobu@bobuos:${cwdRef.current}$ `, ""]);
+        setLines(prev => [...prev, `bobu@bobuos:${cwd}$ `, ""]);
       }
       setInput("");
     } else if (e.key === "ArrowUp") {
@@ -290,7 +302,7 @@ function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose
           </div>
         ))}
         <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ color: "#4ade80", marginRight: 8 }}>bobu@bobuos:{cwdRef.current}$</span>
+          <span style={{ color: "#4ade80", marginRight: 8 }}>bobu@bobuos:{cwd}$</span>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -395,7 +407,7 @@ function AboutWindow() {
 function CVWindow() {
   return (
     <div style={{ height: "100%", overflow: "auto", background: "#0f172a", padding: 32, color: "#e2e8f0" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 4 }}>Giosu&egrave; "Bobu" Tedeschi</h2>
+      <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 4 }}>Giosu&egrave; &ldquo;Bobu&rdquo; Tedeschi</h2>
       <p style={{ color: "#94a3b8", fontSize: 16, marginBottom: 24 }}>Full Stack Engineer & Creative Technologist</p>
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <span style={{ padding: "4px 12px", background: "rgba(59,130,246,0.15)", borderRadius: 20, fontSize: 12, color: "#60a5fa" }}>Milan, IT</span>
@@ -579,7 +591,7 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
   if (!open) return null;
 
   const filteredGames = search
-    ? ALL_GAMES.filter(g => g.label.toLowerCase().includes(search.toLowerCase()) || g.folder?.toLowerCase().includes(search.toLowerCase()))
+    ? [...APPS, ...ALL_GAMES].filter(g => g.label.toLowerCase().includes(search.toLowerCase()) || g.folder?.toLowerCase().includes(search.toLowerCase()))
     : null;
 
   return (
@@ -732,7 +744,10 @@ export default function Home() {
 
   // Expose openApp for terminal
   useEffect(() => {
-    (window as any).__openApp = openApp;
+    window.__openApp = openApp;
+    return () => {
+      window.__openApp = undefined;
+    };
   }, [openApp]);
 
   return (
