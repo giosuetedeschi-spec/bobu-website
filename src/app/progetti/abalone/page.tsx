@@ -1,19 +1,5 @@
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import { GameIframe } from "@/components/games/GameIframe";
+import { GameIframePage } from "@/components/games/GameIframePage";
 
 export default function AbalonePage() {
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Abalone
-        </Typography>
-        <Chip label="Hex Strategy" size="small" variant="outlined" />
-      </Box>
-      <GameIframe src="/games/abalone/index.html" />
-    </Container>
-  );
+  return <GameIframePage title="Abalone" tag="Hex Strategy" src="/games/abalone/index.html" />;
 }

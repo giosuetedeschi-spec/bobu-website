@@ -5,7 +5,6 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
-import Stack from "@mui/material/Stack";
 import Link from "next/link";
 import GamepadIcon from "@mui/icons-material/Gamepad";
 import CodeIcon from "@mui/icons-material/Code";

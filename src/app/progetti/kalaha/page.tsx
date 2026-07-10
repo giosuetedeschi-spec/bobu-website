@@ -1,23 +1,12 @@
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import Alert from "@mui/material/Alert";
-import { PyodideRunner } from "@/components/games/PyodideRunner";
+import { PyodideGamePage } from "@/components/games/PyodideGamePage";
 
 export default function KalahaPage() {
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Kalaha
-        </Typography>
-        <Chip label="Python + Pyodide" size="small" variant="outlined" />
-      </Box>
-      <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-        This runs the Python implementation of Kalaha in your browser. Check the console output below.
-      </Alert>
-      <PyodideRunner scriptPath="/games/kalaha/main.py" />
-    </Container>
+    <PyodideGamePage
+      title="Kalaha"
+      tag="Python + Pyodide"
+      scriptPath="/games/kalaha/main.py"
+      description="This runs the Python implementation of Kalaha in your browser. Check the console output below."
+    />
   );
 }

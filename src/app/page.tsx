@@ -121,7 +121,7 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 // ─── Terminal Component ──────────────────────────────────────
-function TerminalWindow({ window: win, onClose }: { window: WindowState; onClose: () => void }) {
+function TerminalWindow() {
   const [lines, setLines] = useState<string[]>([
     "BobuOS Terminal v1.0",
     'Type "help" for available commands.',
@@ -521,7 +521,7 @@ function OSWindow({
       case "game":
         return <iframe src={win.payload} style={{ width: "100%", height: "100%", border: "none", background: "#0a0a0a" }} title={win.title} />;
       case "terminal":
-        return <TerminalWindow window={win} onClose={onClose} />;
+        return <TerminalWindow />;
       case "files":
         return <FileExplorer window={win} onOpenApp={onOpenApp} />;
       case "about":
