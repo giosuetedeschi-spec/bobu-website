@@ -8,16 +8,22 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
 
+interface PyodideInterface {
+    runPythonAsync: (code: string) => Promise<unknown>;
+    setStdout: (options: { batched: (msg: string) => void }) => void;
+    loadPackage: (name: string) => Promise<void>;
+}
+
 declare global {
     interface Window {
-        loadPyodide: any;
+        loadPyodide: () => Promise<PyodideInterface>;
     }
 }
 
 export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
     const [output, setOutput] = useState<string[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [pyodide, setPyodide] = useState<any>(null);
+    const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -33,9 +39,10 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
             }
             const scriptText = await response.text();
             await pyodide.runPythonAsync(scriptText);
-        } catch (e: any) {
+        } catch (e) {
             console.error("Python Error", e);
-            setOutput((prev) => [...prev, `Error: ${e.message}`]);
+            const message = e instanceof Error ? e.message : String(e);
+            setOutput((prev) => [...prev, `Error: ${message}`]);
         }
     }, [pyodide, scriptPath]);
 

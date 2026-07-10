@@ -53,4 +53,4 @@ Several pieces exist in `src/` but are **not imported by any route** (verified: 
 ### Testing
 
 - Jest + `ts-jest` + `jsdom`, tests live flat in `tests/*.test.tsx` (not colocated with source), matched via `testMatch: ['**/tests/**/*.test.tsx']` in `jest.config.js`.
-- `next/navigation` and `globals.css` are globally mocked (`jest.setup.js`, `__mocks__/`) — no need to mock them per-test.
+- `next/navigation`, `next/font/google`, and all `.css` imports are globally mocked (`jest.setup.js`, `__mocks__/`) — no need to mock them per-test.

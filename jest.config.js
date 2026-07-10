@@ -3,7 +3,7 @@ module.exports = {
   testEnvironment: 'jest-environment-jsdom',
   testMatch: ['**/tests/**/*.test.tsx'],
   moduleNameMapper: {
-    '^@/app/globals.css$': '<rootDir>/__mocks__/globals.css.ts',
+    '\\.css$': '<rootDir>/__mocks__/globals.css.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
