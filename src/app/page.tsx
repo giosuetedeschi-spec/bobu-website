@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { basePath } from "@/lib/basePath";
 
 // ─── Types ───────────────────────────────────────────────────
 interface WindowState {
@@ -519,7 +520,7 @@ function OSWindow({
   const renderContent = () => {
     switch (win.content) {
       case "game":
-        return <iframe src={win.payload} style={{ width: "100%", height: "100%", border: "none", background: "#0a0a0a" }} title={win.title} />;
+        return <iframe src={`${basePath}${win.payload}`} style={{ width: "100%", height: "100%", border: "none", background: "#0a0a0a" }} title={win.title} />;
       case "terminal":
         return <TerminalWindow />;
       case "files":
