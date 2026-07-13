@@ -7,12 +7,20 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["bevy/default"]
 # Feature to enable the debug stepping interface
 bevy_debug_stepping = []
 
 [dependencies]
-bevy = { version = "0.14", features = ["bevy_audio", "vorbis"] }
+# default-features=false + explicit list, dropping "multi_threaded": GH Pages
+# static export can't send COOP/COEP, so no SharedArrayBuffer -> no wasm threads.
+# Re-enable multi_threaded only once deploy target supports cross-origin isolation headers.
+bevy = { version = "0.14", default-features = false, features = [
+  "animation", "bevy_asset", "bevy_audio", "bevy_gilrs", "bevy_scene",
+  "bevy_winit", "bevy_core_pipeline", "bevy_pbr", "bevy_gltf", "bevy_render",
+  "bevy_sprite", "bevy_text", "bevy_ui", "png", "hdr", "vorbis", "x11",
+  "bevy_gizmos", "android_shared_stdcxx", "tonemapping_luts", "default_font",
+  "webgl2", "sysinfo_plugin",
+] }
 # web-sys and wasm-bindgen are needed for WASM interop
 web-sys = { version = "0.3", features = ["Window"] }
 wasm-bindgen = "0.2"

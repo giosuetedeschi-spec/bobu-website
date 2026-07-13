@@ -15,7 +15,6 @@ const eslintConfig = defineConfig([
     ".claude/**",
     "_references/**",
     "projects/**",
-    "BobuOS_Design/**",
   ]),
   {
     // CommonJS Node config files, not app source.

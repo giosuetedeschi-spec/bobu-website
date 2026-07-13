@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { basePath } from "@/lib/basePath";
+import styles from "./page.module.css";
 
 // ─── Types ───────────────────────────────────────────────────
 interface WindowState {
@@ -295,20 +296,23 @@ function TerminalWindow() {
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#0a0a0f", fontFamily: "'Courier New', monospace", fontSize: 13, overflow: "hidden" }}>
-      <div style={{ flex: 1, overflow: "auto", padding: "8px 12px" }}>
+    <div className={styles.terminalWin}>
+      <div className={styles.terminalBody}>
         {lines.map((line, i) => (
-          <div key={i} style={{ color: line.startsWith("bobu@") ? "#4ade80" : line.startsWith("  •") ? "#60a5fa" : "#c0c0c0", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+          <div
+            key={i}
+            className={`${styles.terminalLine} ${line.startsWith("bobu@") ? styles.terminalLinePrompt : line.startsWith("  •") ? styles.terminalLineGame : ""}`}
+          >
             {line}
           </div>
         ))}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ color: "#4ade80", marginRight: 8 }}>bobu@bobuos:{cwd}$</span>
+        <div className={styles.terminalInputRow}>
+          <span className={styles.terminalPrompt}>bobu@bobuos:{cwd}$</span>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#e0e0e0", fontFamily: "inherit", fontSize: "inherit", caretColor: "#4ade80" }}
+            className={styles.terminalInput}
             autoFocus
             spellCheck={false}
           />
@@ -326,18 +330,18 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
   const renderPath = (path: string) => {
     if (path === "/" || path === "/home/bobu") {
       return (
-        <div style={{ display: "flex", gap: 8, padding: "8px 12px", borderBottom: "1px solid #1e293b", overflowX: "auto" }}>
+        <div className={styles.explorerAppsRow}>
           {APPS.map(app => (
-            <button key={app.id} onClick={() => onOpenApp(app)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 12px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", color: "#94a3b8", minWidth: 64 }}>
-              <span style={{ color: "#60a5fa" }}>{ICONS[app.icon]}</span>
-              <span style={{ fontSize: 10 }}>{app.label}</span>
+            <button key={app.id} onClick={() => onOpenApp(app)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
+              <span className={styles.iconGlyphBlue}>{ICONS[app.icon]}</span>
+              <span className={styles.miniLabel}>{app.label}</span>
             </button>
           ))}
-          <div style={{ width: 1, background: "#1e293b", margin: "0 4px" }} />
+          <div className={styles.vDivider} />
           {GAME_FOLDERS.map(folder => (
-            <button key={folder.name} onClick={() => setCurrentPath(folder.name)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 12px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", color: "#94a3b8", minWidth: 64 }}>
-              <span style={{ color: "#fbbf24" }}>{ICONS[folder.icon]}</span>
-              <span style={{ fontSize: 10 }}>{folder.name}</span>
+            <button key={folder.name} onClick={() => setCurrentPath(folder.name)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
+              <span className={styles.iconGlyphYellow}>{ICONS[folder.icon]}</span>
+              <span className={styles.miniLabel}>{folder.name}</span>
             </button>
           ))}
         </div>
@@ -348,15 +352,15 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
     if (folder) {
       return (
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid #1e293b" }}>
-            <button onClick={() => setCurrentPath("/")} style={{ background: "transparent", border: "none", color: "#60a5fa", cursor: "pointer", fontSize: 13 }}>← Back</button>
-            <span style={{ color: "#94a3b8", fontSize: 13 }}>{folder.name}</span>
+          <div className={styles.explorerHeader}>
+            <button onClick={() => setCurrentPath("/")} className={styles.backBtn}>← Back</button>
+            <span className={styles.explorerTitle}>{folder.name}</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8, padding: 12 }}>
+          <div className={styles.explorerGrid}>
             {folder.games.map(game => (
-              <button key={game.id} onClick={() => onOpenApp(game)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, cursor: "pointer", color: "#e0e0e0", transition: "all 0.15s" }}>
-                <span style={{ color: game.color }}>{ICONS[game.icon]}</span>
-                <span style={{ fontSize: 11, textAlign: "center" }}>{game.label}</span>
+              <button key={game.id} onClick={() => onOpenApp(game)} className={styles.gameCard}>
+                <span>{ICONS[game.icon]}</span>
+                <span className={styles.gameCardLabel}>{game.label}</span>
               </button>
             ))}
           </div>
@@ -364,16 +368,16 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
       );
     }
 
-    return <div style={{ padding: 16, color: "#64748b" }}>Folder not found</div>;
+    return <div className={styles.explorerEmpty}>Folder not found</div>;
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#0f172a", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#1e293b", borderBottom: "1px solid #334155" }}>
+    <div className={styles.explorerRoot}>
+      <div className={styles.explorerTitlebar}>
         {ICONS["hard-drive"]}
-        <span style={{ fontSize: 12, color: "#94a3b8" }}>bobu@bobuos: ~{currentPath}</span>
+        <span className={styles.explorerPath}>bobu@bobuos: ~{currentPath}</span>
       </div>
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <div className={styles.explorerContent}>
         {renderPath(currentPath)}
       </div>
     </div>
@@ -383,21 +387,21 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
 // ─── About Window ────────────────────────────────────────────
 function AboutWindow() {
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#0f172a,#1e1b4b)", padding: 32, gap: 16, textAlign: "center" }}>
-      <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#fff" }}>B</div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#e2e8f0" }}>BobuOS</h2>
-      <p style={{ color: "#94a3b8", fontSize: 14 }}>Developer & Creative Coder</p>
-      <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-        <a href="https://github.com/giosuetedeschi-spec" target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", fontSize: 13, textDecoration: "none" }}>GitHub</a>
-        <a href="https://it.linkedin.com/in/giosu%C3%A8-tedeschi-b287b9225" target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", fontSize: 13, textDecoration: "none" }}>LinkedIn</a>
-        <a href="https://x.com/Pizzibarbaro" target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", fontSize: 13, textDecoration: "none" }}>Twitter</a>
+    <div className={styles.aboutRoot}>
+      <div className={styles.aboutAvatar}>B</div>
+      <h2 className={styles.aboutName}>BobuOS</h2>
+      <p className={styles.aboutRole}>Developer & Creative Coder</p>
+      <div className={styles.aboutLinks}>
+        <a href="https://github.com/giosuetedeschi-spec" target="_blank" rel="noopener noreferrer" className={styles.aboutLink}>GitHub</a>
+        <a href="https://it.linkedin.com/in/giosu%C3%A8-tedeschi-b287b9225" target="_blank" rel="noopener noreferrer" className={styles.aboutLink}>LinkedIn</a>
+        <a href="https://x.com/Pizzibarbaro" target="_blank" rel="noopener noreferrer" className={styles.aboutLink}>Twitter</a>
       </div>
-      <div style={{ marginTop: 16, padding: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, width: "100%", maxWidth: 400 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13 }}>
-          <span style={{ color: "#64748b" }}>OS</span><span style={{ color: "#e2e8f0" }}>BobuOS 1.0</span>
-          <span style={{ color: "#64748b" }}>Games</span><span style={{ color: "#e2e8f0" }}>{ALL_GAMES.length} installed</span>
-          <span style={{ color: "#64748b" }}>Stack</span><span style={{ color: "#e2e8f0" }}>Next.js + React</span>
-          <span style={{ color: "#64748b" }}>Theme</span><span style={{ color: "#e2e8f0" }}>Material UI</span>
+      <div className={styles.aboutInfoCard}>
+        <div className={styles.aboutInfoGrid}>
+          <span className={styles.aboutInfoLabel}>OS</span><span className={styles.aboutInfoValue}>BobuOS 1.0</span>
+          <span className={styles.aboutInfoLabel}>Games</span><span className={styles.aboutInfoValue}>{ALL_GAMES.length} installed</span>
+          <span className={styles.aboutInfoLabel}>Stack</span><span className={styles.aboutInfoValue}>Next.js + React</span>
+          <span className={styles.aboutInfoLabel}>Theme</span><span className={styles.aboutInfoValue}>Material UI</span>
         </div>
       </div>
     </div>
@@ -407,40 +411,40 @@ function AboutWindow() {
 // ─── CV Window ───────────────────────────────────────────────
 function CVWindow() {
   return (
-    <div style={{ height: "100%", overflow: "auto", background: "#0f172a", padding: 32, color: "#e2e8f0" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 4 }}>Giosu&egrave; &ldquo;Bobu&rdquo; Tedeschi</h2>
-      <p style={{ color: "#94a3b8", fontSize: 16, marginBottom: 24 }}>Full Stack Engineer & Creative Technologist</p>
-      <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-        <span style={{ padding: "4px 12px", background: "rgba(59,130,246,0.15)", borderRadius: 20, fontSize: 12, color: "#60a5fa" }}>Milan, IT</span>
-        <span style={{ padding: "4px 12px", background: "rgba(59,130,246,0.15)", borderRadius: 20, fontSize: 12, color: "#60a5fa" }}>giosue.tedeschi@edu-its.it</span>
+    <div className={styles.cvRoot}>
+      <h2 className={styles.cvName}>Giosu&egrave; &ldquo;Bobu&rdquo; Tedeschi</h2>
+      <p className={styles.cvRole}>Full Stack Engineer & Creative Technologist</p>
+      <div className={styles.cvTags}>
+        <span className={styles.cvTag}>Milan, IT</span>
+        <span className={styles.cvTag}>giosue.tedeschi@edu-its.it</span>
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: "#60a5fa", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #1e293b" }}>Experience</h3>
-      <div style={{ marginBottom: 20, padding: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+      <h3 className={`${styles.cvSection} ${styles.cvSectionBlue}`}>Experience</h3>
+      <div className={styles.cvEntry}>
+        <div className={styles.cvEntryHeader}>
           <strong>Full Stack Developer</strong>
-          <span style={{ color: "#64748b", fontSize: 13, fontFamily: "monospace" }}>2023 - Present</span>
+          <span className={styles.cvEntryDate}>2023 - Present</span>
         </div>
-        <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>Building modern web applications with Next.js and Spring Boot. Leading frontend architecture decisions.</p>
+        <p className={styles.cvEntryDesc}>Building modern web applications with Next.js and Spring Boot. Leading frontend architecture decisions.</p>
       </div>
-      <div style={{ marginBottom: 20, padding: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+      <div className={styles.cvEntry}>
+        <div className={styles.cvEntryHeader}>
           <strong>Creative Coder</strong>
-          <span style={{ color: "#64748b", fontSize: 13, fontFamily: "monospace" }}>2021 - 2023</span>
+          <span className={styles.cvEntryDate}>2021 - 2023</span>
         </div>
-        <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>Developed interactive websites, generative art pieces, and browser-based games using Three.js, React, and Rust.</p>
+        <p className={styles.cvEntryDesc}>Developed interactive websites, generative art pieces, and browser-based games using Three.js, React, and Rust.</p>
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: "#a855f7", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #1e293b" }}>Education</h3>
-      <div style={{ marginBottom: 20, padding: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+      <h3 className={`${styles.cvSection} ${styles.cvSectionPurple}`}>Education</h3>
+      <div className={styles.cvEntry}>
+        <div className={styles.cvEntryHeader}>
           <strong>ITS Piemonte</strong>
-          <span style={{ color: "#64748b", fontSize: 13, fontFamily: "monospace" }}>2021 - Present</span>
+          <span className={styles.cvEntryDate}>2021 - Present</span>
         </div>
-        <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>Higher Education in Software Engineering and Web Development.</p>
+        <p className={styles.cvEntryDesc}>Higher Education in Software Engineering and Web Development.</p>
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, color: "#22c55e", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #1e293b" }}>Skills</h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <h3 className={`${styles.cvSection} ${styles.cvSectionGreen}`}>Skills</h3>
+      <div className={styles.cvSkills}>
         {["TypeScript","React","Next.js","Rust","Python","Java","Spring Boot","Tailwind","PostgreSQL","Docker","Git","WASM"].map(s => (
-          <span key={s} style={{ padding: "4px 12px", background: "rgba(34,197,94,0.1)", borderRadius: 6, fontSize: 12, color: "#22c55e" }}>{s}</span>
+          <span key={s} className={styles.cvSkillChip}>{s}</span>
         ))}
       </div>
     </div>
@@ -513,14 +517,16 @@ function OSWindow({
 
   if (win.minimized) return null;
 
-  const style: React.CSSProperties = win.maximized
-    ? { position: "absolute", left: 0, top: 0, width: "100%", height: "calc(100% - 48px)", zIndex: win.zIndex }
-    : { position: "absolute", left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.zIndex };
+  // Real-time drag/resize/maximize state — irreducible to static CSS, kept as
+  // the sole inline style on the page.
+  const posStyle: React.CSSProperties = win.maximized
+    ? { left: 0, top: 0, width: "100%", height: "calc(100% - 48px)", zIndex: win.zIndex }
+    : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.zIndex };
 
   const renderContent = () => {
     switch (win.content) {
       case "game":
-        return <iframe src={`${basePath}${win.payload}`} style={{ width: "100%", height: "100%", border: "none", background: "#0a0a0a" }} title={win.title} />;
+        return <iframe src={`${basePath}${win.payload}`} className={styles.windowIframe} title={win.title} />;
       case "terminal":
         return <TerminalWindow />;
       case "files":
@@ -530,56 +536,33 @@ function OSWindow({
       case "cv":
         return <CVWindow />;
       default:
-        return <div style={{ padding: 16, color: "#94a3b8" }}>Unknown content</div>;
+        return <div className={styles.windowUnknown}>Unknown content</div>;
     }
   };
 
   return (
     <div
-      style={{
-        ...style,
-        borderRadius: win.maximized ? 0 : 12,
-        overflow: "hidden",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)",
-        display: "flex",
-        flexDirection: "column",
-        background: "#0f172a",
-      }}
+      className={`${styles.osWindow} ${win.maximized ? styles.osWindowMaximized : ""}`}
+      style={posStyle}
       onMouseDown={onFocus}
     >
       {/* Title bar */}
-      <div
-        onMouseDown={handleDragStart}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          height: 36,
-          background: "#1e293b",
-          borderBottom: "1px solid #334155",
-          cursor: "grab",
-          userSelect: "none",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ color: "#94a3b8", marginRight: 8, display: "flex" }}>{ICONS[win.icon] || ICONS["folder"]}</span>
-        <span style={{ flex: 1, fontSize: 13, color: "#e2e8f0", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{win.title}</span>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }} title="Minimize">─</button>
-          <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }} title="Maximize">□</button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }} title="Close">✕</button>
+      <div onMouseDown={handleDragStart} className={styles.windowTitlebar}>
+        <span className={styles.windowTitlebarIcon}>{ICONS[win.icon] || ICONS["folder"]}</span>
+        <span className={styles.windowTitlebarTitle}>{win.title}</span>
+        <div className={styles.windowTitlebarBtns}>
+          <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} className={styles.windowBtn} title="Minimize">─</button>
+          <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} className={styles.windowBtn} title="Maximize">□</button>
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className={styles.windowBtn} title="Close">✕</button>
         </div>
       </div>
       {/* Content */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      <div className={styles.windowContent}>
         {renderContent()}
       </div>
       {/* Resize handle */}
       {!win.maximized && (
-        <div
-          onMouseDown={handleResizeStart}
-          style={{ position: "absolute", right: 0, bottom: 0, width: 16, height: 16, cursor: "nwse-resize", background: "linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.1) 50%)" }}
-        />
+        <div onMouseDown={handleResizeStart} className={styles.windowResizeHandle} />
       )}
     </div>
   );
@@ -597,56 +580,50 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, zIndex: 9998 }} onClick={onClose} />
-      <div style={{
-        position: "fixed", bottom: 56, left: 12, width: 360, maxHeight: "calc(100vh - 80px)",
-        background: "rgba(15,23,42,0.95)", backdropFilter: "blur(20px)",
-        borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
-        zIndex: 9999, display: "flex", flexDirection: "column", overflow: "hidden",
-      }}>
+      <div className={styles.startOverlay} onClick={onClose} />
+      <div className={styles.startPanel}>
         {/* Search */}
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "8px 12px" }}>
+        <div className={styles.startSearchWrap}>
+          <div className={styles.startSearchBox}>
             {ICONS["search"]}
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search apps..." style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#e2e8f0", fontSize: 14 }} autoFocus />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search apps..." className={styles.startSearchInput} autoFocus />
           </div>
         </div>
 
         {/* Quick apps */}
-        <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display: "flex", gap: 4 }}>
+        <div className={styles.startQuickWrap}>
+          <div className={styles.startQuickRow}>
             {APPS.map(app => (
-              <button key={app.id} onClick={() => { onOpenApp(app); onClose(); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 12px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", color: "#94a3b8", minWidth: 60 }}>
-                <span style={{ color: "#60a5fa" }}>{ICONS[app.icon]}</span>
-                <span style={{ fontSize: 10 }}>{app.label}</span>
+              <button key={app.id} onClick={() => { onOpenApp(app); onClose(); }} className={styles.startQuickBtn}>
+                <span className={styles.iconGlyphBlue}>{ICONS[app.icon]}</span>
+                <span className={styles.miniLabel}>{app.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Games list */}
-        <div style={{ flex: 1, overflow: "auto", padding: "8px 0" }}>
+        <div className={styles.startListWrap}>
           {filteredGames ? (
             filteredGames.map(game => (
-              <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 16px", background: "transparent", border: "none", cursor: "pointer", color: "#e2e8f0", textAlign: "left" }}>
-                <span style={{ color: game.color }}>{ICONS[game.icon]}</span>
+              <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
+                <span>{ICONS[game.icon]}</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{game.label}</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>{game.folder}</div>
+                  <div className={styles.startItemTitle}>{game.label}</div>
+                  <div className={styles.startItemSub}>{game.folder}</div>
                 </div>
               </button>
             ))
           ) : (
             GAME_FOLDERS.map(folder => (
               <div key={folder.name}>
-                <div style={{ padding: "8px 16px 4px", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>{folder.name}</div>
+                <div className={styles.startFolderHeading}>{folder.name}</div>
                 {folder.games.map(game => (
-                  <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 16px", background: "transparent", border: "none", cursor: "pointer", color: "#e2e8f0", textAlign: "left" }}>
-                    <span style={{ color: game.color }}>{ICONS[game.icon]}</span>
+                  <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
+                    <span>{ICONS[game.icon]}</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 500 }}>{game.label}</div>
-                      <div style={{ fontSize: 11, color: "#64748b" }}>{game.status}</div>
+                      <div className={styles.startItemTitle}>{game.label}</div>
+                      <div className={styles.startItemSub}>{game.status}</div>
                     </div>
                   </button>
                 ))}
@@ -752,30 +729,30 @@ export default function Home() {
   }, [openApp]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "linear-gradient(135deg,#0f0f23 0%,#1a1040 50%,#0a1628 100%)", position: "relative" }}>
+    <div className={styles.desktopRoot}>
       {/* Desktop icons */}
-      <div style={{ position: "absolute", top: 16, left: 16, display: "flex", flexDirection: "column", gap: 8, zIndex: 1 }}>
+      <div className={styles.desktopIcons}>
         {APPS.map(app => (
           <button
             key={app.id}
             onDoubleClick={() => openApp(app)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 12px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", color: "#94a3b8", width: 80 }}
+            className={styles.desktopIconBtn}
             title={app.label}
           >
-            <span style={{ color: "#60a5fa", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}>{ICONS[app.icon]}</span>
-            <span style={{ fontSize: 11, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>{app.label}</span>
+            <span className={styles.desktopIconGlyphBlue}>{ICONS[app.icon]}</span>
+            <span className={styles.desktopIconLabel}>{app.label}</span>
           </button>
         ))}
-        <div style={{ width: 60, height: 1, background: "rgba(255,255,255,0.08)", margin: "4px auto" }} />
+        <div className={styles.desktopDivider} />
         {GAME_FOLDERS.map(folder => (
           <button
             key={folder.name}
             onDoubleClick={() => openApp({ id: folder.name, label: folder.name, icon: folder.icon, action: "open", contentType: "files", payload: folder.name })}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 12px", background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", color: "#94a3b8", width: 80 }}
+            className={styles.desktopIconBtn}
             title={folder.name}
           >
-            <span style={{ color: "#fbbf24", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}>{ICONS[folder.icon]}</span>
-            <span style={{ fontSize: 11, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>{folder.name}</span>
+            <span className={styles.desktopIconGlyphYellow}>{ICONS[folder.icon]}</span>
+            <span className={styles.desktopIconLabel}>{folder.name}</span>
           </button>
         ))}
       </div>
@@ -796,21 +773,16 @@ export default function Home() {
       ))}
 
       {/* Taskbar */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 48,
-        background: "rgba(15,23,42,0.9)", backdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        display: "flex", alignItems: "center", padding: "0 8px", gap: 4, zIndex: 10000,
-      }}>
+      <div className={styles.taskbar}>
         {/* Start button */}
         <button
           onClick={() => setStartOpen(!startOpen)}
-          style={{ width: 40, height: 40, borderRadius: 10, border: "none", background: startOpen ? "rgba(59,130,246,0.2)" : "transparent", color: "#60a5fa", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}
+          className={`${styles.startBtn} ${startOpen ? styles.startBtnActive : ""}`}
         >
           B
         </button>
 
-        <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
+        <div className={styles.taskbarDivider} />
 
         {/* Running apps */}
         {windows.map(win => (
@@ -824,24 +796,17 @@ export default function Home() {
                 focusWindow(win.id);
               }
             }}
-            style={{
-              height: 36, padding: "0 12px", borderRadius: 8, border: "none",
-              background: win.minimized ? "transparent" : "rgba(59,130,246,0.15)",
-              color: win.minimized ? "#64748b" : "#60a5fa",
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-              fontSize: 12, fontWeight: 500,
-              borderBottom: !win.minimized ? "2px solid #3b82f6" : "2px solid transparent",
-            }}
+            className={`${styles.taskbarAppBtn} ${!win.minimized ? styles.taskbarAppBtnActive : ""}`}
           >
-            <span style={{ display: "flex" }}>{ICONS[win.icon] || ICONS["folder"]}</span>
-            <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{win.title}</span>
+            <span className={styles.taskbarAppIcon}>{ICONS[win.icon] || ICONS["folder"]}</span>
+            <span className={styles.taskbarAppLabel}>{win.title}</span>
           </button>
         ))}
 
-        <div style={{ flex: 1 }} />
+        <div className={styles.taskbarSpacer} />
 
         {/* System tray */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 12px", color: "#64748b", fontSize: 12 }}>
+        <div className={styles.systemTray}>
           <span>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           <span>{time.toLocaleDateString([], { day: "2-digit", month: "short" })}</span>
         </div>
