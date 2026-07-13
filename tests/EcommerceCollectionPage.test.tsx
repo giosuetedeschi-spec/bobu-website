@@ -4,9 +4,16 @@ import { render, screen } from '@testing-library/react';
 import CollectionPage from '@/app/ecommerce/collection/page';
 
 describe('EcommerceCollectionPage', () => {
-  it('renders the coming-soon heading and a link home', () => {
+  it('renders the product grid with prices and stock status', () => {
     render(<CollectionPage />);
     expect(screen.getByText('Collection')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Back Home' })).toHaveAttribute('href', '/');
+    expect(screen.getByText('Bobu Terminal Tee')).toBeInTheDocument();
+    expect(screen.getByText('€28')).toBeInTheDocument();
+    expect(screen.getByText('Sold Out')).toBeInTheDocument();
+  });
+
+  it('links back to the shop', () => {
+    render(<CollectionPage />);
+    expect(screen.getByRole('link', { name: 'Back to Shop' })).toHaveAttribute('href', '/ecommerce');
   });
 });
