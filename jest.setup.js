@@ -2,6 +2,9 @@
 // For example, you can extend the expect library with DOM matchers.
 require('@testing-library/jest-dom');
 
+// jsdom doesn't implement scrollIntoView
+Element.prototype.scrollIntoView = jest.fn();
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/'), // Default path for tests
