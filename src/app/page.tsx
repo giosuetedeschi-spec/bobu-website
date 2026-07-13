@@ -57,35 +57,35 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     name: "Board Games",
     icon: "gamepad",
     games: [
-      { id: "abalone", label: "Abalone", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/abalone/index.html", folder: "Board" },
-      { id: "azul", label: "Azul", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/azul/index.html", folder: "Board" },
-      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/kalaha/index.html", folder: "Board" },
+      { id: "abalone", label: "Abalone", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/abalone/index.html", folder: "Board", status: "Playable" },
+      { id: "azul", label: "Azul", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/azul/index.html", folder: "Board", status: "Playable" },
+      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/kalaha/index.html", folder: "Board", status: "Playable" },
     ],
   },
   {
     name: "Puzzle",
     icon: "puzzle",
     games: [
-      { id: "mastermind", label: "Mastermind", icon: "hash", action: "open", contentType: "game", payload: "/games/mastermind/index.html", folder: "Puzzle" },
-      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/sudoku/index.html", folder: "Puzzle" },
-      { id: "bitwise", label: "Bitwise Ops", icon: "binary", action: "open", contentType: "game", payload: "/projects/js-demos/bitwise-ops/index.html", folder: "Puzzle" },
+      { id: "mastermind", label: "Mastermind", icon: "hash", action: "open", contentType: "game", payload: "/games/mastermind/index.html", folder: "Puzzle", status: "Playable" },
+      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/sudoku/index.html", folder: "Puzzle", status: "Playable" },
+      { id: "bitwise", label: "Bitwise Ops", icon: "binary", action: "open", contentType: "game", payload: "/projects/js-demos/bitwise-ops/index.html", folder: "Puzzle", status: "Demo" },
     ],
   },
   {
     name: "Arcade",
     icon: "gamepad-2",
     games: [
-      { id: "snake", label: "Snake", icon: "move", action: "open", contentType: "game", payload: "/games/snake/index.html", folder: "Arcade" },
-      { id: "pong", label: "Pong", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/pong/index.html", folder: "Arcade" },
-      { id: "flip7", label: "Flip 7", icon: "layers", action: "open", contentType: "game", payload: "/projects/js-demos/flip-7/index.html", folder: "Arcade" },
+      { id: "snake", label: "Snake", icon: "move", action: "open", contentType: "game", payload: "/games/snake/index.html", folder: "Arcade", status: "Playable" },
+      { id: "pong", label: "Pong", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/pong/index.html", folder: "Arcade", status: "Coming Soon" },
+      { id: "flip7", label: "Flip 7", icon: "layers", action: "open", contentType: "game", payload: "/projects/js-demos/flip-7/index.html", folder: "Arcade", status: "New!" },
     ],
   },
   {
     name: "Visual",
     icon: "sparkles",
     games: [
-      { id: "maze-gen", label: "Maze Generator", icon: "grid-3x3", action: "open", contentType: "game", payload: "/projects/js-demos/maze-generator/index.html", folder: "Visual" },
-      { id: "maze-sol", label: "Maze Solver", icon: "navigation", action: "open", contentType: "game", payload: "/projects/js-demos/maze-solver/index.html", folder: "Visual" },
+      { id: "maze-gen", label: "Maze Generator", icon: "grid-3x3", action: "open", contentType: "game", payload: "/projects/js-demos/maze-generator/index.html", folder: "Visual", status: "Native JS" },
+      { id: "maze-sol", label: "Maze Solver", icon: "navigation", action: "open", contentType: "game", payload: "/projects/js-demos/maze-solver/index.html", folder: "Visual", status: "Native JS" },
     ],
   },
 ];
