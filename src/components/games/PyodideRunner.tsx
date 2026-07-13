@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
+import { basePath } from "@/lib/basePath";
 
 interface PyodideInterface {
     runPythonAsync: (code: string) => Promise<unknown>;
@@ -32,7 +33,7 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
         setOutput([]);
 
         try {
-            const response = await fetch(scriptPath);
+            const response = await fetch(`${basePath}${scriptPath}`);
             if (!response.ok) {
                 setOutput((prev) => [...prev, `Error: Could not load script (${response.status})`]);
                 return;

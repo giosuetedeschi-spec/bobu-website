@@ -25,7 +25,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - run: ls -la out/ || echo "No out dir"
+        env:
+          NEXT_PUBLIC_BASE_PATH: /bobu-website
       - run: touch out/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

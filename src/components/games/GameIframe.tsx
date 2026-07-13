@@ -1,3 +1,5 @@
+import { basePath } from "@/lib/basePath";
+
 export function GameIframe({ src }: { src: string }) {
   return (
     <div
@@ -13,7 +15,7 @@ export function GameIframe({ src }: { src: string }) {
       }}
     >
       <iframe
-        src={src}
+        src={`${basePath}${src}`}
         style={{
           position: "absolute",
           inset: 0,
