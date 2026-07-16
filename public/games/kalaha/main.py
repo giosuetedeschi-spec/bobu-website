@@ -2,12 +2,6 @@
 Kalaha - Bot vs Bot Demo (Pyodide compatible)
 Runs a quick AI vs AI game and prints the result.
 """
-import sys
-import os
-
-# Add current dir to path for imports
-sys.path.insert(0, os.path.dirname(__file__))
-
 from game_logic import (
     initial_state, legal_moves, apply_move, is_terminal,
     evaluate, cleanup_board, P1_PITS, P2_PITS, P1_STORE, P2_STORE

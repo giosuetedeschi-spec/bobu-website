@@ -1,58 +1,47 @@
 """
 Sudoku Solver Demo (Pyodide compatible)
-Generates and solves a puzzle, prints the result.
+Generates a puzzle, solves it with two different solvers, prints the results.
 """
-import sys
-import os
 import time
 
-sys.path.insert(0, os.path.dirname(__file__))
+from generator import generate_sudoku
+from sudoku_utils import print_board
+from solvers.backtracking import BacktrackingSolver
+from solvers.ac3 import AC3Solver
 
-from generator import generate_puzzle
-from sudoku_utils import print_grid, grid_to_string, is_valid
-from solvers.backtracking import solve as backtrack_solve
-from solvers.ac3 import solve as ac3_solve
 
 def run_demo():
     print("=== Sudoku Solver Demo ===\n")
-    
-    # Generate a puzzle
+
     print("Generating puzzle...")
-    puzzle = generate_puzzle(difficulty="medium")
-    
+    puzzle, solution = generate_sudoku(remove_count=45)
+
     print("\n--- Puzzle ---")
-    print_grid(puzzle)
-    
-    # Solve with backtracking
-    print("\nSolving with Backtracking...")
-    board = [row[:] for row in puzzle]
+    print_board(puzzle)
+
+    print("\nSolving with Backtracking (MRV + LCV + propagation)...")
     start = time.time()
-    solved = backtrack_solve(board)
+    solved = BacktrackingSolver(puzzle).solve()
     elapsed = time.time() - start
-    
+
     if solved:
-        print(f"\n--- Solved (in {elapsed:.3f}s) ---")
-        print_grid(board)
-        
-        # Verify
-        if is_valid(board):
-            print("\nSolution verified: VALID")
-        else:
-            print("\nSolution verified: INVALID")
+        print(f"\n--- Solved in {elapsed:.3f}s ---")
+        print_board(solved)
+        print("\nMatches generator solution:", solved == solution)
     else:
-        print("No solution found!")
-    
-    # Also demo AC3
-    print("\n--- AC3 Solver ---")
-    board2 = [row[:] for row in puzzle]
+        print("Backtracking failed to solve the puzzle!")
+
+    print("\nSolving with AC-3 (+ backtracking fallback)...")
     start = time.time()
-    solved2 = ac3_solve(board2)
-    elapsed2 = time.time() - start
-    
-    if solved2:
-        print(f"AC3 solved in {elapsed2:.3f}s")
-        print_grid(board2)
+    solved_ac3 = AC3Solver(puzzle).solve()
+    elapsed = time.time() - start
+
+    if solved_ac3:
+        print(f"AC-3 solved it in {elapsed:.3f}s")
     else:
-        print("AC3 could not fully solve (may need backtracking)")
+        print("AC-3 could not fully solve the puzzle.")
+
+    print("\nDemo complete. Press 'Run Again' for a new puzzle.")
+
 
 run_demo()

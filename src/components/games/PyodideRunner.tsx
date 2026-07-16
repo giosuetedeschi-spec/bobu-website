@@ -13,6 +13,10 @@ interface PyodideInterface {
     runPythonAsync: (code: string) => Promise<unknown>;
     setStdout: (options: { batched: (msg: string) => void }) => void;
     loadPackage: (name: string) => Promise<void>;
+    FS: {
+        writeFile: (path: string, data: string) => void;
+        mkdirTree: (path: string) => void;
+    };
 }
 
 declare global {
@@ -21,7 +25,9 @@ declare global {
     }
 }
 
-export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
+const NO_MODULES: string[] = [];
+
+export function PyodideRunner({ scriptPath, moduleFiles = NO_MODULES }: { scriptPath: string; moduleFiles?: string[] }) {
     const [output, setOutput] = useState<string[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
@@ -33,6 +39,20 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
         setOutput([]);
 
         try {
+            // Sibling modules must exist in Pyodide's FS before main script imports them.
+            const baseDir = scriptPath.slice(0, scriptPath.lastIndexOf("/"));
+            for (const rel of moduleFiles) {
+                const res = await fetch(`${basePath}${baseDir}/${rel}`);
+                if (!res.ok) {
+                    setOutput((prev) => [...prev, `Error: Could not load module ${rel} (${res.status})`]);
+                    return;
+                }
+                const text = await res.text();
+                if (rel.includes("/")) {
+                    pyodide.FS.mkdirTree(rel.slice(0, rel.lastIndexOf("/")));
+                }
+                pyodide.FS.writeFile(rel, text);
+            }
             const response = await fetch(`${basePath}${scriptPath}`);
             if (!response.ok) {
                 setOutput((prev) => [...prev, `Error: Could not load script (${response.status})`]);
@@ -45,7 +65,7 @@ export function PyodideRunner({ scriptPath }: { scriptPath: string }) {
             const message = e instanceof Error ? e.message : String(e);
             setOutput((prev) => [...prev, `Error: ${message}`]);
         }
-    }, [pyodide, scriptPath]);
+    }, [pyodide, scriptPath, moduleFiles]);
 
     const initPyodide = useCallback(async () => {
         try {

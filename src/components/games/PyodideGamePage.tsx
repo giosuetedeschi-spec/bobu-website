@@ -8,11 +8,13 @@ export function PyodideGamePage({
   tag,
   scriptPath,
   description,
+  moduleFiles,
 }: {
   title: string;
   tag: string;
   scriptPath: string;
   description: string;
+  moduleFiles?: string[];
 }) {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -20,7 +22,7 @@ export function PyodideGamePage({
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
         {description}
       </Alert>
-      <PyodideRunner scriptPath={scriptPath} />
+      <PyodideRunner scriptPath={scriptPath} moduleFiles={moduleFiles} />
     </Container>
   );
 }
