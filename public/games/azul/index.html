@@ -15,7 +15,7 @@ h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3
 .factory:hover{box-shadow:0 0 12px rgba(96,165,250,0.3)}
 .factory.selected{border-color:#60a5fa;box-shadow:0 0 16px rgba(96,165,250,0.4)}
 .factory .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
-#center{display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:rgba(0,0,0,0.15);border-radius:10px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s}
+#center{display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:rgba(0,0,0,0.15);border-radius:10px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s;min-width:44px;min-height:44px}
 #center:hover{box-shadow:0 0 12px rgba(52,211,153,0.3)}
 #center.selected{border-color:#34d399}
 #center .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
@@ -24,18 +24,25 @@ h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3
 .tile.red{background:linear-gradient(135deg,#ef4444,#b91c1c)}
 .tile.green{background:linear-gradient(135deg,#22c55e,#15803d)}
 .tile.white{background:linear-gradient(135deg,#f8fafc,#cbd5e1)}
-.tile.first{background:linear-gradient(135deg,#a3e635,#65a30d)}
-#player-board{width:300px}
+.tile.first{background:linear-gradient(135deg,#a3e635,#65a30d);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#1a2e05}
+#boards{display:flex;flex-direction:column;gap:10px}
+.player-board{width:320px}
+.player-board.inactive{opacity:0.65}
+.board-title{font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:6px;display:flex;justify-content:space-between}
+.board-title .pts{color:#e2e8f0}
 .board-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
 .row-label{font-size:0.65rem;color:#64748b;width:14px}
-.pattern-row{display:flex;gap:2px}
-.pc{width:28px;height:28px;border-radius:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:border-color 0.2s}
-.pc:hover{border-color:#60a5fa}
-.pc.filled{cursor:default;border-color:transparent}
-.wc{width:28px;height:28px;border-radius:4px;border:1px solid transparent}
-.wc.scored{box-shadow:inset 0 0 6px rgba(255,255,255,0.3)}
-#floor{display:flex;gap:2px;margin-top:6px;padding:4px;background:rgba(0,0,0,0.15);border-radius:6px}
-.fc{width:26px;height:26px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.1)}
+.pattern-row{display:flex;gap:2px;justify-content:flex-end;min-width:150px}
+.pc{width:28px;height:28px;border-radius:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);transition:border-color 0.2s}
+.pc.placeable{cursor:pointer;border-color:#60a5fa}
+.pc.placeable:hover{box-shadow:0 0 8px rgba(96,165,250,0.5)}
+.wall-row{display:flex;gap:2px;margin-left:8px}
+.wc{width:28px;height:28px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);opacity:0.25}
+.wc.scored{opacity:1;box-shadow:inset 0 0 6px rgba(255,255,255,0.3);border-color:transparent}
+.floor{display:flex;gap:2px;margin-top:6px;padding:4px;background:rgba(0,0,0,0.15);border-radius:6px}
+.fc{width:26px;height:26px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#64748b}
+.fc.filled{border-style:solid}
+.fc.placeable{cursor:pointer;border-color:#fbbf24}
 #sidebar{width:200px;font-size:0.8rem}
 #sidebar h3{font-size:0.9rem;margin-bottom:6px;color:#94a3b8}
 .stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
@@ -50,7 +57,6 @@ h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3
 #controls{display:flex;gap:8px;margin-top:8px;justify-content:center}
 .btn{padding:6px 18px;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s}
 .btn-p{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff}
-.btn-s{background:rgba(255,255,255,0.08);color:#94a3b8}
 #round-info{font-size:0.75rem;color:#64748b;text-align:center;margin-top:4px}
 </style>
 </head>
@@ -64,7 +70,10 @@ h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3
     <div style="text-align:center;font-size:0.7rem;color:#64748b;margin:4px 0">Center</div>
     <div id="color-picker"></div>
   </div>
-  <div class="panel" id="player-board"><div id="board-rows"></div><div id="floor"></div></div>
+  <div id="boards">
+    <div class="panel player-board" id="board-0"></div>
+    <div class="panel player-board" id="board-1"></div>
+  </div>
   <div class="panel" id="sidebar">
     <h3>Score</h3><div id="score-display"></div>
     <div id="round-info"></div>
@@ -73,32 +82,308 @@ h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#3
 </div>
 <div id="message">Select a factory or center</div>
 <script>
-const E=0,B=1,Y=2,R=3,G=4,W=5,FP=-1;
-const CN=['','blue','yellow','red','green','white','first'];
-const WP=[[B,Y,R,G,W],[W,B,Y,R,G],[G,W,B,Y,R],[R,G,W,B,Y],[Y,R,G,W,B]];
-let game={bag:[],box:[],factories:[],center:[],players:[],cp:0,round:1,src:null,color:null,phase:'pick'};
-function init(){
-  game.bag=[];for(let c=1;c<=5;c++)for(let i=0;i<20;i++)game.bag.push(c);
-  shuffle(game.bag);game.box=[];game.factories=Array.from({length:5},()=>[]);game.center=[];
-  game.players=[{pat:[[null,null,null,null,null],[null,null,null,null],[null,null,null],[null,null],[null],wall:Array(25).fill(null),floor:[],score:0},{pat:[[null,null,null,null,null],[null,null,null,null],[null,null,null],[null,null],[null],wall:Array(25).fill(null),floor:[],score:0}];
-  game.cp=0;game.round=1;game.src=null;game.color=null;game.phase='pick';setupRound();render();
+// Azul vs AI. Human = player 0. Standard 2-player rules:
+// 5 factories x4 tiles, center + first-player token, pattern rows 1..5,
+// fixed wall pattern, floor penalties, end when a wall row completes.
+const B=1,Y=2,R=3,G=4,W=5,FP=-1;
+const CN=['','blue','yellow','red','green','white'];
+const WALL_PATTERN=[[B,Y,R,W,G],[G,B,Y,R,W],[W,G,B,Y,R],[R,W,G,B,Y],[Y,R,W,G,B]];
+const FLOOR_PEN=[1,1,2,2,2,3,3];
+const NAMES=['You','AI'];
+
+let game=null;
+
+function newPlayer(){
+  return {
+    pat:Array.from({length:5},(_,r)=>({color:0,count:0,cap:r+1})),
+    wall:Array.from({length:5},()=>Array(5).fill(false)),
+    floor:[], score:0,
+  };
 }
+
+function init(){
+  const bag=[];
+  for(let c=1;c<=5;c++)for(let i=0;i<20;i++)bag.push(c);
+  shuffle(bag);
+  game={bag,box:[],factories:Array.from({length:5},()=>[]),center:[],
+    players:[newPlayer(),newPlayer()],cp:0,starter:0,round:1,
+    src:null,color:null,phase:'pick',over:false};
+  setupRound();
+  render();
+}
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-function setupRound(){game.center=[FP];for(let f of game.factories){f.length=0;for(let i=0;i<4;i++){if(!game.bag.length){game.bag=[...game.box];game.box=[];shuffle(game.bag);if(!game.bag.length)break;}f.push(game.bag.pop());}}game.src=null;game.color=null;game.phase='pick';}
-function render(){renderFactories();renderCenter();renderBoard();renderPicker();renderScore();updateMsg();}
-function renderFactories(){const el=document.getElementById('factories');el.innerHTML='';for(let i=0;i<5;i++){const f=game.factories[i];const d=document.createElement('div');d.className='factory'+(game.src==='f'+i?' selected':'');for(const t of f){const tl=document.createElement('div');tl.className='tile '+CN[t];d.appendChild(tl);}d.onclick=()=>{if(game.phase!=='pick')return;const v=f.filter(t=>t!==FP);if(v.length){game.src='f'+i;game.phase='color';render();}};el.appendChild(d);}}
-function renderCenter(){const el=document.getElementById('center');el.innerHTML='';el.className=game.src==='center'?'selected':'';for(const t of game.center){const tl=document.createElement('div');tl.className='tile '+CN[t];el.appendChild(tl);}el.onclick=()=>{if(game.phase!=='pick')return;const v=game.center.filter(t=>t!==FP);if(v.length){game.src='center';game.phase='color';render();}};}
-function renderPicker(){const el=document.getElementById('color-picker');el.innerHTML='';if(!game.src)return;const tiles=game.src==='center'?game.center:game.factories[parseInt(game.src[1])];const av=new Set(tiles.filter(t=>t!==FP));for(let c=1;c<=5;c++){const d=document.createElement('div');d.className='tile cpt '+CN[c]+(!av.has(c)?' dis':'');if(av.has(c)){d.onclick=()=>{game.color=c;game.phase='place';render();};if(game.color===c)d.classList.add('sel');}el.appendChild(d);}}
-function renderBoard(){const p=game.players[game.cp];const el=document.getElementById('board-rows');el.innerHTML='';for(let r=0;r<5;r++){const rd=document.createElement('div');rd.className='board-row';rd.innerHTML='<span class="row-label">'+(r+1)+'</span>';const pr=document.createElement('div');pr.className='pattern-row';for(let c=0;c<=r;c++){const cell=document.createElement('div');cell.className='pc'+(p.pat[r][c]!==null?' filled':'');if(p.pat[r][c]!==null)cell.classList.add(CN[p.pat[r][c]]);if(game.phase==='place'&&p.pat[r][c]===null){cell.style.borderColor='#60a5fa';cell.onclick=()=>place(r,c);}pr.appendChild(cell);}rd.appendChild(pr);const wr=document.createElement('div');wr.className='pattern-row';for(let c=0;c<5;c++){const wc=document.createElement('div');wc.className='wc'+(p.wall[r*5+c]!==null?' filled':'');if(p.wall[r*5+c]!==null){wc.classList.add(CN[p.wall[r*5+c]]);wc.classList.add('scored');}wr.appendChild(wc);}rd.appendChild(wr);el.appendChild(rd);}const fl=document.getElementById('floor');fl.innerHTML='';for(let i=0;i<7;i++){const fc=document.createElement('div');fc.className='fc'+(p.floor[i]!==null?' filled':'');if(p.floor[i]!==null)fc.classList.add(CN[p.floor[i]]);if(game.phase==='place'&&p.floor.length<7){fc.style.borderColor='#fbbf24';fc.style.cursor='pointer';fc.onclick=()=>placeFloor();}fl.appendChild(fc);}}
-function place(r,c){if(game.phase!=='place'||!game.color)return;const p=game.players[game.cp];if(p.wall[r*5+game.color-1]!==null){msg('Color already in wall!');return;}for(let i=0;i<=r;i++)if(p.pat[r][i]!==null&&p.pat[r][i]!==game.color){msg('Row has different color!');return;}const n=takeTiles();for(let i=0;i<n&&p.pat[r][c]===null;i++)p.pat[r][c]=game.color;endPlace();}
-function placeFloor(){if(game.phase!=='place'||!game.color)return;const p=game.players[game.cp];const n=takeTiles();for(let i=0;i<n&&p.floor.length<7;i++)p.floor.push(game.color);endPlace();}
-function takeTiles(){let tiles;const src=game.src;if(src==='center'){tiles=game.center;game.center=[];}else{const f=game.factories[parseInt(src[1])];tiles=f;f.length=0;}let n=0;for(const t of tiles){if(t===game.color)n++;else if(t===FP)game.center.push(t);else game.center.push(t);}return n;}
-function endPlace(){game.src=null;game.color=null;game.phase='pick';if(game.factories.every(f=>!f.length)&&!game.center.length){game.phase='end';msg('Round over! Scoring...');setTimeout(scoreRound,500);}else{game.cp=(game.cp+1)%2;render();}}
-function scoreRound(){for(const p of game.players){for(let r=0;r<5;r++){if(p.pat[r].every(c=>c!==null)){const col=p.pat[r][p.pat[r].length-1];p.wall[r*5+col-1]=col;p.score+=scoreWall(p.wall,r*5+col-1);for(let c=0;c<p.pat[r].length;c++)p.pat[r][c]=null;}}const pen=[1,1,2,2,2,3,3];for(let i=0;i<p.floor.length;i++)p.score-=pen[i];p.floor=[];if(p.score<0)p.score=0;}game.round++;if(game.round>6||game.players.some(p=>p.wall.filter(w=>w!==null).length>=5))endGame();else{setupRound();render();}}
-function scoreWall(w,i){const r=Math.floor(i/5),c=i%5;let s=0,h=1,v=1;for(let j=c-1;j>=0&&w[r*5+j]!==null;j--)h++;for(let j=c+1;j<5&&w[r*5+j]!==null;j++)h++;for(let j=r-1;j>=0&&w[j*5+c]!==null;j--)v++;for(let j=r+1;j<5&&w[j*5+c]!==null;j++)v++;if(h>1)s+=h;if(v>1)s+=v;if(!s)s=1;return s;}
-function endGame(){game.phase='over';const s1=game.players[0].score,s2=game.players[1].score;msg(s1>s2?'You Win!':s2>s1?'AI Wins!':'Draw!');}
-function renderScore(){const el=document.getElementById('score-display');el.innerHTML='';for(let i=0;i<2;i++){const d=document.createElement('div');d.className='stat';d.innerHTML='<span>P'+(i+1)+(i===0?'(You)':'(')+'(AI)</span><span class="stat-val">'+game.players[i].score+'</span>';el.appendChild(d);}document.getElementById('round-info').textContent='Round '+game.round;}
-function updateMsg(){const el=document.getElementById('message');if(game.phase==='pick')el.innerHTML='Select a <span class="hl">factory</span> or <span class="hl">center</span>';else if(game.phase==='color')el.innerHTML='Pick a <span class="hl">color</span>';else if(game.phase==='place')el.innerHTML='Place on <span class="hl">pattern</span> or <span class="hl">floor</span>';else if(game.phase==='over')el.innerHTML='Game Over!';}
+
+function drawTile(){
+  if(!game.bag.length){game.bag=game.box;game.box=[];shuffle(game.bag);}
+  return game.bag.length?game.bag.pop():null;
+}
+
+function setupRound(){
+  game.center=[FP];
+  for(const f of game.factories){
+    f.length=0;
+    for(let i=0;i<4;i++){const t=drawTile();if(t!==null)f.push(t);}
+  }
+  game.cp=game.starter;
+  game.src=null;game.color=null;game.phase='pick';
+  if(game.cp===1)setTimeout(aiTurn,600);
+}
+
+// ── Moves ──
+// A move = {src:'f0'..'f4'|'center', color, row:0..4 for pattern row, or -1 for floor}
+function legalRows(p,color){
+  const rows=[];
+  for(let r=0;r<5;r++){
+    const slot=p.pat[r];
+    if(slot.count>0&&slot.color!==color)continue;
+    if(slot.count>=slot.cap)continue;
+    if(p.wall[r][WALL_PATTERN[r].indexOf(color)])continue;
+    rows.push(r);
+  }
+  return rows;
+}
+
+function applyMove(move){
+  const p=game.players[game.cp];
+  let taken=0;
+  if(move.src==='center'){
+    const rest=[];
+    for(const t of game.center){
+      if(t===move.color)taken++;
+      else if(t===FP){p.floor.push(FP);game.starter=game.cp;}
+      else rest.push(t);
+    }
+    game.center=rest;
+  }else{
+    const f=game.factories[parseInt(move.src.slice(1))];
+    for(const t of f){
+      if(t===move.color)taken++;
+      else game.center.push(t);
+    }
+    f.length=0;
+  }
+  if(move.row>=0){
+    const slot=p.pat[move.row];
+    slot.color=move.color;
+    const fit=Math.min(taken,slot.cap-slot.count);
+    slot.count+=fit;
+    for(let i=fit;i<taken;i++)p.floor.push(move.color);
+  }else{
+    for(let i=0;i<taken;i++)p.floor.push(move.color);
+  }
+}
+
+function roundDone(){return game.factories.every(f=>!f.length)&&!game.center.length;}
+
+function endTurn(){
+  if(roundDone()){
+    game.phase='scoring';
+    render();
+    msg('Round over — tiling the wall...');
+    setTimeout(scoreRound,900);
+  }else{
+    game.cp=1-game.cp;
+    game.src=null;game.color=null;game.phase='pick';
+    render();
+    if(game.cp===1)setTimeout(aiTurn,700);
+  }
+}
+
+function scoreWallPlacement(wall,r,c){
+  let h=1,v=1;
+  for(let j=c-1;j>=0&&wall[r][j];j--)h++;
+  for(let j=c+1;j<5&&wall[r][j];j++)h++;
+  for(let i=r-1;i>=0&&wall[i][c];i--)v++;
+  for(let i=r+1;i<5&&wall[i][c];i++)v++;
+  if(h>1&&v>1)return h+v;
+  return Math.max(h,v);
+}
+
+function scoreRound(){
+  for(const p of game.players){
+    for(let r=0;r<5;r++){
+      const slot=p.pat[r];
+      if(slot.count===slot.cap&&slot.count>0){
+        const c=WALL_PATTERN[r].indexOf(slot.color);
+        p.wall[r][c]=true;
+        p.score+=scoreWallPlacement(p.wall,r,c);
+        for(let i=0;i<slot.cap-1;i++)game.box.push(slot.color);
+        slot.color=0;slot.count=0;
+      }
+    }
+    let pen=0;
+    p.floor.forEach((t,i)=>{if(i<FLOOR_PEN.length)pen+=FLOOR_PEN[i];if(t!==FP)game.box.push(t);});
+    p.score=Math.max(0,p.score-pen);
+    p.floor=[];
+  }
+  const finished=game.players.some(p=>p.wall.some(row=>row.every(Boolean)));
+  if(finished){
+    for(const p of game.players){
+      for(let r=0;r<5;r++)if(p.wall[r].every(Boolean))p.score+=2;
+      for(let c=0;c<5;c++)if(p.wall.every(row=>row[c]))p.score+=7;
+      for(let col=1;col<=5;col++){
+        if(WALL_PATTERN.every((row,r)=>p.wall[r][row.indexOf(col)]))p.score+=10;
+      }
+    }
+    game.over=true;game.phase='over';
+    render();
+    const [s0,s1]=game.players.map(p=>p.score);
+    msg(s0>s1?'🎉 You win '+s0+' – '+s1+'!':s1>s0?'🤖 AI wins '+s1+' – '+s0+'.':'Draw '+s0+' – '+s0+'.');
+    return;
+  }
+  game.round++;
+  setupRound();
+  render();
+}
+
+// ── AI: greedy, prefers filling rows exactly, low floor spill ──
+function aiTurn(){
+  if(game.over||game.cp!==1)return;
+  const p=game.players[1];
+  const sources=[];
+  game.factories.forEach((f,i)=>{if(f.length)sources.push({key:'f'+i,tiles:f});});
+  if(game.center.some(t=>t!==FP))sources.push({key:'center',tiles:game.center});
+  let best=null,bestScore=-Infinity;
+  for(const s of sources){
+    const colors=new Set(s.tiles.filter(t=>t!==FP));
+    for(const color of colors){
+      const n=s.tiles.filter(t=>t===color).length;
+      const rows=legalRows(p,color);
+      const options=rows.map(r=>({row:r})).concat([{row:-1}]);
+      for(const o of options){
+        let score;
+        if(o.row<0){score=-n*3;}
+        else{
+          const slot=p.pat[o.row];
+          const fit=Math.min(n,slot.cap-slot.count);
+          const spill=n-fit;
+          const completes=slot.count+fit===slot.cap;
+          score=fit*2+(completes?6+scoreWallPlacement(p.wall,o.row,WALL_PATTERN[o.row].indexOf(color)):0)-spill*3;
+        }
+        if(s.key==='center'&&game.center.includes(FP))score-=1;
+        score+=Math.random()*0.5;
+        if(score>bestScore){bestScore=score;best={src:s.key,color,row:o.row};}
+      }
+    }
+  }
+  if(best){applyMove(best);endTurn();}
+}
+
+// ── Rendering ──
+function render(){renderFactories();renderCenter();renderPicker();renderBoards();renderScore();updateMsg();}
+
+function renderFactories(){
+  const el=document.getElementById('factories');el.innerHTML='';
+  game.factories.forEach((f,i)=>{
+    const d=document.createElement('div');
+    d.className='factory'+(game.src==='f'+i?' selected':'');
+    for(const t of f){const tl=document.createElement('div');tl.className='tile '+CN[t];d.appendChild(tl);}
+    d.onclick=()=>{if(game.cp!==0||game.over)return;if(f.length){game.src='f'+i;game.color=null;game.phase='color';render();}};
+    el.appendChild(d);
+  });
+}
+
+function renderCenter(){
+  const el=document.getElementById('center');el.innerHTML='';
+  el.className=game.src==='center'?'selected':'';
+  for(const t of game.center){
+    const tl=document.createElement('div');
+    tl.className='tile '+(t===FP?'first':CN[t]);
+    if(t===FP)tl.textContent='1';
+    el.appendChild(tl);
+  }
+  el.onclick=()=>{if(game.cp!==0||game.over)return;if(game.center.some(t=>t!==FP)){game.src='center';game.color=null;game.phase='color';render();}};
+}
+
+function renderPicker(){
+  const el=document.getElementById('color-picker');el.innerHTML='';
+  if(!game.src||game.cp!==0)return;
+  const tiles=game.src==='center'?game.center:game.factories[parseInt(game.src.slice(1))];
+  const av=new Set(tiles.filter(t=>t!==FP));
+  for(let c=1;c<=5;c++){
+    const d=document.createElement('div');
+    d.className='tile cpt '+CN[c]+(av.has(c)?'':' dis');
+    if(av.has(c)){
+      d.onclick=()=>{game.color=c;game.phase='place';render();};
+      if(game.color===c)d.classList.add('sel');
+    }
+    el.appendChild(d);
+  }
+}
+
+function renderBoards(){
+  for(let pi=0;pi<2;pi++){
+    const p=game.players[pi];
+    const el=document.getElementById('board-'+pi);
+    el.className='panel player-board'+(game.cp===pi&&!game.over?'':' inactive');
+    el.innerHTML='<div class="board-title"><span>'+NAMES[pi]+(game.cp===pi&&!game.over?' ◂':'')+'</span><span class="pts">'+p.score+' pts</span></div>';
+    const canPlace=pi===0&&game.cp===0&&game.phase==='place'&&game.color;
+    const okRows=canPlace?legalRows(p,game.color):[];
+    for(let r=0;r<5;r++){
+      const rd=document.createElement('div');rd.className='board-row';
+      rd.innerHTML='<span class="row-label">'+(r+1)+'</span>';
+      const pr=document.createElement('div');pr.className='pattern-row';
+      const slot=p.pat[r];
+      for(let c=0;c<slot.cap;c++){
+        const cell=document.createElement('div');
+        const filled=c>=slot.cap-slot.count;
+        cell.className='pc'+(filled?' '+CN[slot.color]:'');
+        if(filled)cell.style.background='';
+        if(filled)cell.classList.add('tile');
+        if(okRows.includes(r)){cell.classList.add('placeable');cell.onclick=()=>{applyMove({src:game.src,color:game.color,row:r});endTurn();};}
+        pr.appendChild(cell);
+      }
+      rd.appendChild(pr);
+      const wr=document.createElement('div');wr.className='wall-row';
+      for(let c=0;c<5;c++){
+        const wc=document.createElement('div');
+        wc.className='wc tile '+CN[WALL_PATTERN[r][c]]+(p.wall[r][c]?' scored':'');
+        wr.appendChild(wc);
+      }
+      rd.appendChild(wr);
+      el.appendChild(rd);
+    }
+    const fl=document.createElement('div');fl.className='floor';
+    for(let i=0;i<7;i++){
+      const fc=document.createElement('div');
+      const t=p.floor[i];
+      fc.className='fc';
+      if(t!==undefined){
+        fc.classList.add('filled','tile',t===FP?'first':CN[t]);
+        if(t===FP)fc.textContent='1';
+      }else{
+        fc.textContent='-'+FLOOR_PEN[i];
+      }
+      if(pi===0&&game.cp===0&&game.phase==='place'&&game.color){
+        fc.classList.add('placeable');
+        fc.onclick=()=>{applyMove({src:game.src,color:game.color,row:-1});endTurn();};
+      }
+      fl.appendChild(fc);
+    }
+    el.appendChild(fl);
+  }
+}
+
+function renderScore(){
+  const el=document.getElementById('score-display');el.innerHTML='';
+  game.players.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='stat';
+    d.innerHTML='<span>'+NAMES[i]+'</span><span class="stat-val">'+p.score+'</span>';
+    el.appendChild(d);
+  });
+  document.getElementById('round-info').textContent='Round '+game.round;
+}
+
+function updateMsg(){
+  if(game.over)return;
+  const el=document.getElementById('message');
+  if(game.cp===1){el.textContent='AI is thinking...';return;}
+  if(game.phase==='pick')el.innerHTML='Select a <span class="hl">factory</span> or the <span class="hl">center</span>';
+  else if(game.phase==='color')el.innerHTML='Pick a <span class="hl">color</span> to take';
+  else if(game.phase==='place')el.innerHTML='Click a highlighted <span class="hl">pattern row</span> (or the floor)';
+}
+
 function msg(m){document.getElementById('message').textContent=m;}
 document.getElementById('btn-new').onclick=init;
 init();
