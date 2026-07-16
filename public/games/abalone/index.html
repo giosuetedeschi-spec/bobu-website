@@ -160,11 +160,17 @@ function genAllMoves(color){
           moves.push({sel:[a,b],dest:front,type:"inline",dir});
         if(state[back[0]+","+back[1]]===EMPTY)
           moves.push({sel:[a,b],dest:back,type:"inline",dir:[-dir[0],-dir[1]]});
-        // Sumito push
+        // Sumito push (both orientations of the pair)
         if(state[front[0]+","+front[1]]===opp){
           const beyond=[front[0]+dir[0],front[1]+dir[1]];
           if(state[beyond[0]+","+beyond[1]]===EMPTY||!BOARD_CELLS.has(beyond[0]+","+beyond[1]))
             moves.push({sel:[a,b],dest:front,type:"push",dir,pushCount:1});
+        }
+        if(state[back[0]+","+back[1]]===opp){
+          const bdir=[-dir[0],-dir[1]];
+          const beyondB=[back[0]+bdir[0],back[1]+bdir[1]];
+          if(state[beyondB[0]+","+beyondB[1]]===EMPTY||!BOARD_CELLS.has(beyondB[0]+","+beyondB[1]))
+            moves.push({sel:[a,b],dest:back,type:"push",dir:bdir,pushCount:1});
         }
       }
     }
@@ -191,15 +197,17 @@ function genAllMoves(color){
             moves.push({sel:[a,b,c],dest:front,type:"inline",dir});
           if(state[back[0]+","+back[1]]===EMPTY)
             moves.push({sel:[a,b,c],dest:back,type:"inline",dir:[-dir[0],-dir[1]]});
-          // Push (can push up to 2)
-          if(state[front[0]+","+front[1]]===opp){
-            const beyond=[front[0]+dir[0],front[1]+dir[1]];
-            if(state[beyond[0]+","+beyond[1]]===EMPTY||!BOARD_CELLS.has(beyond[0]+","+beyond[1]))
-              moves.push({sel:[a,b,c],dest:front,type:"push",dir,pushCount:1});
-            else if(state[beyond[0]+","+beyond[1]]===opp){
-              const b2=[beyond[0]+dir[0],beyond[1]+dir[1]];
-              if(state[b2[0]+","+b2[1]]===EMPTY||!BOARD_CELLS.has(b2[0]+","+b2[1]))
-                moves.push({sel:[a,b,c],dest:front,type:"push",dir,pushCount:2});
+          // Push (can push up to 2), both orientations of the column
+          for(const [head,pdir] of [[front,dir],[back,[-dir[0],-dir[1]]]]){
+            if(state[head[0]+","+head[1]]===opp){
+              const beyond=[head[0]+pdir[0],head[1]+pdir[1]];
+              if(state[beyond[0]+","+beyond[1]]===EMPTY||!BOARD_CELLS.has(beyond[0]+","+beyond[1]))
+                moves.push({sel:[a,b,c],dest:head,type:"push",dir:pdir,pushCount:1});
+              else if(state[beyond[0]+","+beyond[1]]===opp){
+                const b2=[beyond[0]+pdir[0],beyond[1]+pdir[1]];
+                if(state[b2[0]+","+b2[1]]===EMPTY||!BOARD_CELLS.has(b2[0]+","+b2[1]))
+                  moves.push({sel:[a,b,c],dest:head,type:"push",dir:pdir,pushCount:2});
+              }
             }
           }
         }
@@ -225,33 +233,31 @@ function applyMove(move){
       state[s[0]+dir[0]+","+(s[1]+dir[1])]=color;
     }
   } else if(move.type==="inline"){
-    // Move all in line
+    // Column shifts one step: back cell empties, dest fills
     const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-    if(state[dest[0]+","+dest[1]]===EMPTY){
-      // Move front-most to dest, others shift
-      const last=sorted[sorted.length-1];
-      state[last[0]+","+last[1]]=EMPTY;
-      state[dest[0]+","+dest[1]]=color;
-    }
+    state[sorted[0][0]+","+sorted[0][1]]=EMPTY;
+    state[dest[0]+","+dest[1]]=color;
   } else if(move.type==="push"){
     const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-    // Push opponent
-    let pushTarget=dest;
-    if(state[pushTarget[0]+","+pushTarget[1]]===opp){
-      const beyond=[pushTarget[0]+dir[0],pushTarget[1]+dir[1]];
-      if(!BOARD_CELLS.has(beyond[0]+","+beyond[1])){
-        // Eject!
-        state[pushTarget[0]+","+pushTarget[1]]=EMPTY;
-        if(color===BLACK)whiteOut++;else blackOut++;
-      } else {
-        state[beyond[0]+","+beyond[1]]=opp;
-      }
+    // Walk the opponent chain from dest; its far end shifts to `beyond` (or off the board)
+    let cur=dest;
+    while(state[cur[0]+","+cur[1]]===opp)cur=[cur[0]+dir[0],cur[1]+dir[1]];
+    if(!BOARD_CELLS.has(cur[0]+","+cur[1])){
+      if(color===BLACK)whiteOut++;else blackOut++;
+    } else {
+      state[cur[0]+","+cur[1]]=opp;
     }
-    // Move our marbles
-    const last=sorted[sorted.length-1];
-    state[last[0]+","+last[1]]=EMPTY;
+    // Our column shifts: back cell empties, dest fills
+    state[sorted[0][0]+","+sorted[0][1]]=EMPTY;
     state[dest[0]+","+dest[1]]=color;
   }
+}
+
+// Compare cell groups ignoring click order
+function sameCells(a,b){
+  if(a.length!==b.length)return false;
+  const key=l=>l.map(c=>c[0]+","+c[1]).sort().join("|");
+  return key(a)===key(b);
 }
 
 function checkWin(){
@@ -278,39 +284,16 @@ function evaluateBoard(color){
 
 function aiMove(){
   const moves=genAllMoves(currentPlayer);
-  if(!moves.length)return;
+  if(!moves.length)return null;
 
   let best=null,bestScore=-Infinity;
   for(const m of moves){
-    // Simulate
+    // Simulate with the real applyMove, then restore
     const saved={...state},bo=blackOut,wo=whiteOut;
-    // Quick apply
-    const color=currentPlayer;
-    const opp=color===BLACK?WHITE:BLACK;
-    const sel=m.sel,dest=m.dest,dir=m.dir;
-    if(m.type==="move"){state[sel[0][0]+","+sel[0][1]]=EMPTY;state[dest[0]+","+dest[1]]=color;}
-    else if(m.type==="parallel"){for(const s of sel)state[s[0]+","+s[1]]=EMPTY;for(const s of sel)state[s[0]+dir[0]+","+(s[1]+dir[1])]=color;}
-    else if(m.type==="inline"){
-      const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-      const last=sorted[sorted.length-1];
-      state[last[0]+","+last[1]]=EMPTY;state[dest[0]+","+dest[1]]=color;
-    } else if(m.type==="push"){
-      const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-      if(state[dest[0]+","+dest[1]]===opp){
-        const beyond=[dest[0]+dir[0],dest[1]+dir[1]];
-        if(!BOARD_CELLS.has(beyond)){state[dest[0]+","+dest[1]]=EMPTY;if(color===BLACK)whiteOut++;else blackOut++;}
-        else{state[beyond[0]+","+beyond[1]]=opp;}
-      }
-      const last=sorted[sorted.length-1];
-      state[last[0]+","+last[1]]=EMPTY;state[dest[0]+","+dest[1]]=color;
-    }
-
-    const score=evaluateBoard(currentPlayer);
+    applyMove(m);
+    const score=evaluateBoard(currentPlayer)+(m.type==="push"?150:0)+Math.random()*4;
     state=saved;blackOut=bo;whiteOut=wo;
-
-    // Bonus for push moves
-    const finalScore=m.type==="push"?score+150:score;
-    if(finalScore>bestScore){bestScore=finalScore;best=m;}
+    if(score>bestScore){bestScore=score;best=m;}
   }
   return best;
 }
@@ -362,7 +345,7 @@ function render(){
   // Highlight valid destinations for selected marbles
   if(selected.length>0){
     for(const m of validMoves){
-      if(m.sel.length===selected.length&&m.sel.every((s,i)=>s[0]===selected[i][0]&&s[1]===selected[i][1])){
+      if(sameCells(m.sel,selected)){
         const [px,py]=toPixel(m.dest[0],m.dest[1]);
         ctx.beginPath();
         ctx.arc(px,py,cellSize*0.3,0,Math.PI*2);
@@ -434,8 +417,7 @@ canvas.addEventListener("click",e=>{
   // If clicking on empty or opponent, try to move
   if(selected.length>0&&(v===EMPTY||v===WHITE)){
     const move=validMoves.find(m=>
-      m.sel.length===selected.length&&
-      m.sel.every((s,i)=>s[0]===selected[i][0]&&s[1]===selected[i][1])&&
+      sameCells(m.sel,selected)&&
       m.dest[0]===q&&m.dest[1]===r
     );
     if(move){
