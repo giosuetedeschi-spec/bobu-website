@@ -254,6 +254,42 @@
   background: linear-gradient(135deg, #0f0f23 0%, #1a1040 50%, #0a1628 100%);
   position: relative;
 }
+.wallLofi { background: #16213e url("/assets/wallpapers/lofi-cat.jpg") center/cover no-repeat; }
+.wallDebian { background: #163040 url("/assets/wallpapers/debian-emerald.svg") center/cover no-repeat; }
+.wallKali { background: #1c7bb8 url("/assets/wallpapers/kali-dragon.jpg") center/cover no-repeat; }
+
+.ctxOverlay { position: fixed; inset: 0; z-index: 9000; }
+.ctxMenu {
+  position: fixed;
+  z-index: 9001;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 180px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.ctxMenuHeading {
+  font-size: 0.7rem;
+  color: #64748b;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ctxMenuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.ctxMenuItem:hover { background: rgba(96, 165, 250, 0.15); color: #fff; }
 .desktopIcons { position: absolute; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 1; }
 .desktopIconBtn {
   display: flex;

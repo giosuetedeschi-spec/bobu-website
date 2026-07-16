@@ -39,11 +39,20 @@ interface DesktopIcon {
 declare global {
   interface Window {
     __openApp?: (app: DesktopIcon) => void;
+    __setWallpaper?: (id: string) => boolean;
   }
   interface Navigator {
     deviceMemory?: number;
   }
 }
+
+// ─── Wallpapers ──────────────────────────────────────────────
+const WALLPAPERS = [
+  { id: "lofi", label: "Lofi Cat" },
+  { id: "debian", label: "Debian Emerald" },
+  { id: "kali", label: "Kali Dragon" },
+  { id: "gradient", label: "BobuOS Gradient" },
+];
 
 // ─── App Registry ────────────────────────────────────────────
 const APPS: DesktopIcon[] = [
@@ -60,7 +69,8 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     games: [
       { id: "abalone", label: "Abalone", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/abalone/index.html", folder: "Board", status: "Playable" },
       { id: "azul", label: "Azul", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/azul/index.html", folder: "Board", status: "Playable" },
-      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/kalaha/index.html", folder: "Board", status: "Playable" },
+      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/progetti/kalaha", folder: "Board", status: "Playable" },
+      { id: "tris", label: "Tris", icon: "hash", action: "open", contentType: "game", payload: "/games/tris/index.html", folder: "Board", status: "Playable" },
     ],
   },
   {
@@ -68,7 +78,7 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     icon: "puzzle",
     games: [
       { id: "mastermind", label: "Mastermind", icon: "hash", action: "open", contentType: "game", payload: "/games/mastermind/index.html", folder: "Puzzle", status: "Playable" },
-      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/sudoku/index.html", folder: "Puzzle", status: "Playable" },
+      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/progetti/sudoku", folder: "Puzzle", status: "Playable" },
       { id: "bitwise", label: "Bitwise Ops", icon: "binary", action: "open", contentType: "game", payload: "/projects/js-demos/bitwise-ops/index.html", folder: "Puzzle", status: "Demo" },
     ],
   },
@@ -77,7 +87,8 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     icon: "gamepad-2",
     games: [
       { id: "snake", label: "Snake", icon: "move", action: "open", contentType: "game", payload: "/games/snake/index.html", folder: "Arcade", status: "Playable" },
-      { id: "pong", label: "Pong", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/pong/index.html", folder: "Arcade", status: "Coming Soon" },
+      { id: "pong", label: "Pong", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/pong/index.html", folder: "Arcade", status: "2 Players" },
+      { id: "flappy", label: "Flappy Bird", icon: "navigation", action: "open", contentType: "game", payload: "/games/flappy-bird/index.html", folder: "Arcade", status: "New!" },
       { id: "flip7", label: "Flip 7", icon: "layers", action: "open", contentType: "game", payload: "/projects/js-demos/flip-7/index.html", folder: "Arcade", status: "New!" },
     ],
   },
@@ -165,8 +176,10 @@ function TerminalWindow() {
           "  echo <text>   - Print text",
           "  games         - List all games",
           "",
-          "Apps: terminal, files, cv, about, abalone, azul, mastermind,",
-          "      kalaha, sudoku, snake, pong, flip7, maze-gen, maze-sol, bitwise",
+          "  wallpaper <n>  - Change wallpaper (lofi, debian, kali, gradient)",
+          "",
+          "Apps: terminal, files, cv, about, abalone, azul, tris, mastermind,",
+          "      kalaha, sudoku, snake, pong, flappy, flip7, maze-gen, maze-sol, bitwise",
         ];
         break;
       case "clear":
@@ -230,6 +243,15 @@ function TerminalWindow() {
         break;
       case "games":
         output = ["Installed games:", ...ALL_GAMES.map(g => `  • ${g.label} [${g.folder}]`)];
+        break;
+      case "wallpaper":
+        if (!args[0]) {
+          output = ["Usage: wallpaper <name>", "Available: " + WALLPAPERS.map(w => w.id).join(", ")];
+        } else if (window.__setWallpaper?.(args[0].toLowerCase())) {
+          output = [`Wallpaper set to ${args[0]}`];
+        } else {
+          output = [`Unknown wallpaper: ${args[0]}`, "Available: " + WALLPAPERS.map(w => w.id).join(", ")];
+        }
         break;
       case "open":
         if (!args[0]) {
@@ -413,37 +435,44 @@ function CVWindow() {
   return (
     <div className={styles.cvRoot}>
       <h2 className={styles.cvName}>Giosu&egrave; &ldquo;Bobu&rdquo; Tedeschi</h2>
-      <p className={styles.cvRole}>Full Stack Engineer & Creative Technologist</p>
+      <p className={styles.cvRole}>Developer & Creative Technologist</p>
       <div className={styles.cvTags}>
-        <span className={styles.cvTag}>Milan, IT</span>
-        <span className={styles.cvTag}>giosue.tedeschi@edu-its.it</span>
+        <span className={styles.cvTag}>Torino, IT</span>
+        <span className={styles.cvTag}>giosue.tedeschi31@gmail.com</span>
       </div>
       <h3 className={`${styles.cvSection} ${styles.cvSectionBlue}`}>Experience</h3>
       <div className={styles.cvEntry}>
         <div className={styles.cvEntryHeader}>
-          <strong>Full Stack Developer</strong>
-          <span className={styles.cvEntryDate}>2023 - Present</span>
+          <strong>Python & Cryptography Teaching Assistant — Liceo Classico Cavour</strong>
+          <span className={styles.cvEntryDate}>2023 - 2024</span>
         </div>
-        <p className={styles.cvEntryDesc}>Building modern web applications with Next.js and Spring Boot. Leading frontend architecture decisions.</p>
+        <p className={styles.cvEntryDesc}>Supported Python and cryptographic-systems lessons, helping students work through individual problems.</p>
       </div>
       <div className={styles.cvEntry}>
         <div className={styles.cvEntryHeader}>
-          <strong>Creative Coder</strong>
-          <span className={styles.cvEntryDate}>2021 - 2023</span>
+          <strong>Co-founder & Writer — Mercuzio & Friends</strong>
+          <span className={styles.cvEntryDate}>2022 - Present</span>
         </div>
-        <p className={styles.cvEntryDesc}>Developed interactive websites, generative art pieces, and browser-based games using Three.js, React, and Rust.</p>
+        <p className={styles.cvEntryDesc}>Cultural collective: articles, podcast production, video direction, and collaborations with local institutions in Torino.</p>
+      </div>
+      <div className={styles.cvEntry}>
+        <div className={styles.cvEntryHeader}>
+          <strong>Events & Culture — Salone del Libro, TEDxTorino, Torino Comics</strong>
+          <span className={styles.cvEntryDate}>2019 - 2024</span>
+        </div>
+        <p className={styles.cvEntryDesc}>Staff and volunteer roles: logistics, speaker prep, crowd flow, plus jury work for the LiberAzioni film festival and radio programming at Radio erre18.</p>
       </div>
       <h3 className={`${styles.cvSection} ${styles.cvSectionPurple}`}>Education</h3>
       <div className={styles.cvEntry}>
         <div className={styles.cvEntryHeader}>
-          <strong>ITS Piemonte</strong>
-          <span className={styles.cvEntryDate}>2021 - Present</span>
+          <strong>Liceo Scientifico Ettore Majorana, Torino</strong>
+          <span className={styles.cvEntryDate}>2021</span>
         </div>
-        <p className={styles.cvEntryDesc}>Higher Education in Software Engineering and Web Development.</p>
+        <p className={styles.cvEntryDesc}>Diploma di maturit&agrave; scientifica. Later: &ldquo;Diventare Imprenditori&rdquo; entrepreneurship course (UniTo, 2022) and Scuola Holden writing program (2023).</p>
       </div>
       <h3 className={`${styles.cvSection} ${styles.cvSectionGreen}`}>Skills</h3>
       <div className={styles.cvSkills}>
-        {["TypeScript","React","Next.js","Rust","Python","Java","Spring Boot","Tailwind","PostgreSQL","Docker","Git","WASM"].map(s => (
+        {["TypeScript","React","Next.js","Python","Rust","Java","Git","Docker","WASM","Italian (native)","English","Spanish (A2)"].map(s => (
           <span key={s} className={styles.cvSkillChip}>{s}</span>
         ))}
       </div>
@@ -642,12 +671,34 @@ export default function Home() {
   const [nextZ, setNextZ] = useState(10);
   const [startOpen, setStartOpen] = useState(false);
   const [time, setTime] = useState(new Date());
+  const [wallpaper, setWallpaper] = useState("lofi");
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const winIdRef = useRef(0);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    // localStorage is client-only; reading it in the initializer would break SSR hydration
+    const saved = localStorage.getItem("bobuos-wallpaper");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved && WALLPAPERS.some(w => w.id === saved)) setWallpaper(saved);
+  }, []);
+
+  const changeWallpaper = useCallback((id: string) => {
+    if (!WALLPAPERS.some(w => w.id === id)) return false;
+    setWallpaper(id);
+    localStorage.setItem("bobuos-wallpaper", id);
+    setCtxMenu(null);
+    return true;
+  }, []);
+
+  useEffect(() => {
+    window.__setWallpaper = changeWallpaper;
+    return () => { window.__setWallpaper = undefined; };
+  }, [changeWallpaper]);
 
   const openApp = useCallback((app: DesktopIcon) => {
     if (app.contentType === "game" && app.payload) {
@@ -728,8 +779,18 @@ export default function Home() {
     };
   }, [openApp]);
 
+  const wallClass = { lofi: styles.wallLofi, debian: styles.wallDebian, kali: styles.wallKali }[wallpaper] || "";
+
   return (
-    <div className={styles.desktopRoot}>
+    <div
+      className={`${styles.desktopRoot} ${wallClass}`}
+      onContextMenu={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+          setCtxMenu({ x: e.clientX, y: e.clientY });
+        }
+      }}
+    >
       {/* Desktop icons */}
       <div className={styles.desktopIcons}>
         {APPS.map(app => (
@@ -814,6 +875,26 @@ export default function Home() {
 
       {/* Start Menu */}
       <StartMenu open={startOpen} onClose={() => setStartOpen(false)} onOpenApp={openApp} />
+
+      {/* Desktop context menu */}
+      {ctxMenu && (
+        <>
+          <div
+            className={styles.ctxOverlay}
+            onClick={() => setCtxMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }}
+          />
+          {/* Runtime cursor position — same rationale as the OSWindow inline style */}
+          <div className={styles.ctxMenu} style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 220) }}>
+            <div className={styles.ctxMenuHeading}>Wallpaper</div>
+            {WALLPAPERS.map(w => (
+              <button key={w.id} className={styles.ctxMenuItem} onClick={() => changeWallpaper(w.id)}>
+                {wallpaper === w.id ? "●" : "○"} {w.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
