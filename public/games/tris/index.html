@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tris</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#f472b6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#board{display:grid;grid-template-columns:repeat(3,90px);grid-template-rows:repeat(3,90px);gap:8px}
+.cell{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-size:2.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;user-select:none}
+.cell:hover{background:rgba(255,255,255,0.1)}
+.cell.x{color:#60a5fa}
+.cell.o{color:#f472b6}
+.cell.win{background:rgba(34,197,94,0.25)}
+#msg{min-height:24px;font-size:0.95rem;color:#94a3b8}
+#controls{display:flex;gap:10px}
+button{padding:8px 22px;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;font-size:0.85rem}
+button.ghost{background:rgba(255,255,255,0.08);color:#94a3b8}
+#score{font-size:0.8rem;color:#64748b}
+</style>
+</head>
+<body>
+<h1>TRIS</h1>
+<div id="board"></div>
+<div id="msg">Your turn — you are X</div>
+<div id="controls">
+  <button id="btn-new">New Game</button>
+  <button id="btn-first" class="ghost">Let AI start</button>
+</div>
+<div id="score">You 0 · AI 0 · Draws 0</div>
+<script>
+const HU='X',AI='O';
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let board,over,tally={hu:0,ai:0,dr:0};
+
+function init(aiFirst){
+  board=Array(9).fill(null);over=false;
+  render();
+  msg('Your turn — you are X');
+  if(aiFirst)aiMove();
+}
+
+function winner(b){
+  for(const l of LINES)if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[1]]===b[l[2]])return{p:b[l[0]],line:l};
+  if(b.every(Boolean))return{p:'draw',line:[]};
+  return null;
+}
+
+// Minimax with depth preference: win fast, lose slow. Unbeatable.
+function minimax(b,player,depth){
+  const w=winner(b);
+  if(w){
+    if(w.p===AI)return{score:10-depth};
+    if(w.p===HU)return{score:depth-10};
+    return{score:0};
+  }
+  let best={score:player===AI?-Infinity:Infinity,move:-1};
+  for(let i=0;i<9;i++){
+    if(b[i])continue;
+    b[i]=player;
+    const r=minimax(b,player===AI?HU:AI,depth+1);
+    b[i]=null;
+    if(player===AI?r.score>best.score:r.score<best.score)best={score:r.score,move:i};
+  }
+  return best;
+}
+
+function aiMove(){
+  if(over)return;
+  const empty=board.filter(c=>!c).length;
+  // first move on empty board: center or corner, no need to search 9!
+  const move=empty===9?[0,2,4,6,8][Math.floor(Math.random()*5)]:minimax(board,AI,0).move;
+  board[move]=AI;
+  finishTurn(AI);
+}
+
+function finishTurn(mover){
+  const w=winner(board);
+  render(w);
+  if(w){
+    over=true;
+    if(w.p===HU){tally.hu++;msg('🎉 You win!');}
+    else if(w.p===AI){tally.ai++;msg('🤖 AI wins.');}
+    else{tally.dr++;msg('Draw.');}
+    updateTally();
+  }else{
+    msg(mover===HU?'AI is thinking...':'Your turn');
+  }
+}
+
+function render(w){
+  const el=document.getElementById('board');el.innerHTML='';
+  board.forEach((v,i)=>{
+    const c=document.createElement('div');
+    c.className='cell'+(v==='X'?' x':v==='O'?' o':'')+(w&&w.line.includes(i)?' win':'');
+    c.textContent=v||'';
+    c.onclick=()=>{
+      if(over||board[i])return;
+      board[i]=HU;
+      finishTurn(HU);
+      if(!over)setTimeout(aiMove,300);
+    };
+    el.appendChild(c);
+  });
+}
+
+function msg(m){document.getElementById('msg').textContent=m;}
+function updateTally(){document.getElementById('score').textContent='You '+tally.hu+' · AI '+tally.ai+' · Draws '+tally.dr;}
+document.getElementById('btn-new').onclick=()=>init(false);
+document.getElementById('btn-first').onclick=()=>init(true);
+init(false);
+</script>
+</body>
+</html>

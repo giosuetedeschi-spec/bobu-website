@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bird</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a14;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif}
+#wrap{position:relative;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.5)}
+canvas{display:block}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="420" height="640"></canvas></div>
+<script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+const GRAVITY=0.45,FLAP=-7.6,PIPE_W=64,GAP=160,PIPE_EVERY=95,SPEED=2.4;
+
+let bird,pipes,frame,score,best=+(localStorage.getItem('flappy-best')||0),state; // 'ready'|'play'|'dead'
+
+function reset(){
+  bird={x:110,y:H/2,vy:0,r:14};
+  pipes=[];frame=0;score=0;state='ready';
+}
+
+function flap(){
+  if(state==='ready')state='play';
+  if(state==='play')bird.vy=FLAP;
+  if(state==='dead'){reset();}
+}
+
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();flap();}});
+canvas.addEventListener('pointerdown',flap);
+
+function update(){
+  if(state!=='play')return;
+  frame++;
+  bird.vy+=GRAVITY;bird.y+=bird.vy;
+  if(frame%PIPE_EVERY===1){
+    const top=60+Math.random()*(H-GAP-200);
+    pipes.push({x:W,top,passed:false});
+  }
+  for(const p of pipes)p.x-=SPEED;
+  if(pipes.length&&pipes[0].x<-PIPE_W)pipes.shift();
+  for(const p of pipes){
+    if(!p.passed&&p.x+PIPE_W<bird.x){p.passed=true;score++;}
+    // collision
+    if(bird.x+bird.r>p.x&&bird.x-bird.r<p.x+PIPE_W){
+      if(bird.y-bird.r<p.top||bird.y+bird.r>p.top+GAP)die();
+    }
+  }
+  if(bird.y+bird.r>H-40||bird.y-bird.r<0)die();
+}
+
+function die(){
+  state='dead';
+  if(score>best){best=score;localStorage.setItem('flappy-best',best);}
+}
+
+function draw(){
+  // sky
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#1a1a3e');sky.addColorStop(1,'#2d1b4e');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  // stars
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  for(let i=0;i<40;i++){const x=(i*97)%W,y=(i*61)%(H-100);ctx.fillRect(x,y,2,2);}
+  // pipes
+  for(const p of pipes){
+    const g=ctx.createLinearGradient(p.x,0,p.x+PIPE_W,0);
+    g.addColorStop(0,'#16a34a');g.addColorStop(0.5,'#4ade80');g.addColorStop(1,'#15803d');
+    ctx.fillStyle=g;
+    ctx.fillRect(p.x,0,PIPE_W,p.top);
+    ctx.fillRect(p.x-4,p.top-24,PIPE_W+8,24);
+    ctx.fillRect(p.x,p.top+GAP,PIPE_W,H-40-(p.top+GAP));
+    ctx.fillRect(p.x-4,p.top+GAP,PIPE_W+8,24);
+  }
+  // ground
+  ctx.fillStyle='#3f2d1e';ctx.fillRect(0,H-40,W,40);
+  ctx.fillStyle='#5b4226';ctx.fillRect(0,H-40,W,6);
+  // bird
+  ctx.save();
+  ctx.translate(bird.x,bird.y);
+  ctx.rotate(Math.max(-0.5,Math.min(1.2,bird.vy*0.08)));
+  ctx.fillStyle='#fbbf24';
+  ctx.beginPath();ctx.arc(0,0,bird.r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f59e0b';
+  ctx.beginPath();ctx.ellipse(-4,4,8,5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(5,-5,4.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(6.5,-5,2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f97316';ctx.beginPath();ctx.moveTo(12,-1);ctx.lineTo(22,2);ctx.lineTo(12,5);ctx.fill();
+  ctx.restore();
+  // score
+  ctx.fillStyle='#fff';ctx.font='bold 34px "Segoe UI"';ctx.textAlign='center';
+  ctx.fillText(score,W/2,70);
+  ctx.font='13px "Segoe UI"';ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.fillText('best '+best,W/2,92);
+  if(state==='ready'){
+    ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font='bold 22px "Segoe UI"';
+    ctx.fillText('Tap / Space to flap',W/2,H/2-60);
+  }
+  if(state==='dead'){
+    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff';ctx.font='bold 30px "Segoe UI"';
+    ctx.fillText('Game Over',W/2,H/2-20);
+    ctx.font='16px "Segoe UI"';
+    ctx.fillText('Score '+score+'  ·  Best '+best,W/2,H/2+12);
+    ctx.fillText('Tap / Space to retry',W/2,H/2+42);
+  }
+}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+reset();loop();
+</script>
+</body>
+</html>
