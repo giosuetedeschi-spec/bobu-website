@@ -6,6 +6,6 @@ import CvPage from '@/app/cv/page';
 describe('CvPage', () => {
   it('renders the resume heading', () => {
     render(<CvPage />);
-    expect(screen.getByText('Full Stack Engineer & Creative Technologist')).toBeInTheDocument();
+    expect(screen.getByText('Developer & Creative Technologist')).toBeInTheDocument();
   });
 });

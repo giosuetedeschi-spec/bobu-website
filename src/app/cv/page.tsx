@@ -12,39 +12,62 @@ import SchoolIcon from "@mui/icons-material/School";
 import CodeIcon from "@mui/icons-material/Code";
 
 const skills = [
-  { label: "Languages", items: ["TypeScript", "Rust", "Python", "C++", "Java"] },
-  { label: "Frontend", items: ["Next.js", "React", "Tailwind CSS", "Framer Motion"] },
-  { label: "Backend", items: ["Spring Boot", "Node.js", "PostgreSQL", "MongoDB"] },
+  { label: "Programming", items: ["TypeScript", "Python", "Rust", "Java", "React", "Next.js"] },
   { label: "Tools", items: ["Git", "Docker", "Linux", "WASM"] },
+  { label: "Languages", items: ["Italian (native)", "English (good)", "Spanish (A2)"] },
+  { label: "Creative", items: ["Creative writing", "Podcast production", "Video direction", "Calligraphy"] },
 ];
 
 const experience = [
   {
-    title: "Full Stack Developer",
-    period: "2023 - Present",
+    title: "Python & Cryptography Teaching Assistant — I.I.S. Liceo Classico Cavour",
+    period: "2023 - 2024",
     description:
-      "Building modern web applications with Next.js and Spring Boot. Leading frontend architecture decisions and implementing performance-critical modules.",
+      "Technical assistant for Python and cryptographic-systems lessons: deepened course topics and helped students through individual problems.",
   },
   {
-    title: "Creative Coder",
-    period: "2021 - 2023",
+    title: "Co-founder & Writer — Mercuzio & Friends",
+    period: "2022 - Present",
     description:
-      "Developed interactive websites, generative art pieces, and browser-based games using Three.js, React, and Rust.",
+      "Cultural collective in Torino: writing, mediation, collaborations with city institutions, video direction, podcast design.",
   },
   {
-    title: "ITS Student",
-    period: "2021 - Present",
+    title: "Radio Collaborator — Radio erre18",
+    period: "2024 - Present",
     description:
-      "Studying software engineering and web technologies at ITS Piemonte. Focus on full-stack development and system design.",
+      "Episode planning, mixer operation and streaming software for live radio programming.",
+  },
+  {
+    title: "Production Member — Amaro (student cultural journal)",
+    period: "2022 - 2023",
+    description:
+      "Article writing, proofreading, print-shop relations, distribution, and video-podcast direction.",
+  },
+  {
+    title: "Events Staff — Salone del Libro, Torino Comics, TEDxTorino, Club Silencio",
+    period: "2019 - 2024",
+    description:
+      "Reception, crowd flow, stand and stage setup, speaker preparation, materials logistics across Torino's main cultural events. Jury member for the LiberAzioni film festival (AMNC, 2023).",
   },
 ];
 
 const education = [
   {
-    title: "ITS Piemonte",
-    period: "2021 - Present",
+    title: "Liceo Scientifico Ettore Majorana, Torino",
+    period: "2016 - 2021",
+    description: "Diploma di maturità scientifica — mathematics, physics, philosophy.",
+  },
+  {
+    title: "Scuola Holden — writing program",
+    period: "2023",
     description:
-      "Higher Education in Software Engineering and Web Development.",
+      "Group work with established writers (Kate Williams, Adam Gollner, Amidon Steven): short stories, copy, TV series, novel outline.",
+  },
+  {
+    title: "\"Diventare Imprenditori\" — Università di Torino",
+    period: "2022",
+    description:
+      "Business Model Canvas, market analysis, marketing principles, business plans and startup finance.",
   },
 ];
 
@@ -65,11 +88,12 @@ export default function ResumePage() {
           Giosu&egrave; &quot;Bobu&quot; Tedeschi
         </Typography>
         <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, mb: 2 }}>
-          Full Stack Engineer & Creative Technologist
+          Developer & Creative Technologist
         </Typography>
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-          <Chip icon={<WorkIcon sx={{ fontSize: 16 }} />} label="Milan, IT" size="small" variant="outlined" />
-          <Chip label="giosue.tedeschi@edu-its.it" size="small" variant="outlined" />
+          <Chip icon={<WorkIcon sx={{ fontSize: 16 }} />} label="Torino, IT" size="small" variant="outlined" />
+          <Chip label="giosue.tedeschi31@gmail.com" size="small" variant="outlined" />
+          <Chip label="Full CV (PDF)" size="small" variant="outlined" component="a" href="/cv.pdf" target="_blank" clickable />
         </Box>
       </Box>
 

@@ -33,7 +33,7 @@ describe('HomePage desktop', () => {
   it('opens the CV window with resume content', () => {
     render(<HomePage />);
     fireEvent.doubleClick(screen.getByTitle('CV'));
-    expect(screen.getByText('Full Stack Engineer & Creative Technologist')).toBeInTheDocument();
+    expect(screen.getByText('Developer & Creative Technologist')).toBeInTheDocument();
   });
 
   it('opens a game window from the desktop folder drill-down, then can navigate back', () => {
