@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { basePath } from "@/lib/basePath";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import MobileCard from "@/components/MobileCard";
 import styles from "./page.module.css";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -674,6 +676,7 @@ export default function Home() {
   const [wallpaper, setWallpaper] = useState("lofi");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const winIdRef = useRef(0);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -780,6 +783,10 @@ export default function Home() {
   }, [openApp]);
 
   const wallClass = { lofi: styles.wallLofi, debian: styles.wallDebian, kali: styles.wallKali }[wallpaper] || "";
+
+  // Phone-sized viewports get a dedicated tap-driven card instead of the
+  // drag/hover-dependent desktop OS. All hooks above run unconditionally first.
+  if (isMobile) return <MobileCard />;
 
   return (
     <div
