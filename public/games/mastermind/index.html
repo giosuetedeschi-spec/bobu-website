@@ -4,201 +4,1094 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mastermind</title>
+<script>
+/* Contract stub, assigned before first paint (harness/GAME_API.md rule 6). */
+window.__GAME__ = {
+  id: "mastermind",
+  version: 1,
+  ready: false,
+  meta: { name: "Mastermind", players: 1, mode: "turn-based" },
+  getState: function () { return { status: "idle", turn: null, score: 0 }; },
+  reset: function () {},
+  step: function () {},
+  input: function () { return { ok: false, reason: "not-ready" }; },
+  actions: function () { return []; }
+};
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#0f0f1a 0%,#1a1030 100%);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow:auto;user-select:none}
-#game-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:900px;padding:10px;gap:6px;height:100vh}
-h1{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,#f472b6,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
-#board{display:flex;flex-direction:column;gap:3px;width:100%;max-width:380px}
-.row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;transition:background 0.2s}
-.row.active{background:rgba(255,255,255,0.06)}
-.row-label{font-size:0.7rem;color:#64748b;width:16px;text-align:center}
-.pegs{display:flex;gap:6px;flex:1}
-.peg{width:36px;height:36px;border-radius:50%;border:2px solid #334155;background:#1e293b;cursor:pointer;transition:transform 0.15s,border-color 0.2s;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
-.peg:hover{transform:scale(1.1);border-color:#60a5fa}
-.peg.filled{border-color:#475569}
-.hints{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;margin-left:8px}
-.hint{width:14px;height:14px;border-radius:50%;background:#0f172a;border:1px solid #1e293b}
-.hint.black{background:#e2e8f0;border-color:#94a3b8}
-.hint.white{background:#1e293b;border-color:#64748b}
-.hint.correct{background:#22c55e;border-color:#16a34a}
-#selector{display:flex;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:12px;margin-top:4px}
-.swatch{width:38px;height:38px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform 0.15s,border-color 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
-.swatch:hover{transform:scale(1.15)}
-.swatch.sel{border-color:#fff;transform:scale(1.15)}
-#controls{display:flex;gap:10px;margin-top:6px}
-.btn{padding:8px 24px;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s}
-.btn-submit{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff}
-.btn-submit:disabled{opacity:0.3;cursor:not-allowed}
-.btn-submit:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,0.4)}
-.btn-reset{background:rgba(255,255,255,0.08);color:#94a3b8}
-.btn-reset:hover{background:rgba(255,255,255,0.12)}
-#message{text-align:center;font-size:0.85rem;color:#94a3b8;min-height:20px}
-#message.win{color:#22c55e;font-weight:600}
-#message.lose{color:#ef4444;font-weight:600}
-#secret-reveal{display:flex;gap:6px;margin-top:4px}
-#secret-reveal .peg{width:28px;height:28px;border-radius:50%;border:2px solid #334155;display:flex;align-items:center;justify-content:center}
+:root{
+  --bg0:#080b18; --bg1:#141a34; --bg2:#1b1440;
+  --panel:rgba(255,255,255,.045);
+  --panel2:rgba(255,255,255,.07);
+  --stroke:rgba(255,255,255,.10);
+  --stroke2:rgba(255,255,255,.18);
+  --txt:#e9edfb; --muted:#94a1c2; --dim:#64708d;
+  --accent:#7c5cff; --accent2:#22d3ee; --good:#34d399; --bad:#fb7185;
+  --peg:30px; --fb:11px; --radius:16px;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+@media (max-height:720px){:root{--peg:26px;--fb:10px}}
+@media (max-height:580px){:root{--peg:22px;--fb:9px;--radius:13px}}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 620px at 12% -10%, rgba(124,92,255,.30), transparent 62%),
+    radial-gradient(900px 560px at 105% 8%, rgba(34,211,238,.18), transparent 60%),
+    linear-gradient(160deg,var(--bg0),var(--bg1) 55%,var(--bg2));
+  color:var(--txt);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+h1,h2,h3{font-weight:700;letter-spacing:-.01em}
+
+.app{height:100dvh;display:flex;flex-direction:column;gap:10px;padding:12px;max-width:1160px;margin:0 auto}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:32px;height:32px;flex:0 0 auto;filter:drop-shadow(0 3px 8px rgba(124,92,255,.55))}
+.brand h1{font-size:1.06rem;line-height:1.1;
+  background:linear-gradient(100deg,#fff,#c7bcff 45%,#7ae7ff);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand .tag{display:block;font-size:.66rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.chips{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
+  background:var(--panel);border:1px solid var(--stroke);font-size:.74rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+.chip.win{color:#062;background:linear-gradient(135deg,#34d399,#22d3ee);border-color:transparent;color:#04231d}
+.chip.lose{background:linear-gradient(135deg,#fb7185,#f97316);border-color:transparent;color:#2a0a10}
+
+/* ---------- layout ---------- */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:12px}
+@media (max-width:880px){.layout{grid-template-columns:1fr;overflow:auto;scrollbar-width:thin}}
+.panel{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);
+  backdrop-filter:blur(8px);box-shadow:var(--shadow)}
+.panel h2{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+
+.boardpanel{display:flex;flex-direction:column;min-height:0;padding:12px 14px}
+.side{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto;scrollbar-width:thin;padding-right:2px}
+.side .panel{padding:12px 13px}
+@media (max-width:880px){.side{overflow:visible}}
+
+/* ---------- secret row ---------- */
+.secretbar{display:flex;align-items:center;gap:10px;padding:0 2px 10px;border-bottom:1px solid var(--stroke);margin-bottom:8px;flex:0 0 auto}
+.secretbar .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.secretpegs{display:flex;gap:6px}
+.legend{margin-left:auto;display:flex;gap:12px;align-items:center;font-size:.68rem;color:var(--dim);font-weight:600}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.legend i.ex{background:#f8fafc;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 0 7px rgba(255,255,255,.55)}
+.legend i.pa{background:transparent;border:2px solid #93a3c4}
+@media (max-width:560px){.legend{display:none}}
+
+/* ---------- board ---------- */
+.board{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:5px;padding:2px}
+.row{display:flex;align-items:center;gap:9px;padding:4px 8px;border-radius:12px;border:1px solid transparent;transition:background .2s,border-color .2s}
+.row.done{background:rgba(255,255,255,.028)}
+.row.active{background:linear-gradient(90deg,rgba(124,92,255,.20),rgba(34,211,238,.07));border-color:rgba(124,92,255,.42);
+  box-shadow:0 0 0 1px rgba(124,92,255,.16),0 6px 18px -8px rgba(124,92,255,.7)}
+.row.future{opacity:.4}
+.rownum{width:18px;text-align:center;font-size:.68rem;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.row.active .rownum{color:var(--accent2)}
+.pegs{display:flex;gap:7px}
+.fbwrap{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* ---------- pegs ---------- */
+.peg{
+  width:var(--peg);height:var(--peg);border-radius:50%;position:relative;flex:0 0 auto;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .16s cubic-bezier(.2,1.3,.4,1),box-shadow .2s,border-color .2s;
+}
+.peg.filled{
+  border-color:rgba(0,0,0,.35);
+  background-image:
+    radial-gradient(circle at 33% 26%,rgba(255,255,255,.62),rgba(255,255,255,.05) 48%),
+    linear-gradient(160deg,rgba(255,255,255,.15),rgba(0,0,0,.35));
+  box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 -3px 7px rgba(0,0,0,.35);
+}
+.peg .num{font-size:calc(var(--peg)*.34);font-weight:800;color:rgba(255,255,255,.72);
+  text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;line-height:1}
+.peg:not(.filled) .num{display:none}
+button.peg{cursor:pointer}
+button.peg:hover{transform:translateY(-2px) scale(1.06)}
+button.peg:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,211,238,.65)}
+.peg.sel{border-color:var(--accent2)!important;box-shadow:0 0 0 2px rgba(34,211,238,.75),0 0 14px rgba(34,211,238,.45)}
+.peg.pop{animation:pop .28s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.peg.hidden{background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 5px,rgba(255,255,255,.02) 5px 10px)}
+.peg.hidden::after{content:"?";font-size:calc(var(--peg)*.42);font-weight:800;color:var(--dim)}
+.peg.flip{animation:flip .5s cubic-bezier(.35,.9,.3,1) both}
+@keyframes flip{0%{transform:rotateY(0) scale(1)}50%{transform:rotateY(90deg) scale(1.12)}100%{transform:rotateY(180deg) scale(1)}}
+.secretpegs .peg{--peg:26px;width:26px;height:26px}
+@media (max-height:580px){.secretpegs .peg{--peg:22px;width:22px;height:22px}}
+
+/* ---------- feedback ---------- */
+.fb{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,var(--fb));gap:4px;align-content:center}
+.fb i{width:var(--fb);height:var(--fb);border-radius:50%;display:block;background:rgba(255,255,255,.05);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+.fb i.exact{background:#f8fafc;box-shadow:0 0 8px rgba(255,255,255,.7),inset 0 -1px 2px rgba(0,0,0,.25)}
+.fb i.part{background:transparent;border:2px solid #93a3c4;box-shadow:none}
+.fb.reveal i{animation:pop .3s backwards}
+.fb.reveal i:nth-child(2){animation-delay:.05s}
+.fb.reveal i:nth-child(3){animation-delay:.1s}
+.fb.reveal i:nth-child(4){animation-delay:.15s}
+.fb.reveal i:nth-child(5){animation-delay:.2s}
+.fbtxt{font-size:.7rem;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.row.done .fbtxt{color:var(--muted)}
+
+/* ---------- palette ---------- */
+.palette{display:flex;flex-wrap:wrap;gap:9px}
+.sw{width:38px;height:38px;border-radius:50%;position:relative;border:2px solid transparent;cursor:pointer;
+  background-image:radial-gradient(circle at 33% 26%,rgba(255,255,255,.6),rgba(255,255,255,.04) 48%);
+  box-shadow:0 4px 12px rgba(0,0,0,.45),inset 0 -3px 8px rgba(0,0,0,.35);
+  transition:transform .15s cubic-bezier(.2,1.4,.4,1),box-shadow .2s;
+  display:flex;align-items:center;justify-content:center}
+.sw span{font-size:.68rem;font-weight:800;color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.65)}
+.sw:hover{transform:translateY(-3px) scale(1.07)}
+.sw:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,211,238,.7)}
+.sw:active{transform:scale(.94)}
+@media (max-height:580px){.sw{width:32px;height:32px}}
+
+/* ---------- buttons / controls ---------- */
+.btnrow{display:flex;gap:8px;margin-top:11px}
+.btn{flex:1;padding:9px 12px;border-radius:11px;font-size:.8rem;font-weight:700;
+  background:var(--panel2);border:1px solid var(--stroke);color:var(--txt);
+  transition:transform .14s,box-shadow .2s,background .2s,opacity .2s;white-space:nowrap}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,211,238,.6)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#4f46e5 55%,var(--accent2));border-color:transparent;color:#fff;
+  box-shadow:0 6px 18px -6px rgba(124,92,255,.9)}
+.btn.primary:hover:not(:disabled){box-shadow:0 10px 24px -6px rgba(124,92,255,1)}
+.btn kbd{font-family:inherit;font-size:.68rem;opacity:.72;margin-left:5px}
+
+.msg{margin-top:10px;font-size:.79rem;line-height:1.35;color:var(--muted);min-height:2.4em}
+.msg.win{color:var(--good);font-weight:700}
+.msg.lose{color:var(--bad);font-weight:700}
+.msg.warn{color:#fbbf24}
+
+.setting{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.setting>span{font-size:.76rem;color:var(--muted);font-weight:600}
+.seg{display:flex;background:rgba(0,0,0,.28);border:1px solid var(--stroke);border-radius:9px;padding:2px;gap:2px}
+.seg button{padding:4px 10px;border-radius:7px;font-size:.74rem;font-weight:700;color:var(--dim);transition:.18s}
+.seg button:hover{color:var(--txt)}
+.seg button.on{background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;box-shadow:0 3px 10px -3px rgba(124,92,255,.9)}
+.seg button:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(34,211,238,.7)}
+.switch{width:42px;height:23px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid var(--stroke);
+  position:relative;transition:.22s;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:#8b95b3;transition:.22s cubic-bezier(.3,1.4,.4,1)}
+.switch.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+.switch.on::after{left:21px;background:#fff}
+.switch:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(34,211,238,.6)}
+
+details.rules{font-size:.74rem;color:var(--muted);line-height:1.5}
+details.rules summary{cursor:pointer;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);
+  font-weight:700;list-style:none;display:flex;align-items:center;gap:6px}
+details.rules summary::-webkit-details-marker{display:none}
+details.rules summary::before{content:"▸";transition:transform .2s;display:inline-block}
+details.rules[open] summary::before{transform:rotate(90deg)}
+details.rules ul{margin:9px 0 0 2px;padding-left:14px;display:flex;flex-direction:column;gap:5px}
+details.rules b{color:var(--txt)}
+.kbdline{margin-top:9px;font-size:.7rem;color:var(--dim)}
+.kbdline kbd{background:rgba(255,255,255,.09);border:1px solid var(--stroke);border-bottom-width:2px;
+  border-radius:5px;padding:1px 5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.68rem;color:var(--muted)}
+
+.banner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
-<div id="game-wrap">
-  <h1>MASTERMIND</h1>
-  <div id="board"></div>
-  <div id="selector"></div>
-  <div id="controls">
-    <button class="btn btn-submit" id="btn-submit" disabled>Submit</button>
-    <button class="btn btn-reset" id="btn-reset">New Game</button>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+        <rect x="3" y="3" width="42" height="42" rx="13" fill="url(#g1)" opacity=".18"/>
+        <rect x="3.8" y="3.8" width="40.4" height="40.4" rx="12.6" fill="none" stroke="url(#g1)" stroke-width="1.6"/>
+        <circle cx="17" cy="17" r="6" fill="#ef4444"/>
+        <circle cx="31" cy="17" r="6" fill="#facc15"/>
+        <circle cx="17" cy="31" r="6" fill="#22c55e"/>
+        <circle cx="31" cy="31" r="6" fill="#3b82f6"/>
+      </svg>
+      <div>
+        <h1>Mastermind</h1>
+        <span class="tag">crack the code</span>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip" id="chipTurn">Guess <b>1</b>/<b>10</b></div>
+      <div class="chip" id="chipScore">W <b>0</b> · L <b>0</b></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel boardpanel">
+      <div class="secretbar">
+        <span class="lbl">Secret</span>
+        <div class="secretpegs" id="secretPegs"></div>
+        <div class="legend">
+          <span><i class="ex"></i> right spot</span>
+          <span><i class="pa"></i> right colour</span>
+        </div>
+      </div>
+      <div class="board" id="board" role="grid" aria-label="Guess history"></div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h2>Your guess</h2>
+        <div class="palette" id="palette"></div>
+        <div class="btnrow">
+          <button class="btn primary" id="btnSubmit" disabled>Submit<kbd>⏎</kbd></button>
+          <button class="btn" id="btnBack">Undo<kbd>⌫</kbd></button>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="btnHint">Hint<kbd>H</kbd></button>
+          <button class="btn" id="btnNew">New<kbd>N</kbd></button>
+        </div>
+        <p class="msg" id="msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="panel">
+        <h2>Setup</h2>
+        <div class="setting"><span>Code length</span>
+          <div class="seg" id="segLen" role="group" aria-label="Code length"></div>
+        </div>
+        <div class="setting"><span>Colours</span>
+          <div class="seg" id="segCol" role="group" aria-label="Number of colours"></div>
+        </div>
+        <div class="setting"><span>Repeats in code</span>
+          <button class="switch" id="swDup" role="switch" aria-checked="true" aria-label="Allow repeated colours in the secret code"></button>
+        </div>
+        <div class="setting" style="margin-bottom:0"><span>Attempts</span>
+          <div class="seg" id="segTries" role="group" aria-label="Number of attempts"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <details class="rules" open>
+          <summary>How to play</summary>
+          <ul>
+            <li>A hidden code of <b id="rLen">4</b> coloured pegs is drawn from <b id="rCol">6</b> colours.</li>
+            <li>Fill the highlighted row and submit. Each guess is scored with key pegs:</li>
+            <li><b>White filled peg</b> = right colour, right position.</li>
+            <li><b>Hollow peg</b> = right colour, wrong position.</li>
+            <li>Key pegs are unordered — they never say <em>which</em> peg was right.</li>
+            <li>Repeated colours only earn as many key pegs as they appear in the code.</li>
+            <li>Crack it before the attempts run out.</li>
+          </ul>
+          <div class="kbdline">
+            <kbd>1</kbd>–<kbd>8</kbd> place colour · <kbd>←</kbd><kbd>→</kbd> move · <kbd>⌫</kbd> undo ·
+            <kbd>Enter</kbd> submit · <kbd>H</kbd> hint · <kbd>N</kbd> new
+          </div>
+        </details>
+      </div>
+    </aside>
   </div>
-  <div id="message">Click a peg slot, then pick a color</div>
-  <div id="secret-reveal" style="display:none"></div>
 </div>
 
 <script>
-const NUM_COLORS=6, CODE_LENGTH=4, MAX_GUESSES=10;
-const COLORS=['#dc3232','#32b432','#3278dc','#f0c832','#dc5adc','#f08c1e'];
-const COLOR_NAMES=['Red','Green','Blue','Yellow','Pink','Orange'];
+"use strict";
+(function () {
 
-let secret=[],rows=[],currentRow=0,selectedSlot=null,gameOver=false;
-
-function initGame(){
-  secret=Array.from({length:CODE_LENGTH},()=>Math.floor(Math.random()*NUM_COLORS));
-  rows=Array.from({length:MAX_GUESSES},()=>({pegs:Array(CODE_LENGTH).fill(null),black:0,white:0,submitted:false}));
-  currentRow=0;selectedSlot=null;gameOver=false;
-  renderBoard();renderSelector();updateUI();
-  document.getElementById('secret-reveal').style.display='none';
-  document.getElementById('message').textContent='Click a peg slot, then pick a color';
-  document.getElementById('message').className='';
+/* ============================================================
+   Deterministic PRNG (mulberry32) — never Math.random
+   ============================================================ */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-function scoreGuess(guess){
-  let black=0,white=0;
-  const sCopy=[...secret],gCopy=[...guess];
-  for(let i=0;i<CODE_LENGTH;i++)if(gCopy[i]===sCopy[i]){black++;sCopy[i]=-1;gCopy[i]=-2;}
-  for(let i=0;i<CODE_LENGTH;i++)if(gCopy[i]>=0){
-    const idx=sCopy.indexOf(gCopy[i]);
-    if(idx>=0){white++;sCopy[idx]=-1;}
+/* ============================================================
+   Palette
+   ============================================================ */
+var PALETTE = [
+  { hex: "#ef4444", name: "Red" },
+  { hex: "#f97316", name: "Orange" },
+  { hex: "#facc15", name: "Yellow" },
+  { hex: "#22c55e", name: "Green" },
+  { hex: "#06b6d4", name: "Cyan" },
+  { hex: "#3b82f6", name: "Blue" },
+  { hex: "#a855f7", name: "Purple" },
+  { hex: "#ec4899", name: "Pink" }
+];
+
+var LENGTHS = [4, 5];
+var COLOURS = [6, 7, 8];
+var TRIES = [10, 12];
+
+/* ============================================================
+   Core scoring — the rule everybody gets wrong.
+
+   1. Count exact matches, and REMOVE those pegs from both rows.
+   2. whites = sum over colours of min(remaining in guess,
+                                       remaining in secret).
+
+   This is the only formulation that is symmetric and can never
+   double-count a peg (the classic bug: "colour appears somewhere
+   in the secret" without consuming it).
+   ============================================================ */
+function score(secret, guess) {
+  var n = secret.length, black = 0, white = 0, i, maxColour = 0;
+  for (i = 0; i < n; i++) {
+    if (secret[i] > maxColour) maxColour = secret[i];
+    if (guess[i] > maxColour) maxColour = guess[i];
   }
-  return[black,white];
+  var sCount = new Array(maxColour + 1).fill(0);
+  var gCount = new Array(maxColour + 1).fill(0);
+  /* pass 1 — exact hits are consumed and never counted again */
+  for (i = 0; i < n; i++) {
+    if (secret[i] === guess[i]) black++;
+    else { sCount[secret[i]]++; gCount[guess[i]]++; }
+  }
+  /* pass 2 — colour-only hits from what is left over on both sides */
+  for (i = 0; i <= maxColour; i++) white += Math.min(sCount[i], gCount[i]);
+  return { black: black, white: white };
 }
 
-function renderBoard(){
-  const board=document.getElementById('board');
-  board.innerHTML='';
-  for(let r=0;r<MAX_GUESSES;r++){
-    const row=rows[r];
-    const div=document.createElement('div');
-    div.className='row'+(r===currentRow&&!gameOver?' active':'');
-    div.innerHTML=`<span class="row-label">${r+1}</span><div class="pegs" id="pegs-${r}"></div><div class="hints" id="hints-${r}"></div>`;
-    const pegsDiv=div.querySelector(`#pegs-${r}`);
-    for(let p=0;p<CODE_LENGTH;p++){
-      const peg=document.createElement('div');
-      peg.className='peg'+(row.pegs[p]!==null?' filled':'');
-      peg.dataset.row=r;peg.dataset.slot=p;
-      if(row.pegs[p]!==null)peg.style.background=COLORS[row.pegs[p]];
-      if(r===currentRow&&!gameOver){
-        peg.onclick=()=>selectSlot(p);
-      }
-      pegsDiv.appendChild(peg);
+/* ============================================================
+   Code space helpers (used by the solver / hint)
+   ============================================================ */
+function allCodes(len, colours, allowDup) {
+  var out = [];
+  var cur = new Array(len);
+  (function rec(pos, used) {
+    if (pos === len) { out.push(cur.slice()); return; }
+    for (var c = 0; c < colours; c++) {
+      if (!allowDup && used[c]) continue;
+      cur[pos] = c;
+      if (!allowDup) used[c] = 1;
+      rec(pos + 1, used);
+      if (!allowDup) used[c] = 0;
     }
-    const hintsDiv=div.querySelector(`#hints-${r}`);
-    if(row.submitted){
-      for(let h=0;h<row.black;h++){const d=document.createElement('div');d.className='hint black';hintsDiv.appendChild(d);}
-      for(let h=0;h<row.white;h++){const d=document.createElement('div');d.className='hint white';hintsDiv.appendChild(d);}
-      const empty=CODE_LENGTH-row.black-row.white;
-      for(let h=0;h<empty;h++){const d=document.createElement('div');d.className='hint';hintsDiv.appendChild(d);}
-    } else {
-      for(let h=0;h<CODE_LENGTH;h++){const d=document.createElement('div');d.className='hint';hintsDiv.appendChild(d);}
+  })(0, new Array(colours).fill(0));
+  return out;
+}
+
+function consistent(code, history) {
+  for (var i = 0; i < history.length; i++) {
+    var h = history[i];
+    var r = score(code, h.guess);
+    if (r.black !== h.black || r.white !== h.white) return false;
+  }
+  return true;
+}
+
+/* Knuth-style: pick the candidate whose worst-case partition is smallest. */
+function suggest(candidates, len, rand) {
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+  var pool = candidates;
+  var MAX_POOL = 320;
+  if (pool.length > MAX_POOL) {
+    pool = [];
+    var step = candidates.length / MAX_POOL;
+    for (var k = 0; k < MAX_POOL; k++) pool.push(candidates[Math.floor(k * step)]);
+  }
+  var scoreSet = candidates;
+  if (scoreSet.length > 1200) {
+    scoreSet = [];
+    var st = candidates.length / 1200;
+    for (var q = 0; q < 1200; q++) scoreSet.push(candidates[Math.floor(q * st)]);
+  }
+  var best = null, bestWorst = Infinity, ties = [];
+  for (var i = 0; i < pool.length; i++) {
+    var buckets = Object.create(null), worst = 0;
+    for (var j = 0; j < scoreSet.length; j++) {
+      var r = score(scoreSet[j], pool[i]);
+      var key = r.black * 16 + r.white;
+      var v = (buckets[key] || 0) + 1;
+      buckets[key] = v;
+      if (v > worst) worst = v;
     }
-    board.appendChild(div);
+    if (worst < bestWorst) { bestWorst = worst; best = pool[i]; ties = [pool[i]]; }
+    else if (worst === bestWorst) ties.push(pool[i]);
   }
+  if (ties.length > 1 && rand) return ties[Math.floor(rand() * ties.length)];
+  return best;
 }
 
-function renderSelector(){
-  const sel=document.getElementById('selector');
-  sel.innerHTML='';
-  for(let c=0;c<NUM_COLORS;c++){
-    const sw=document.createElement('div');
-    sw.className='swatch';
-    sw.style.background=COLORS[c];
-    sw.title=COLOR_NAMES[c];
-    sw.onclick=()=>selectColor(c);
-    sel.appendChild(sw);
-  }
-}
+/* ============================================================
+   Game state
+   ============================================================ */
+var cfg = { codeLength: 4, colours: 6, duplicates: true, maxGuesses: 10 };
+var S = {
+  secret: [],
+  history: [],
+  current: [],
+  status: "idle",
+  selected: 0,
+  message: "",
+  messageKind: "",
+  revealed: false,
+  lastRow: -1
+};
+var tally = { wins: 0, losses: 0, played: 0, best: null, streak: 0 };
+var rand = mulberry32(1);
+var seedValue = 1;
 
-function selectSlot(slot){
-  if(gameOver)return;
-  selectedSlot=slot;
-  // Highlight the slot
-  const pegs=document.querySelectorAll(`#pegs-${currentRow} .peg`);
-  pegs.forEach((p,i)=>{
-    if(i===slot)p.style.borderColor='#60a5fa';
-    else p.style.borderColor=rows[currentRow].pegs[i]!==null?'#475569':'#334155';
-  });
-  document.getElementById('message').textContent=`Slot ${slot+1} selected - pick a color`;
-}
-
-function selectColor(color){
-  if(gameOver||selectedSlot===null)return;
-  rows[currentRow].pegs[selectedSlot]=color;
-  selectedSlot=null;
-  renderBoard();
-  updateUI();
-  // Auto-advance to next empty slot
-  const nextEmpty=rows[currentRow].pegs.indexOf(null);
-  if(nextEmpty>=0&&rows[currentRow].pegs.filter(p=>p!==null).length<CODE_LENGTH){
-    // Don't auto-select, let user click
-  }
-}
-
-function updateUI(){
-  const canSubmit=rows[currentRow].pegs.every(p=>p!==null)&&!gameOver;
-  document.getElementById('btn-submit').disabled=!canSubmit;
-  if(gameOver)return;
-  const filled=rows[currentRow].pegs.filter(p=>p!==null).length;
-  if(filled===CODE_LENGTH) document.getElementById('message').textContent='Ready to submit!';
-  else if(selectedSlot===null) document.getElementById('message').textContent=`Slot ${filled+1} of ${CODE_LENGTH} - click a peg slot`;
-}
-
-document.getElementById('btn-submit').onclick=()=>{
-  if(gameOver)return;
-  const row=rows[currentRow];
-  if(!row.pegs.every(p=>p!==null))return;
-  const[b,w]=scoreGuess(row.pegs);
-  row.black=b;row.white=w;row.submitted=true;
-  if(b===CODE_LENGTH){
-    gameOver=true;
-    document.getElementById('message').textContent='🎉 You cracked the code!';
-    document.getElementById('message').className='win';
-    revealSecret();
-  } else if(currentRow===MAX_GUESSES-1){
-    gameOver=true;
-    document.getElementById('message').textContent='Out of guesses!';
-    document.getElementById('message').className='lose';
-    revealSecret();
+function newSecret() {
+  var out = [], i, c;
+  if (cfg.duplicates) {
+    for (i = 0; i < cfg.codeLength; i++) out.push(Math.floor(rand() * cfg.colours));
   } else {
-    currentRow++;
-    selectedSlot=null;
-    document.getElementById('message').textContent=`${b} exact, ${b+w} correct color`;
+    var bag = [];
+    for (c = 0; c < cfg.colours; c++) bag.push(c);
+    for (i = bag.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+    }
+    out = bag.slice(0, cfg.codeLength);
   }
-  renderBoard();updateUI();
+  return out;
+}
+
+function startGame() {
+  S.secret = newSecret();
+  S.history = [];
+  S.current = new Array(cfg.codeLength).fill(null);
+  S.status = "playing";
+  S.selected = 0;
+  S.revealed = false;
+  S.lastRow = -1;
+  S.message = "Pick colours for the highlighted row, then Submit.";
+  S.messageKind = "";
+}
+
+function resetAll(seed) {
+  seedValue = (typeof seed === "number" && isFinite(seed)) ? (seed >>> 0) : 1;
+  rand = mulberry32(seedValue);
+  tally = { wins: 0, losses: 0, played: 0, best: null, streak: 0 };
+  startGame();
+}
+
+/* ---------- actions on the model ---------- */
+function place(slot, colour) {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  if (!Number.isInteger(slot) || slot < 0 || slot >= cfg.codeLength) return { ok: false, reason: "slot out of range" };
+  if (!Number.isInteger(colour) || colour < 0 || colour >= cfg.colours) return { ok: false, reason: "colour out of range" };
+  S.current[slot] = colour;
+  S.selected = nextEmptyFrom(slot + 1);
+  return { ok: true, current: S.current.slice() };
+}
+
+function nextEmptyFrom(from) {
+  var n = cfg.codeLength, i;
+  for (i = from; i < n; i++) if (S.current[i] === null) return i;
+  for (i = 0; i < n; i++) if (S.current[i] === null) return i;
+  return Math.min(from, n - 1);
+}
+
+function pushColour(colour) {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  if (!Number.isInteger(colour) || colour < 0 || colour >= cfg.colours) return { ok: false, reason: "colour out of range" };
+  var slot = S.current[S.selected] === null ? S.selected : nextEmptyFrom(S.selected);
+  if (S.current[slot] !== null) slot = S.selected;
+  return place(slot, colour);
+}
+
+function undo() {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  var i, last = -1;
+  for (i = 0; i < cfg.codeLength; i++) if (S.current[i] !== null) last = i;
+  if (S.current[S.selected] !== null) last = S.selected;
+  if (last < 0) return { ok: false, reason: "row already empty" };
+  S.current[last] = null;
+  S.selected = last;
+  return { ok: true, current: S.current.slice() };
+}
+
+function clearRow() {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  S.current = new Array(cfg.codeLength).fill(null);
+  S.selected = 0;
+  return { ok: true };
+}
+
+function submitGuess(code) {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  if (!Array.isArray(code)) return { ok: false, reason: "guess must be an array" };
+  if (code.length !== cfg.codeLength) return { ok: false, reason: "guess must have " + cfg.codeLength + " pegs" };
+  for (var i = 0; i < code.length; i++) {
+    if (!Number.isInteger(code[i]) || code[i] < 0 || code[i] >= cfg.colours) {
+      return { ok: false, reason: "colour index out of range (0.." + (cfg.colours - 1) + ")" };
+    }
+  }
+  var r = score(S.secret, code);
+  S.history.push({ guess: code.slice(), black: r.black, white: r.white });
+  S.lastRow = S.history.length - 1;
+  S.current = new Array(cfg.codeLength).fill(null);
+  S.selected = 0;
+
+  if (r.black === cfg.codeLength) {
+    S.status = "won";
+    S.revealed = true;
+    tally.wins++; tally.played++; tally.streak++;
+    if (tally.best === null || S.history.length < tally.best) tally.best = S.history.length;
+    S.message = "Cracked it in " + S.history.length + " " + (S.history.length === 1 ? "guess" : "guesses") + "!";
+    S.messageKind = "win";
+  } else if (S.history.length >= cfg.maxGuesses) {
+    S.status = "lost";
+    S.revealed = true;
+    tally.losses++; tally.played++; tally.streak = 0;
+    S.message = "Out of attempts — the code is revealed above.";
+    S.messageKind = "lose";
+  } else {
+    S.message = r.black + " in place, " + r.white + " right colour elsewhere. " +
+      (cfg.maxGuesses - S.history.length) + " left.";
+    S.messageKind = "";
+  }
+  return { ok: true, black: r.black, white: r.white, status: S.status };
+}
+
+function reveal() {
+  if (S.status !== "playing") return { ok: false, reason: "game already over" };
+  S.status = "lost";
+  S.revealed = true;
+  tally.losses++; tally.played++; tally.streak = 0;
+  S.message = "You gave up — here was the code.";
+  S.messageKind = "lose";
+  return { ok: true, secret: S.secret.slice() };
+}
+
+function hint() {
+  if (S.status !== "playing") return { ok: false, reason: "game over" };
+  var space = allCodes(cfg.codeLength, cfg.colours, cfg.duplicates);
+  var cands = [];
+  for (var i = 0; i < space.length; i++) if (consistent(space[i], S.history)) cands.push(space[i]);
+  var pick = suggest(cands, cfg.codeLength, rand);
+  if (!pick) return { ok: false, reason: "no consistent code — feedback is contradictory" };
+  S.current = pick.slice();
+  S.selected = 0;
+  S.message = cands.length + " code" + (cands.length === 1 ? "" : "s") + " still possible. Solver suggests this row.";
+  S.messageKind = "warn";
+  return { ok: true, remaining: cands.length, suggestion: pick.slice() };
+}
+
+function applyConfig(patch) {
+  var next = {
+    codeLength: patch.codeLength !== undefined ? patch.codeLength : cfg.codeLength,
+    colours: patch.colours !== undefined ? patch.colours : cfg.colours,
+    duplicates: patch.duplicates !== undefined ? !!patch.duplicates : cfg.duplicates,
+    maxGuesses: patch.maxGuesses !== undefined ? patch.maxGuesses : cfg.maxGuesses
+  };
+  if (LENGTHS.indexOf(next.codeLength) < 0) return { ok: false, reason: "code length must be 4 or 5" };
+  if (COLOURS.indexOf(next.colours) < 0) return { ok: false, reason: "colours must be 6, 7 or 8" };
+  if (TRIES.indexOf(next.maxGuesses) < 0) return { ok: false, reason: "attempts must be 10 or 12" };
+  if (!next.duplicates && next.colours < next.codeLength) return { ok: false, reason: "not enough colours for a repeat-free code" };
+  cfg = next;
+  startGame();
+  return { ok: true, config: snapshotConfig() };
+}
+
+function snapshotConfig() {
+  return {
+    codeLength: cfg.codeLength, colours: cfg.colours,
+    duplicates: cfg.duplicates, maxGuesses: cfg.maxGuesses
+  };
+}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+var $ = function (id) { return document.getElementById(id); };
+var elBoard = $("board"), elSecret = $("secretPegs"), elPalette = $("palette"),
+    elMsg = $("msg"), elChipTurn = $("chipTurn"), elChipScore = $("chipScore");
+
+function pegEl(colour, opts) {
+  opts = opts || {};
+  var el = document.createElement(opts.button ? "button" : "div");
+  el.className = "peg" + (colour === null || colour === undefined ? "" : " filled");
+  if (opts.button) { el.type = "button"; }
+  if (colour !== null && colour !== undefined) {
+    el.style.backgroundColor = PALETTE[colour].hex;
+    var n = document.createElement("span");
+    n.className = "num";
+    n.textContent = String(colour + 1);
+    el.appendChild(n);
+    el.setAttribute("aria-label", PALETTE[colour].name);
+  } else {
+    el.setAttribute("aria-label", "empty slot");
+  }
+  return el;
+}
+
+function fbEl(black, white, total, animate) {
+  var wrap = document.createElement("div");
+  wrap.className = "fb" + (animate ? " reveal" : "");
+  wrap.style.gridTemplateRows = "repeat(2, var(--fb))";
+  var i, made = 0;
+  for (i = 0; i < black; i++) { var a = document.createElement("i"); a.className = "exact"; wrap.appendChild(a); made++; }
+  for (i = 0; i < white; i++) { var b = document.createElement("i"); b.className = "part"; wrap.appendChild(b); made++; }
+  for (i = made; i < total; i++) wrap.appendChild(document.createElement("i"));
+  wrap.title = black + " right colour in the right spot, " + white + " right colour elsewhere";
+  return wrap;
+}
+
+function renderSecret() {
+  elSecret.innerHTML = "";
+  for (var i = 0; i < cfg.codeLength; i++) {
+    var el;
+    if (S.revealed) {
+      el = pegEl(S.secret[i]);
+      el.classList.add("pop");
+      el.style.animationDelay = (i * 0.07) + "s";
+    } else {
+      el = document.createElement("div");
+      el.className = "peg hidden";
+      el.setAttribute("aria-label", "hidden peg");
+    }
+    elSecret.appendChild(el);
+  }
+}
+
+function renderBoard() {
+  elBoard.innerHTML = "";
+  var total = cfg.maxGuesses, r, i;
+  for (r = 0; r < total; r++) {
+    var row = document.createElement("div");
+    var isDone = r < S.history.length;
+    var isActive = r === S.history.length && S.status === "playing";
+    row.className = "row " + (isDone ? "done" : isActive ? "active" : "future");
+
+    var num = document.createElement("span");
+    num.className = "rownum";
+    num.textContent = String(r + 1);
+    row.appendChild(num);
+
+    var pegs = document.createElement("div");
+    pegs.className = "pegs";
+    for (i = 0; i < cfg.codeLength; i++) {
+      var val = isDone ? S.history[r].guess[i] : (isActive ? S.current[i] : null);
+      var p = pegEl(val, { button: isActive });
+      if (isActive) {
+        (function (slot) {
+          p.addEventListener("click", function () {
+            S.selected = slot;
+            render();
+          });
+        })(i);
+        if (i === S.selected) p.classList.add("sel");
+        p.tabIndex = -1;
+      }
+      if (isDone && r === S.lastRow) { p.classList.add("pop"); p.style.animationDelay = (i * 0.04) + "s"; }
+      pegs.appendChild(p);
+    }
+    row.appendChild(pegs);
+
+    var fbw = document.createElement("div");
+    fbw.className = "fbwrap";
+    if (isDone) {
+      fbw.appendChild(fbEl(S.history[r].black, S.history[r].white, cfg.codeLength, r === S.lastRow));
+      var t = document.createElement("span");
+      t.className = "fbtxt";
+      t.textContent = S.history[r].black + " · " + S.history[r].white;
+      fbw.appendChild(t);
+    } else {
+      fbw.appendChild(fbEl(0, 0, cfg.codeLength, false));
+      var t2 = document.createElement("span");
+      t2.className = "fbtxt";
+      t2.textContent = "—";
+      fbw.appendChild(t2);
+    }
+    row.appendChild(fbw);
+    elBoard.appendChild(row);
+    if (isActive) row.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function renderPalette() {
+  elPalette.innerHTML = "";
+  for (var c = 0; c < cfg.colours; c++) {
+    (function (colour) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "sw";
+      b.style.backgroundColor = PALETTE[colour].hex;
+      b.title = PALETTE[colour].name + " (press " + (colour + 1) + ")";
+      b.setAttribute("aria-label", PALETTE[colour].name);
+      var s = document.createElement("span");
+      s.textContent = String(colour + 1);
+      b.appendChild(s);
+      b.addEventListener("click", function () { pushColour(colour); render(); });
+      elPalette.appendChild(b);
+    })(c);
+  }
+}
+
+function renderControls() {
+  segment("segLen", LENGTHS, cfg.codeLength, function (v) { uiConfig({ codeLength: v }); });
+  segment("segCol", COLOURS, cfg.colours, function (v) { uiConfig({ colours: v }); });
+  segment("segTries", TRIES, cfg.maxGuesses, function (v) { uiConfig({ maxGuesses: v }); });
+  var sw = $("swDup");
+  sw.classList.toggle("on", cfg.duplicates);
+  sw.setAttribute("aria-checked", cfg.duplicates ? "true" : "false");
+  $("rLen").textContent = String(cfg.codeLength);
+  $("rCol").textContent = String(cfg.colours);
+}
+
+function segment(id, values, active, onPick) {
+  var el = $(id);
+  el.innerHTML = "";
+  values.forEach(function (v) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = String(v);
+    b.className = v === active ? "on" : "";
+    b.setAttribute("aria-pressed", v === active ? "true" : "false");
+    b.addEventListener("click", function () { onPick(v); });
+    el.appendChild(b);
+  });
+}
+
+function uiConfig(patch) {
+  var r = applyConfig(patch);
+  if (!r.ok) { S.message = r.reason; S.messageKind = "warn"; }
+  render();
+}
+
+function render() {
+  renderSecret();
+  renderBoard();
+  renderControls();
+  elMsg.textContent = S.message;
+  elMsg.className = "msg " + S.messageKind;
+  var used = S.history.length;
+  elChipTurn.innerHTML = S.status === "playing"
+    ? "Guess <b>" + Math.min(used + 1, cfg.maxGuesses) + "</b>/<b>" + cfg.maxGuesses + "</b>"
+    : (S.status === "won" ? "Solved in <b>" + used + "</b>" : "Code revealed");
+  elChipTurn.className = "chip" + (S.status === "won" ? " win" : S.status === "lost" ? " lose" : "");
+  elChipScore.innerHTML = "W <b>" + tally.wins + "</b> · L <b>" + tally.losses + "</b>" +
+    (tally.best !== null ? " · best <b>" + tally.best + "</b>" : "");
+  var full = S.current.every(function (v) { return v !== null; });
+  $("btnSubmit").disabled = !(S.status === "playing" && full);
+  $("btnHint").disabled = S.status !== "playing";
+  $("btnBack").disabled = S.status !== "playing";
+}
+
+/* ---------- wiring ---------- */
+$("btnSubmit").addEventListener("click", function () {
+  if (S.current.some(function (v) { return v === null; })) return;
+  submitGuess(S.current.slice());
+  render();
+});
+$("btnBack").addEventListener("click", function () { undo(); render(); });
+$("btnNew").addEventListener("click", function () { startGame(); render(); });
+$("btnHint").addEventListener("click", function () { hint(); render(); });
+$("swDup").addEventListener("click", function () { uiConfig({ duplicates: !cfg.duplicates }); });
+
+document.addEventListener("keydown", function (e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  var k = e.key;
+  if (k >= "1" && k <= "8") {
+    var c = parseInt(k, 10) - 1;
+    if (c < cfg.colours) { pushColour(c); render(); e.preventDefault(); }
+    return;
+  }
+  if (k === "Enter") {
+    if (S.status === "playing" && S.current.every(function (v) { return v !== null; })) {
+      submitGuess(S.current.slice()); render();
+    } else if (S.status !== "playing") { startGame(); render(); }
+    e.preventDefault(); return;
+  }
+  if (k === "Backspace" || k === "Delete") { undo(); render(); e.preventDefault(); return; }
+  if (k === "ArrowLeft") { S.selected = (S.selected + cfg.codeLength - 1) % cfg.codeLength; render(); e.preventDefault(); return; }
+  if (k === "ArrowRight") { S.selected = (S.selected + 1) % cfg.codeLength; render(); e.preventDefault(); return; }
+  if (k === "n" || k === "N") { startGame(); render(); e.preventDefault(); return; }
+  if (k === "h" || k === "H") { hint(); render(); e.preventDefault(); return; }
+  if (k === "Escape") { clearRow(); render(); e.preventDefault(); }
+});
+
+/* ============================================================
+   Self-tests
+   ============================================================ */
+function selftest() {
+  var cases = [
+    // [secret, guess, black, white, note]
+    [[0, 1, 1, 1], [0, 0, 1, 1], 3, 0, "brief's AABB vs ABBB: 3 pegs literally align -> 3 black, 0 white"],
+    [[0, 1, 1, 2], [0, 0, 1, 1], 2, 1, "duplicates in both; naive 'colour appears in secret' scoring wrongly says 2 white"],
+    [[0, 1, 2, 3], [0, 1, 2, 3], 4, 0, "all correct"],
+    [[0, 1, 2, 3], [4, 5, 4, 5], 0, 0, "all wrong"],
+    [[0, 1, 2, 3], [3, 2, 1, 0], 0, 4, "full permutation, no duplicates"],
+    [[0, 0, 1, 1], [1, 1, 0, 0], 0, 4, "duplicates in both, fully transposed"],
+    [[0, 0, 0, 0], [0, 1, 2, 3], 1, 0, "duplicates in the secret only"],
+    [[0, 1, 2, 3], [0, 0, 0, 0], 1, 0, "duplicates in the guess only"],
+    [[0, 0, 0, 0], [0, 0, 0, 0], 4, 0, "all-duplicate exact match"],
+    [[0, 0, 1, 2], [0, 1, 0, 3], 1, 2, "one exact, two displaced"],
+    [[1, 1, 2, 2], [1, 2, 1, 2], 2, 2, "paired duplicates"],
+    [[0, 0, 1, 1], [0, 1, 1, 0], 2, 2, "duplicates in both, partial swap"],
+    [[0, 1, 1, 1], [1, 1, 1, 1], 3, 0, "guess floods a colour the secret has 3 of"],
+    [[1, 1, 1, 1], [0, 1, 1, 1], 3, 0, "secret floods a colour the guess has 3 of"],
+    [[0, 1, 2, 3, 4], [4, 3, 2, 1, 0], 1, 4, "length 5 permutation"],
+    [[0, 0, 1, 1, 2], [0, 1, 0, 1, 3], 2, 2, "length 5 with duplicates in both"],
+    [[5, 5, 5, 5, 5], [5, 5, 5, 5, 5], 5, 0, "length 5 all identical"],
+    [[0, 1, 2, 3, 4], [5, 5, 5, 5, 5], 0, 0, "length 5 nothing in common"]
+  ];
+  var results = [], passed = 0, failed = 0, i;
+  for (i = 0; i < cases.length; i++) {
+    var c = cases[i];
+    var r = score(c[0], c[1]);
+    var ok = r.black === c[2] && r.white === c[3];
+    if (ok) passed++; else failed++;
+    results.push({
+      name: "score([" + c[0] + "] , [" + c[1] + "]) = " + c[2] + "/" + c[3],
+      ok: ok, got: r.black + "/" + r.white, note: c[4]
+    });
+  }
+
+  /* invariants over many pseudo-random pairs */
+  function invariant(name, fn) {
+    var ok = true, detail = "";
+    try { var d = fn(); if (d !== true) { ok = false; detail = String(d); } }
+    catch (e) { ok = false; detail = e.message; }
+    if (ok) passed++; else failed++;
+    results.push({ name: name, ok: ok, got: detail, note: "" });
+  }
+
+  var rr = mulberry32(20260811);
+  invariant("black+white never exceeds code length (4000 random pairs)", function () {
+    for (var t = 0; t < 4000; t++) {
+      var len = 4 + (rr() < 0.5 ? 0 : 1), cols = 6 + Math.floor(rr() * 3);
+      var s = [], g = [], k;
+      for (k = 0; k < len; k++) { s.push(Math.floor(rr() * cols)); g.push(Math.floor(rr() * cols)); }
+      var r = score(s, g);
+      if (r.black + r.white > len) return "overflow " + s + " / " + g + " -> " + r.black + "/" + r.white;
+      if (r.black < 0 || r.white < 0) return "negative pegs";
+    }
+    return true;
+  });
+
+  invariant("black counts exactly the positional matches (4000 random pairs)", function () {
+    for (var t = 0; t < 4000; t++) {
+      var len = 4 + (rr() < 0.5 ? 0 : 1), cols = 6 + Math.floor(rr() * 3);
+      var s = [], g = [], k, exact = 0;
+      for (k = 0; k < len; k++) { s.push(Math.floor(rr() * cols)); g.push(Math.floor(rr() * cols)); }
+      for (k = 0; k < len; k++) if (s[k] === g[k]) exact++;
+      if (score(s, g).black !== exact) return "black mismatch on " + s + " / " + g;
+    }
+    return true;
+  });
+
+  invariant("scoring is symmetric: score(s,g) === score(g,s) (4000 random pairs)", function () {
+    for (var t = 0; t < 4000; t++) {
+      var len = 4 + (rr() < 0.5 ? 0 : 1), cols = 6 + Math.floor(rr() * 3);
+      var s = [], g = [], k;
+      for (k = 0; k < len; k++) { s.push(Math.floor(rr() * cols)); g.push(Math.floor(rr() * cols)); }
+      var a = score(s, g), b = score(g, s);
+      if (a.black !== b.black || a.white !== b.white) return "asymmetric on " + s + " / " + g;
+    }
+    return true;
+  });
+
+  invariant("score(code, code) is always all-black", function () {
+    for (var t = 0; t < 500; t++) {
+      var len = 4 + (rr() < 0.5 ? 0 : 1), cols = 6 + Math.floor(rr() * 3);
+      var s = [], k;
+      for (k = 0; k < len; k++) s.push(Math.floor(rr() * cols));
+      var r = score(s, s);
+      if (r.black !== len || r.white !== 0) return "self-score wrong on " + s;
+    }
+    return true;
+  });
+
+  invariant("exhaustive 4x6: feedback is always achievable and self-consistent", function () {
+    var codes = allCodes(4, 6, true);
+    for (var a = 0; a < codes.length; a += 37) {
+      for (var b = 0; b < codes.length; b += 53) {
+        var r = score(codes[a], codes[b]);
+        if (r.black + r.white > 4) return "overflow";
+        if (r.black === 3 && r.white === 1) return "impossible 3/1 feedback on " + codes[a] + " / " + codes[b];
+      }
+    }
+    return true;
+  });
+
+  invariant("solver: the secret always survives the consistency filter", function () {
+    var rnd = mulberry32(7);
+    for (var t = 0; t < 40; t++) {
+      var secret = [], k;
+      for (k = 0; k < 4; k++) secret.push(Math.floor(rnd() * 6));
+      var hist = [];
+      for (var q = 0; q < 3; q++) {
+        var g = [];
+        for (k = 0; k < 4; k++) g.push(Math.floor(rnd() * 6));
+        var r = score(secret, g);
+        hist.push({ guess: g, black: r.black, white: r.white });
+      }
+      if (!consistent(secret, hist)) return "secret filtered out: " + secret;
+    }
+    return true;
+  });
+
+  invariant("solver cracks 4x6 within 6 guesses from 30 seeded secrets", function () {
+    var rnd = mulberry32(1234);
+    var space = allCodes(4, 6, true);
+    for (var t = 0; t < 30; t++) {
+      var secret = space[Math.floor(rnd() * space.length)];
+      var hist = [], cands = space, guesses = 0;
+      while (guesses < 8) {
+        var g = guesses === 0 ? [0, 0, 1, 1] : suggest(cands, 4, rnd);
+        if (!g) return "solver ran out of candidates for " + secret;
+        var r = score(secret, g);
+        guesses++;
+        if (r.black === 4) break;
+        hist.push({ guess: g, black: r.black, white: r.white });
+        cands = cands.filter(function (c) { return consistent(c, hist); });
+      }
+      if (guesses > 6) return "solver needed " + guesses + " guesses for " + secret;
+    }
+    return true;
+  });
+
+  invariant("illegal input is rejected, never thrown", function () {
+    var saveCfg = snapshotConfig(), saveState = JSON.stringify(S), saveTally = JSON.stringify(tally);
+    var bad = [
+      API.input("guess", { code: [0, 0, 0] }),
+      API.input("guess", { code: [0, 0, 0, 99] }),
+      API.input("guess", { code: "nope" }),
+      API.input("guess", {}),
+      API.input("place", { slot: 99, colour: 0 }),
+      API.input("place", { slot: 0, colour: -1 }),
+      API.input("setLength", { value: 9 }),
+      API.input("setColours", { value: 3 }),
+      API.input("__nope__")
+    ];
+    var out = true;
+    for (var i2 = 0; i2 < bad.length; i2++) if (!bad[i2] || bad[i2].ok !== false) out = "case " + i2 + " was accepted";
+    cfg = saveCfg; S = JSON.parse(saveState); tally = JSON.parse(saveTally);
+    return out;
+  });
+
+  invariant("repeat-free secrets contain no duplicate colours", function () {
+    var save = { cfg: snapshotConfig(), S: JSON.stringify(S), tally: JSON.stringify(tally) };
+    var out = true;
+    for (var t = 0; t < 200; t++) {
+      applyConfig({ duplicates: false, codeLength: t % 2 ? 5 : 4, colours: 6 + (t % 3) });
+      var seen = {};
+      for (var k = 0; k < S.secret.length; k++) {
+        if (seen[S.secret[k]]) { out = "duplicate in " + S.secret; break; }
+        seen[S.secret[k]] = 1;
+      }
+      if (out !== true) break;
+    }
+    cfg = save.cfg; S = JSON.parse(save.S); tally = JSON.parse(save.tally);
+    return out;
+  });
+
+  invariant("reset(seed) reproduces the same secret", function () {
+    var save = { cfg: snapshotConfig(), S: JSON.stringify(S), tally: JSON.stringify(tally) };
+    API.reset(31337); var a = S.secret.join(",");
+    API.reset(31337); var b = S.secret.join(",");
+    API.reset(31338); var c = S.secret.join(",");
+    cfg = save.cfg; S = JSON.parse(save.S); tally = JSON.parse(save.tally);
+    if (a !== b) return "same seed gave different secrets";
+    if (a === c) return "different seeds gave the same secret (suspicious)";
+    return true;
+  });
+
+  return { ok: failed === 0, passed: passed, failed: failed, total: passed + failed, results: results };
+}
+
+/* ============================================================
+   window.__GAME__
+   ============================================================ */
+var ACTIONS = ["guess", "submit", "place", "push", "undo", "clear", "hint", "reveal",
+               "restart", "setLength", "setColours", "setColors", "setDuplicates",
+               "setAttempts", "selftest"];
+
+var API = {
+  id: "mastermind",
+  version: 1,
+  ready: false,
+  meta: { name: "Mastermind", players: 1, mode: "turn-based" },
+
+  getState: function () {
+    return {
+      status: S.status,
+      turn: S.status === "playing" ? "player" : null,
+      score: {
+        wins: tally.wins, losses: tally.losses, played: tally.played,
+        best: tally.best, streak: tally.streak, guesses: S.history.length
+      },
+      config: snapshotConfig(),
+      seed: seedValue,
+      board: S.history.map(function (h) { return h.guess.slice(); }),
+      history: S.history.map(function (h) { return { guess: h.guess.slice(), black: h.black, white: h.white }; }),
+      current: S.current.slice(),
+      selected: S.selected,
+      row: S.history.length,
+      guessesLeft: Math.max(0, cfg.maxGuesses - S.history.length),
+      revealed: S.revealed,
+      secret: S.revealed ? S.secret.slice() : null,
+      message: S.message
+    };
+  },
+
+  reset: function (seed) { resetAll(seed); render(); },
+
+  step: function () { /* turn-based: nothing advances on its own */ },
+
+  input: function (action, payload) {
+    payload = payload || {};
+    var r;
+    switch (action) {
+      case "guess":
+        r = submitGuess(payload.code || payload.guess); render(); return r;
+      case "submit":
+        if (S.status !== "playing") { return { ok: false, reason: "game over" }; }
+        if (S.current.some(function (v) { return v === null; })) return { ok: false, reason: "row is incomplete" };
+        r = submitGuess(S.current.slice()); render(); return r;
+      case "place":
+        r = place(payload.slot, payload.colour !== undefined ? payload.colour : payload.color); render(); return r;
+      case "push":
+        r = pushColour(payload.colour !== undefined ? payload.colour : payload.color); render(); return r;
+      case "undo": r = undo(); render(); return r;
+      case "clear": r = clearRow(); render(); return r;
+      case "hint": r = hint(); render(); return r;
+      case "reveal": r = reveal(); render(); return r;
+      case "restart":
+        if (payload.seed !== undefined) { resetAll(payload.seed); } else { startGame(); }
+        render(); return { ok: true, status: S.status };
+      case "setLength": r = applyConfig({ codeLength: payload.value }); render(); return r;
+      case "setColours":
+      case "setColors": r = applyConfig({ colours: payload.value }); render(); return r;
+      case "setDuplicates": r = applyConfig({ duplicates: !!payload.value }); render(); return r;
+      case "setAttempts": r = applyConfig({ maxGuesses: payload.value }); render(); return r;
+      case "selftest": {
+        var t = selftest(); render();
+        return { ok: t.ok, passed: t.passed, failed: t.failed, total: t.total, results: t.results };
+      }
+      default:
+        return { ok: false, reason: "unknown action: " + String(action) };
+    }
+  },
+
+  actions: function () { return ACTIONS.slice(); }
 };
 
-document.getElementById('btn-reset').onclick=initGame;
+window.__GAME__ = API;
+resetAll(1);
+render();
+API.ready = true;
 
-function revealSecret(){
-  const div=document.getElementById('secret-reveal');
-  div.style.display='flex';
-  div.innerHTML='<span style="font-size:0.75rem;color:#64748b">Secret:</span>';
-  for(let i=0;i<CODE_LENGTH;i++){
-    const p=document.createElement('div');
-    p.className='peg';
-    p.style.background=COLORS[secret[i]];
-    div.appendChild(p);
-  }
-}
-
-initGame();
+})();
 </script>
 </body>
 </html>

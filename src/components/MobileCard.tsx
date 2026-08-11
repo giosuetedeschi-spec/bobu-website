@@ -57,7 +57,7 @@ export default function MobileCard() {
   };
 
   return (
-    <main className={styles.root}>
+    <main className={styles.root} data-testid="mobile-card">
       <div className={styles.card}>
         {/* Flip card: tap the avatar/name area to reveal a short intro */}
         <button

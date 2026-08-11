@@ -5,6 +5,7 @@ const MODULES = ["game_logic.py", "ai_engine.py", "endgame_db.py", "zobrist_hash
 export default function KalahaPage() {
   return (
     <PyodideGamePage
+      gameId="kalaha"
       title="Kalaha"
       tag="Python + Pyodide"
       scriptPath="/games/kalaha/main.py"

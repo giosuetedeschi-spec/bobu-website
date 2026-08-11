@@ -1,62 +1,85 @@
-import json
-import os
-from typing import Dict, Optional, List, Union
+"""Endgame database for Kalaha.
+
+Stores *exact* game-theoretic values (final store difference from Player 1's
+point of view, under perfect play) for positions with few enough seeds left in
+play that the search resolved them all the way to a terminal position.
+
+Only genuinely proven values are inserted.  The search calls :meth:`add` after
+a subtree has been explored with no depth cut-off **and** no alpha/beta window
+cut-off, which is precisely the condition under which the returned value is the
+true minimax value rather than a bound or a heuristic estimate.  Because those
+values are strategy-independent, the database stays valid across searches that
+use different evaluation heuristics — unlike the transposition table.
+
+The database lives in memory.  ``dump``/``restore`` are provided for callers
+that want to persist it (the browser demo never does, so nothing is read from
+or written to disk at import time).
+"""
+
+from typing import Dict, List, Optional
 
 try:
     from zobrist_hashing import zobrist
-except ImportError:
+    from game_logic import seeds_in_play
+except ImportError:  # pragma: no cover - package-style import fallback
     from kalaha.zobrist_hashing import zobrist
+    from kalaha.game_logic import seeds_in_play
 
-DB_FILE = "endgame_db.json"
+# Positions with more seeds than this are not worth memoising: they are rarely
+# revisited and would bloat the table.
+DEFAULT_MAX_SEEDS = 14
+
 
 class EndgameDB:
-    def __init__(self) -> None:
-        self.db: Dict[str, int] = {} # Hash (str) -> Score (int)
-        self.max_seeds: int = 0
-        self.load()
+    def __init__(self, max_seeds: int = DEFAULT_MAX_SEEDS) -> None:
+        self.db: Dict[int, int] = {}
+        self.max_seeds: int = max_seeds
+        self.hits: int = 0
+        self.stores: int = 0
 
-    def load(self) -> None:
-        if os.path.exists(DB_FILE):
-            try:
-                with open(DB_FILE, 'r') as f:
-                    data = json.load(f)
-                    self.db = data.get("positions", {})
-                    self.max_seeds = data.get("max_seeds", 0)
-                    print(f"Loaded {len(self.db)} solved positions from {DB_FILE}. Max seeds: {self.max_seeds}")
-            except Exception as e:
-                print(f"Error loading {DB_FILE}: {e}")
-                self.db = {}
-        else:
-            print("No endgame database found. Starting fresh.")
+    # --- queries ------------------------------------------------------------
 
-    def save(self) -> None:
-        try:
-            with open(DB_FILE, 'w') as f:
-                data = {
-                    "max_seeds": self.max_seeds,
-                    "positions": self.db
-                }
-                json.dump(data, f, indent=4)
-            print(f"Saved {len(self.db)} positions to {DB_FILE}.")
-        except Exception as e:
-            print(f"Error saving {DB_FILE}: {e}")
+    def covers(self, board: List[int]) -> bool:
+        """Cheap gate: is this position small enough to possibly be stored?"""
+        return seeds_in_play(board) <= self.max_seeds
 
     def lookup(self, board: List[int], player: int) -> Optional[int]:
-        """
-        Returns exact score if position is solved, else None.
-        """
-        h = str(zobrist.compute_hash(board, player))
-        return self.db.get(h)
+        """Exact value for this position, or ``None`` if not solved yet."""
+        value = self.db.get(zobrist.compute_hash(board, player))
+        if value is not None:
+            self.hits += 1
+        return value
 
     def add(self, board: List[int], player: int, score: int) -> None:
-        """
-        Adds a solved position.
-        """
-        h = str(zobrist.compute_hash(board, player))
-        self.db[h] = score
-        
-        current_seeds = sum(board)
-        if current_seeds > self.max_seeds:
-            self.max_seeds = current_seeds
+        """Record a proven exact value."""
+        if not self.covers(board):
+            return
+        key = zobrist.compute_hash(board, player)
+        if key not in self.db:
+            self.stores += 1
+        self.db[key] = int(score)
 
+    # --- maintenance --------------------------------------------------------
+
+    def clear(self) -> None:
+        self.db.clear()
+        self.hits = 0
+        self.stores = 0
+
+    def __len__(self) -> int:
+        return len(self.db)
+
+    def dump(self) -> dict:
+        """Serialisable snapshot (JSON needs string keys)."""
+        return {
+            "max_seeds": self.max_seeds,
+            "positions": {str(k): v for k, v in self.db.items()},
+        }
+
+    def restore(self, data: dict) -> None:
+        self.max_seeds = int(data.get("max_seeds", DEFAULT_MAX_SEEDS))
+        self.db = {int(k): int(v) for k, v in data.get("positions", {}).items()}
+
+
+# Global instance used by the search.
 endgame_db = EndgameDB()

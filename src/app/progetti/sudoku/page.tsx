@@ -13,6 +13,7 @@ const MODULES = [
 export default function SudokuPage() {
   return (
     <PyodideGamePage
+      gameId="sudoku"
       title="Sudoku Solver"
       tag="Python + Pyodide"
       scriptPath="/games/sudoku/main.py"
