@@ -4,43 +4,80 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maze Generator - Peaceful Gardens</title>
+    <title>Maze Generator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div id="app">
         <header>
-            <h1>Maze Generator</h1>
+            <div class="brand">
+                <span class="mark"></span>
+                <h1>Maze Generator</h1>
+            </div>
+
             <div class="controls">
-                <select id="algo-select">
-                    <option value="backtracker">Recursive Backtracker</option>
-                    <option value="prims">Prim's Algorithm</option>
-                    <option value="division">Recursive Division</option>
-                </select>
-                <div class="control-group">
-                    <label>Export</label>
-                    <div class="export-buttons">
-                        <button class="small" id="btn-export-png">PNG</button>
-                        <button class="small" id="btn-export-json">JSON</button>
-                        <button class="small" id="btn-export-csv">CSV</button>
-                        <button class="small" id="btn-export-txt">TXT</button>
-                    </div>
+                <label class="field">
+                    <span>Algorithm</span>
+                    <select id="algo-select">
+                        <option value="backtracker">Recursive Backtracker</option>
+                        <option value="prims">Prim's Algorithm</option>
+                        <option value="division">Recursive Division</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span>Size</span>
+                    <select id="size-select">
+                        <option value="small">21 × 21</option>
+                        <option value="medium" selected>31 × 31</option>
+                        <option value="large">41 × 41</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span>Speed</span>
+                    <input type="range" id="speed-range" min="1" max="60" value="8">
+                </label>
+
+                <button id="btn-generate" class="primary">Generate</button>
+                <button id="btn-instant">Instant</button>
+
+                <div class="exports">
+                    <button class="small" id="btn-export-png" title="Download the maze as a PNG">PNG</button>
+                    <button class="small" id="btn-export-json" title="Download the wall bitmask as JSON">JSON</button>
                 </div>
-                <div class="control-group">
-                    <label>Speed</label>
-                    <input type="range" id="speed-range" min="1" max="50" value="10">
-                </div>
-                <button id="btn-generate">Generate</button>
             </div>
         </header>
+
         <main>
-            <canvas id="maze-canvas"></canvas>
+            <div id="stage">
+                <canvas id="maze-canvas"></canvas>
+                <div id="toast"></div>
+            </div>
+
+            <aside id="side">
+                <p id="algo-blurb" class="blurb"></p>
+
+                <div class="stats">
+                    <div class="stat"><span class="label">Cells</span><span class="value" id="stat-cells">—</span></div>
+                    <div class="stat"><span class="label">Passages</span><span class="value" id="stat-carved">—</span></div>
+                    <div class="stat"><span class="label">Steps</span><span class="value" id="stat-steps">—</span></div>
+                    <div class="stat"><span class="label">Result</span><span class="value" id="stat-perfect">—</span></div>
+                </div>
+
+                <div class="legend">
+                    <h2>Reading the picture</h2>
+                    <p><i class="chip cool"></i> carved early &nbsp;<i class="chip warm"></i> carved late — the colour ramp shows the order the algorithm worked in.</p>
+                    <p><i class="chip cursor"></i> the algorithm's cursor.</p>
+                    <p><i class="chip frontier"></i> Prim's frontier: cells adjacent to the tree, waiting to be pulled in.</p>
+                    <p><i class="chip rect"></i> Recursive Division's active rectangle.</p>
+                    <p class="note">All three produce a <strong>perfect maze</strong>: exactly one path between any two cells — every cell reachable, no loops.</p>
+                </div>
+            </aside>
         </main>
-        <footer>
-            <p>Peaceful Algorithms &bull; Native JS Visualization</p>
-        </footer>
     </div>
+
     <script type="module" src="src/main.js"></script>
 </body>
 
