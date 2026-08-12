@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twin Drift</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: #05030f;
+  color: #f4f0ff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#wrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 2 / 3;
+  max-width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(167, 139, 250, 0.2);
+}
+
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.hud {
+  position: absolute;
+  inset: 0;
+  padding: 14px 16px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud .top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+.stat .k {
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(196, 181, 253, 0.75);
+}
+
+.stat .v {
+  font-size: 1.5rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  text-shadow: 0 0 20px rgba(167, 139, 250, 0.75);
+}
+
+.stat.right { text-align: right; }
+
+#mult {
+  align-self: center;
+  margin-top: 4px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fde047;
+  text-shadow: 0 0 22px rgba(253, 224, 71, 0.9);
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  transform: scale(0.85);
+}
+
+#mult.on { opacity: 1; transform: scale(1); }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(5, 3, 15, 0.74);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.overlay[hidden] { display: none; }
+
+.panel {
+  width: min(320px, 100%);
+  text-align: center;
+  padding: 26px 22px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, rgba(45, 28, 84, 0.95), rgba(15, 9, 32, 0.97));
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.6);
+}
+
+.panel h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #f0abfc, #67e8f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.panel p { font-size: 0.82rem; color: #b6a8d9; line-height: 1.55; margin-bottom: 14px; }
+
+.scores { display: flex; gap: 9px; margin-bottom: 15px; }
+
+.scores div {
+  flex: 1;
+  padding: 9px;
+  border-radius: 11px;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+}
+
+.scores .n { font-size: 1.25rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.scores .k { font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: #b6a8d9; }
+.scores .best .n { color: #fde047; }
+
+.keys { font-size: 0.7rem; color: #8b7bb8; line-height: 1.9; margin-bottom: 15px; }
+
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(167, 139, 250, 0.16);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-bottom-width: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.66rem;
+  color: #ddd6fe;
+}
+
+button {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 680;
+  color: #1a0b2e;
+  background: linear-gradient(140deg, #f5d0fe, #c084fc);
+  border: none;
+  border-radius: 11px;
+  padding: 11px 28px;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 10px 26px rgba(192, 132, 252, 0.35);
+  transition: transform 0.1s;
+}
+
+button:active { transform: translateY(1px); }
+
+/* Touch controls, shown only on coarse pointers. */
+#touch {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: none;
+  gap: 8px;
+  padding: 12px;
+  pointer-events: auto;
+}
+
+#touch button {
+  flex: 1;
+  padding: 16px 0;
+  font-size: 0.78rem;
+  background: rgba(167, 139, 250, 0.16);
+  color: #ede9fe;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  box-shadow: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #touch { display: flex; }
+}
+</style>
+</head>
+
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <div class="hud">
+    <div class="top">
+      <div class="stat"><div class="k">Score</div><div class="v" id="score">0</div></div>
+      <div class="stat right"><div class="k">Distance</div><div class="v" id="dist">0</div></div>
+    </div>
+    <div id="mult">DRIFT x1.0</div>
+  </div>
+
+  <div id="touch">
+    <button data-hold="left">◀ Left</button>
+    <button data-hold="drift">Drift</button>
+    <button data-hold="right">Right ▶</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="ov-title">Twin Drift</h2>
+      <p id="ov-text">You steer <strong>both</strong> cars at once — and they mirror each other. Thread them through the gaps together.</p>
+      <div class="scores" id="ov-scores" hidden>
+        <div><div class="n" id="ov-score">0</div><div class="k">Score</div></div>
+        <div><div class="n" id="ov-dist">0</div><div class="k">Distance</div></div>
+        <div class="best"><div class="n" id="ov-best">0</div><div class="k">Best</div></div>
+      </div>
+      <div class="keys">
+        <kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> steer both<br>
+        hold <kbd>Space</kbd> to drift — less grip, more points
+      </div>
+      <button id="ov-btn">Drive</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================== constants */
+
+const W = 480, H = 720;
+const MID = W / 2;
+const LANE_PAD = 16;                 // road edge inset within each half
+const CAR_W = 26, CAR_H = 44;
+const CAR_Y = H - 150;               // both cars sit at a fixed screen height
+
+const GRIP = 0.22;                   // how fast lateral velocity reaches target
+const DRIFT_GRIP = 0.055;            // ... and how much it loses when drifting
+const STEER = 3.5;
+const MAX_VX = 5.6;
+
+const SPEED_START = 3.4, SPEED_MAX = 8.5;
+const SPAWN_START = 62, SPAWN_MIN = 30;
+
+const OB_W = 54, OB_H = 26;
+const PICKUP_R = 11;
+
+function mulberry32(seed) {
+  let a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function safeGet(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch { /* sandboxed */ } }
+
+/* ================================================================== state */
+
+const game = {
+  seed: 1,
+  rng: mulberry32(1),
+  status: "ready",              // ready | playing | over
+  cars: [],
+  obstacles: [],
+  pickups: [],
+  skids: [],
+  sparks: [],
+  input: { dir: 0, drift: false },
+  ticks: 0,
+  sinceSpawn: 0,
+  distance: 0,
+  score: 0,
+  driftTime: 0,
+  multiplier: 1,
+  best: Number(safeGet("twindrift-best", "0")) || 0,
+  shake: 0,
+  crashed: null,
+};
+
+/** Half 0 is the left road, half 1 the right. Cars mirror each other. */
+const halfLeft = (half) => (half === 0 ? LANE_PAD : MID + LANE_PAD);
+const halfRight = (half) => (half === 0 ? MID - LANE_PAD : W - LANE_PAD);
+
+const speed = () => SPEED_START + (SPEED_MAX - SPEED_START) * Math.min(1, game.distance / 4000);
+const spawnEvery = () => SPAWN_START - (SPAWN_START - SPAWN_MIN) * Math.min(1, game.distance / 4000);
+
+function reset(seed) {
+  game.seed = seed === undefined ? game.seed : (seed >>> 0 || 1);
+  game.rng = mulberry32(game.seed);
+  game.status = "ready";
+  game.cars = [
+    { half: 0, x: (LANE_PAD + MID - LANE_PAD) / 2, vx: 0, tilt: 0 },
+    { half: 1, x: (MID + LANE_PAD + W - LANE_PAD) / 2, vx: 0, tilt: 0 },
+  ];
+  game.obstacles = [];
+  game.pickups = [];
+  game.skids = [];
+  game.sparks = [];
+  game.input = { dir: 0, drift: false };
+  game.ticks = 0;
+  game.sinceSpawn = 0;
+  game.distance = 0;
+  game.score = 0;
+  game.driftTime = 0;
+  game.multiplier = 1;
+  game.shake = 0;
+  game.crashed = null;
+}
+
+/* ================================================================== spawn */
+
+function spawnRow() {
+  // Each half gets an obstacle at a random lateral position, always leaving a
+  // gap wide enough for a car to get through.
+  for (const half of [0, 1]) {
+    const lo = halfLeft(half);
+    const hi = halfRight(half);
+    const span = hi - lo;
+    const x = lo + game.rng() * Math.max(1, span - OB_W);
+    game.obstacles.push({ half, x, y: -OB_H, w: OB_W, h: OB_H });
+  }
+  // Occasionally an orb, on one side only.
+  if (game.rng() < 0.55) {
+    const half = game.rng() < 0.5 ? 0 : 1;
+    const lo = halfLeft(half) + PICKUP_R;
+    const hi = halfRight(half) - PICKUP_R;
+    game.pickups.push({ half, x: lo + game.rng() * (hi - lo), y: -PICKUP_R * 2, taken: false });
+  }
+}
+
+function crash(car) {
+  if (game.status !== "playing") return;
+  game.status = "over";
+  game.crashed = car.half;
+  game.shake = 1;
+  for (let i = 0; i < 26; i++) {
+    game.sparks.push({
+      x: car.x, y: CAR_Y,
+      vx: (game.rng() - 0.5) * 8, vy: (game.rng() - 0.5) * 8 - 2,
+      life: 1, hue: 280 + game.rng() * 60,
+    });
+  }
+  if (game.score > game.best) { game.best = Math.round(game.score); safeSet("twindrift-best", String(game.best)); }
+}
+
+const overlaps = (car, o) =>
+  car.half === o.half
+  && car.x - CAR_W / 2 < o.x + o.w
+  && car.x + CAR_W / 2 > o.x
+  && CAR_Y - CAR_H / 2 < o.y + o.h
+  && CAR_Y + CAR_H / 2 > o.y;
+
+/* =================================================================== tick */
+
+function tick() {
+  game.ticks++;
+  if (game.shake > 0) game.shake = Math.max(0, game.shake - 0.035);
+
+  for (const s of game.sparks) { s.x += s.vx; s.y += s.vy; s.vy += 0.28; s.life -= 0.02; }
+  game.sparks = game.sparks.filter((s) => s.life > 0);
+  for (const s of game.skids) s.life -= 0.012;
+  game.skids = game.skids.filter((s) => s.life > 0);
+
+  if (game.status !== "playing") return;
+
+  const v = speed();
+  game.distance += v / 10;
+
+  const drifting = game.input.drift && game.input.dir !== 0;
+  const grip = game.input.drift ? DRIFT_GRIP : GRIP;
+
+  game.cars.forEach((car, i) => {
+    // The mirror: the right-hand car steers opposite the left one. That is the
+    // whole game -- one input, two cars, two different sets of gaps.
+    const dir = i === 0 ? game.input.dir : -game.input.dir;
+    const target = dir * STEER * (game.input.drift ? 1.5 : 1);
+    car.vx += (target - car.vx) * grip;
+    car.vx = Math.max(-MAX_VX, Math.min(MAX_VX, car.vx));
+    car.x += car.vx;
+
+    const lo = halfLeft(car.half) + CAR_W / 2;
+    const hi = halfRight(car.half) - CAR_W / 2;
+    if (car.x < lo) { car.x = lo; car.vx = 0; }
+    if (car.x > hi) { car.x = hi; car.vx = 0; }
+
+    car.tilt += (car.vx / MAX_VX * 0.42 - car.tilt) * 0.2;
+
+    if (drifting && Math.abs(car.vx) > 1.2) {
+      game.skids.push({ half: car.half, x: car.x, y: CAR_Y + CAR_H / 2 - 4, life: 1 });
+    }
+  });
+
+  // Drift multiplier builds while sliding, decays otherwise.
+  if (drifting && Math.abs(game.cars[0].vx) > 1.2) {
+    game.driftTime++;
+    game.multiplier = Math.min(5, 1 + game.driftTime / 90);
+  } else {
+    game.driftTime = Math.max(0, game.driftTime - 3);
+    game.multiplier = Math.max(1, 1 + game.driftTime / 90);
+  }
+
+  game.score += (v / 10) * game.multiplier;
+
+  game.sinceSpawn++;
+  if (game.obstacles.length === 0 || game.sinceSpawn >= spawnEvery()) { spawnRow(); game.sinceSpawn = 0; }
+
+  for (const o of game.obstacles) o.y += v;
+  for (const p of game.pickups) p.y += v;
+  game.obstacles = game.obstacles.filter((o) => o.y < H + 40);
+  game.pickups = game.pickups.filter((p) => p.y < H + 40 && !p.taken);
+
+  for (const car of game.cars) {
+    for (const o of game.obstacles) {
+      if (overlaps(car, o)) { crash(car); return; }
+    }
+    for (const p of game.pickups) {
+      if (p.taken || p.half !== car.half) continue;
+      const dx = p.x - car.x;
+      const dy = p.y - CAR_Y;
+      if (Math.abs(dx) < CAR_W / 2 + PICKUP_R && Math.abs(dy) < CAR_H / 2 + PICKUP_R) {
+        p.taken = true;
+        game.score += 120 * game.multiplier;
+        for (let i = 0; i < 8; i++) {
+          game.sparks.push({
+            x: p.x, y: p.y,
+            vx: (game.rng() - 0.5) * 5, vy: (game.rng() - 0.5) * 5,
+            life: 1, hue: 180 + game.rng() * 40,
+          });
+        }
+      }
+    }
+  }
+}
+
+/* ================================================================= render */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d", { alpha: false });
+
+function fit() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const r = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round((r.width || W) * dpr));
+  const h = Math.max(1, Math.round((r.height || H) * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+
+function drawRoad(t) {
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#1a0b3d");
+  sky.addColorStop(0.5, "#0d0722");
+  sky.addColorStop(1, "#05030f");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // Synthwave horizon grid.
+  ctx.strokeStyle = "rgba(167, 139, 250, 0.16)";
+  ctx.lineWidth = 1;
+  const scroll = (t * 2) % 40;
+  for (let y = -40; y < H; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + scroll);
+    ctx.lineTo(W, y + scroll);
+    ctx.stroke();
+  }
+
+  // The two roads.
+  for (const half of [0, 1]) {
+    const lo = halfLeft(half);
+    const hi = halfRight(half);
+    const g = ctx.createLinearGradient(lo, 0, hi, 0);
+    g.addColorStop(0, "rgba(30, 20, 60, 0.92)");
+    g.addColorStop(0.5, "rgba(20, 13, 44, 0.95)");
+    g.addColorStop(1, "rgba(30, 20, 60, 0.92)");
+    ctx.fillStyle = g;
+    ctx.fillRect(lo, 0, hi - lo, H);
+
+    ctx.strokeStyle = half === 0 ? "rgba(103, 232, 249, 0.75)" : "rgba(240, 171, 252, 0.75)";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(lo, 0); ctx.lineTo(lo, H);
+    ctx.moveTo(hi, 0); ctx.lineTo(hi, H);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Dashed centre line, scrolling.
+    ctx.strokeStyle = "rgba(196, 181, 253, 0.28)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([22, 26]);
+    ctx.lineDashOffset = -((t * 4) % 48);
+    ctx.beginPath();
+    ctx.moveTo((lo + hi) / 2, 0);
+    ctx.lineTo((lo + hi) / 2, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Divider between the twin roads.
+  ctx.strokeStyle = "rgba(253, 224, 71, 0.35)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 12]);
+  ctx.beginPath();
+  ctx.moveTo(MID, 0); ctx.lineTo(MID, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawCar(car, index) {
+  const colour = index === 0 ? "#67e8f9" : "#f0abfc";
+  ctx.save();
+  ctx.translate(car.x, CAR_Y);
+  ctx.rotate(car.tilt);
+
+  ctx.shadowColor = colour;
+  ctx.shadowBlur = 22;
+
+  // Body
+  ctx.fillStyle = colour;
+  ctx.beginPath();
+  ctx.roundRect(-CAR_W / 2, -CAR_H / 2, CAR_W, CAR_H, 7);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Cockpit
+  ctx.fillStyle = "rgba(10, 5, 25, 0.75)";
+  ctx.beginPath();
+  ctx.roundRect(-CAR_W / 2 + 5, -CAR_H / 2 + 9, CAR_W - 10, CAR_H * 0.4, 4);
+  ctx.fill();
+
+  // Headlight wash
+  const beam = ctx.createLinearGradient(0, -CAR_H / 2, 0, -CAR_H / 2 - 70);
+  beam.addColorStop(0, "rgba(255,255,255,0.22)");
+  beam.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = beam;
+  ctx.beginPath();
+  ctx.moveTo(-CAR_W / 2 + 3, -CAR_H / 2);
+  ctx.lineTo(CAR_W / 2 - 3, -CAR_H / 2);
+  ctx.lineTo(CAR_W, -CAR_H / 2 - 70);
+  ctx.lineTo(-CAR_W, -CAR_H / 2 - 70);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function draw(t) {
+  fit();
+  const scale = canvas.width / W;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (game.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * 11 * game.shake, (Math.random() - 0.5) * 11 * game.shake);
+  }
+
+  drawRoad(t);
+
+  for (const s of game.skids) {
+    ctx.globalAlpha = s.life * 0.4;
+    ctx.fillStyle = "#2a2140";
+    ctx.fillRect(s.x - 9, s.y, 5, 9);
+    ctx.fillRect(s.x + 4, s.y, 5, 9);
+  }
+  ctx.globalAlpha = 1;
+
+  for (const o of game.obstacles) {
+    ctx.fillStyle = "rgba(244, 63, 94, 0.2)";
+    ctx.strokeStyle = "#fb7185";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "#fb7185";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.roundRect(o.x, o.y, o.w, o.h, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  for (const p of game.pickups) {
+    if (p.taken) continue;
+    const pulse = 1 + Math.sin(t * 0.2 + p.x) * 0.14;
+    ctx.fillStyle = "#fde047";
+    ctx.shadowColor = "#fde047";
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PICKUP_R * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  game.cars.forEach(drawCar);
+
+  for (const s of game.sparks) {
+    ctx.globalAlpha = Math.max(0, s.life);
+    ctx.fillStyle = `hsl(${s.hue}, 95%, 65%)`;
+    ctx.fillRect(s.x - 2.5, s.y - 2.5, 5, 5);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ===================================================================== UI */
+
+const el = (id) => document.getElementById(id);
+
+function syncUI() {
+  el("score").textContent = String(Math.round(game.score));
+  el("dist").textContent = `${Math.round(game.distance)}m`;
+  const m = el("mult");
+  if (game.multiplier > 1.05 && game.status === "playing") {
+    m.classList.add("on");
+    m.textContent = `DRIFT x${game.multiplier.toFixed(1)}`;
+  } else {
+    m.classList.remove("on");
+  }
+
+  const over = game.status === "over";
+  const ready = game.status === "ready";
+  el("overlay").hidden = !(over || ready);
+  el("ov-scores").hidden = !over;
+  el("ov-title").textContent = over ? "Wrecked" : "Twin Drift";
+  el("ov-text").innerHTML = over
+    ? `The ${game.crashed === 0 ? "left" : "right"} car hit a barrier.`
+    : "You steer <strong>both</strong> cars at once — and they mirror each other. Thread them through the gaps together.";
+  el("ov-btn").textContent = over ? "Drive again" : "Drive";
+  el("ov-score").textContent = String(Math.round(game.score));
+  el("ov-dist").textContent = `${Math.round(game.distance)}m`;
+  el("ov-best").textContent = String(game.best);
+}
+
+let last = performance.now();
+let acc = 0;
+const STEP = 1000 / 60;
+
+function frame(now) {
+  const dt = Math.min(now - last, 250);
+  last = now;
+  acc += dt;
+  let guard = 0;
+  while (acc >= STEP && guard++ < 6) { acc -= STEP; tick(); }
+  draw(now / 16.67);
+  syncUI();
+  requestAnimationFrame(frame);
+}
+
+/* ================================================================== input */
+
+function start() {
+  if (game.status === "ready") { game.status = "playing"; last = performance.now(); acc = 0; }
+  else if (game.status === "over") { reset((Math.random() * 0xffffffff) >>> 0); game.status = "playing"; }
+}
+
+const HELD = { left: false, right: false, drift: false };
+
+function applyHeld() {
+  game.input.dir = (HELD.right ? 1 : 0) - (HELD.left ? 1 : 0);
+  game.input.drift = HELD.drift;
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (k === "arrowleft" || k === "a") { HELD.left = true; start(); e.preventDefault(); }
+  if (k === "arrowright" || k === "d") { HELD.right = true; start(); e.preventDefault(); }
+  if (e.code === "Space") { HELD.drift = true; start(); e.preventDefault(); }
+  applyHeld();
+});
+
+window.addEventListener("keyup", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "arrowleft" || k === "a") HELD.left = false;
+  if (k === "arrowright" || k === "d") HELD.right = false;
+  if (e.code === "Space") HELD.drift = false;
+  applyHeld();
+});
+
+for (const b of document.querySelectorAll("#touch button")) {
+  const key = b.dataset.hold;
+  const down = (e) => { e.preventDefault(); HELD[key] = true; start(); applyHeld(); };
+  const up = (e) => { e.preventDefault(); HELD[key] = false; applyHeld(); };
+  b.addEventListener("pointerdown", down);
+  b.addEventListener("pointerup", up);
+  b.addEventListener("pointercancel", up);
+  b.addEventListener("pointerleave", up);
+}
+
+el("ov-btn").addEventListener("click", start);
+canvas.addEventListener("pointerdown", () => { if (game.status !== "playing") start(); });
+window.addEventListener("resize", fit);
+
+/* ======================================================= harness contract */
+
+function runSelfTest() {
+  const results = [];
+  const check = (name, ok, detail = "") => { results.push({ name, ok: !!ok, detail: String(detail) }); };
+  const saveBest = game.best;
+
+  // Mirroring: one input must move the two cars in opposite directions.
+  reset(4);
+  game.status = "playing";
+  const x0 = game.cars.map((c) => c.x);
+  game.input = { dir: 1, drift: false };
+  for (let i = 0; i < 20; i++) tick();
+  const moved = game.cars.map((c, i) => c.x - x0[i]);
+  check("one input steers the two cars in opposite directions",
+    moved[0] > 1 && moved[1] < -1, `left ${moved[0].toFixed(1)}, right ${moved[1].toFixed(1)}`);
+
+  // Cars stay on their own road.
+  reset(5);
+  game.status = "playing";
+  game.input = { dir: -1, drift: false };
+  let escaped = null;
+  for (let i = 0; i < 400 && game.status === "playing"; i++) {
+    tick();
+    for (const c of game.cars) {
+      if (c.x < halfLeft(c.half) - 1 || c.x > halfRight(c.half) + 1) escaped = c;
+    }
+  }
+  check("neither car can leave its own road", escaped === null, escaped ? JSON.stringify(escaped) : "");
+
+  // Drifting reduces grip, so the same input slides further.
+  const slideWith = (drift) => {
+    reset(9);
+    game.status = "playing";
+    game.input = { dir: 1, drift };
+    for (let i = 0; i < 12; i++) tick();
+    const held = game.cars[0].x;
+    game.input = { dir: 0, drift };
+    for (let i = 0; i < 12; i++) tick();
+    return game.cars[0].x - held;   // how far it keeps sliding after letting go
+  };
+  const coastNormal = slideWith(false);
+  const coastDrift = slideWith(true);
+  check("drifting keeps sliding further than gripping",
+    coastDrift > coastNormal, `drift ${coastDrift.toFixed(2)} vs grip ${coastNormal.toFixed(2)}`);
+
+  // Score and distance climb while driving.
+  reset(7);
+  game.status = "playing";
+  for (let i = 0; i < 120 && game.status === "playing"; i++) tick();
+  check("distance increases while driving", game.distance > 0, game.distance.toFixed(1));
+  check("score increases while driving", game.score > 0, game.score.toFixed(1));
+
+  // Standing still with obstacles coming must eventually crash.
+  reset(2);
+  game.status = "playing";
+  game.input = { dir: 0, drift: false };
+  let crashedAt = -1;
+  for (let i = 0; i < 4000 && game.status === "playing"; i++) { tick(); crashedAt = i; }
+  check("never steering eventually crashes", game.status === "over", `after ${crashedAt} ticks`);
+
+  // Determinism.
+  const run = (s) => {
+    reset(s);
+    game.status = "playing";
+    game.input = { dir: 1, drift: false };
+    for (let i = 0; i < 200; i++) tick();
+    return JSON.stringify({ o: game.obstacles, c: game.cars, d: Math.round(game.distance) });
+  };
+  const a = run(31), b = run(31), c = run(32);
+  check("same seed reproduces the same run", a === b);
+  check("different seeds diverge", a !== c);
+
+  game.best = saveBest;
+  reset(1);
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+window.__GAME__ = {
+  id: "twin-drift",
+  version: 1,
+  ready: true,
+  meta: { name: "Twin Drift", players: "1", mode: "realtime" },
+
+  getState() {
+    return {
+      status: game.status === "over" ? "over" : game.status === "ready" ? "idle" : "playing",
+      turn: null,
+      score: Math.round(game.score),
+      distance: Math.round(game.distance),
+      best: game.best,
+      seed: game.seed,
+      ticks: game.ticks,
+      multiplier: Math.round(game.multiplier * 100) / 100,
+      drifting: game.input.drift && game.input.dir !== 0,
+      cars: game.cars.map((c) => ({ half: c.half, x: Math.round(c.x * 100) / 100, vx: Math.round(c.vx * 100) / 100 })),
+      obstacles: game.obstacles.map((o) => ({ half: o.half, x: Math.round(o.x * 100) / 100, y: Math.round(o.y * 100) / 100 })),
+      pickups: game.pickups.filter((p) => !p.taken).length,
+      speed: Math.round(speed() * 100) / 100,
+      crashed: game.crashed,
+      world: { w: W, h: H, mid: MID },
+    };
+  },
+
+  reset(seed = 1) {
+    reset(seed);
+    // The harness drives ticks itself, so start rolling rather than on the
+    // title card.
+    game.status = "playing";
+    syncUI();
+  },
+
+  step(n = 1) {
+    for (let i = 0; i < n; i++) tick();
+    syncUI();
+  },
+
+  input(action, payload) {
+    switch (action) {
+      case "left": HELD.left = true; HELD.right = false; applyHeld(); return { ok: true };
+      case "right": HELD.right = true; HELD.left = false; applyHeld(); return { ok: true };
+      case "release": HELD.left = false; HELD.right = false; applyHeld(); return { ok: true };
+      case "drift": HELD.drift = true; applyHeld(); return { ok: true };
+      case "grip": HELD.drift = false; applyHeld(); return { ok: true };
+      case "start": start(); return { ok: true, status: game.status };
+      case "restart": this.reset(payload?.seed ?? game.seed); return { ok: true };
+      case "selftest": return runSelfTest();
+      default: return { ok: false, reason: `unknown action '${action}'` };
+    }
+  },
+
+  actions: () => ["left", "right", "release", "drift", "grip", "start", "restart", "selftest"],
+};
+
+/* ==================================================================== go */
+
+reset((Math.random() * 0xffffffff) >>> 0);
+fit();
+syncUI();
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>
