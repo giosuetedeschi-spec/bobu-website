@@ -99,12 +99,48 @@ button {
 }
 
 button:active { transform: translateY(1px); }
+
+button.ghost {
+  margin-top: 9px;
+  background: transparent;
+  color: #a5adc0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 10px 26px;
+}
+
+/* Pause control, mirroring the circular button in the reference. */
+#pause-btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #f5f6fa;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+  z-index: 3;
+}
+
+#pause-btn[hidden] { display: none; }
+#pause-btn svg { fill: currentColor; }
+#pause-btn:hover { background: rgba(255, 255, 255, 0.26); }
 </style>
 </head>
 
 <body>
 <div id="wrap">
   <canvas id="game"></canvas>
+
+  <button id="pause-btn" type="button" aria-label="Pause" hidden>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></svg>
+  </button>
 
   <div class="overlay" id="overlay">
     <div class="panel">
@@ -119,6 +155,7 @@ button:active { transform: translateY(1px); }
         <kbd>←</kbd><kbd>→</kbd> &nbsp; <kbd>A</kbd><kbd>L</kbd> &nbsp; <kbd>Z</kbd><kbd>M</kbd> &nbsp; or click a half
       </div>
       <button id="ov-btn">Play</button>
+      <button id="ov-btn2" class="ghost" hidden>Restart</button>
     </div>
   </div>
 </div>
@@ -210,6 +247,7 @@ const game = {
   seed: 1,
   rng: mulberry32(1),
   status: 'ready',                 // ready | playing | over
+  paused: false,
   balls: [],
   spikes: [],                      // { side, y } -- side is the lane it blocks
   gates: [],                       // { y, passed }
@@ -262,6 +300,7 @@ function reset(seed) {
   game.seed = seed === undefined ? game.seed : (seed >>> 0 || 1);
   game.rng = mulberry32(game.seed);
   game.status = 'ready';
+  game.paused = false;
   game.balls = [makeBall(0), makeBall(1)];
   game.spikes = [];
   game.gates = [];
@@ -388,7 +427,7 @@ function tick() {
   for (const p of game.particles) { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life -= 0.02; }
   game.particles = game.particles.filter((p) => p.life > 0);
 
-  if (game.status !== 'playing') return;
+  if (game.status !== 'playing' || game.paused) return;
 
   const v = speed();
   game.distance += v;
@@ -401,9 +440,17 @@ function tick() {
   for (const st of game.stars) { st.y += v * st.par; if (st.y > H) st.y -= H; }
   for (const cl of game.clouds) { cl.y += v * cl.par; if (cl.y > H + cl.h) cl.y -= H + cl.h * 2; }
 
-  // Trail motes are world-fixed too: dropped at the ball and left behind.
-  for (const m of game.motes) { m.y += v; m.x += m.vx; m.life--; }
-  game.motes = game.motes.filter((m) => m.life > 0 && m.y < H + 20);
+  // Motes stream *backwards along the ball's own path* -- they do not inherit
+  // the course scroll, so the tail traces the arc instead of raining straight
+  // down. They coast and slow rather than falling.
+  for (const m of game.motes) {
+    m.x += m.vx;
+    m.y += m.vy;
+    m.vx *= 0.93;
+    m.vy *= 0.93;
+    m.life--;
+  }
+  game.motes = game.motes.filter((m) => m.life > 0);
 
   const themeIndex = Math.floor(game.distance / 10 / THEME_EVERY) % THEMES.length;
   if (themeIndex !== game.theme) { game.theme = themeIndex; game.themeMix = 0; }
@@ -442,11 +489,15 @@ function tick() {
     // a visible comet tail and sitting on the wall leaves almost nothing.
     const moving = Math.abs(ball.vel) > 0.6 || ball.out > 6;
     if (moving && game.ticks % TRAIL_EVERY === 0) {
+      // Emitted moving the opposite way to the ball, at a fraction of its
+      // speed, with a little spread so the tail reads as particles.
+      const screenVel = outward(ball.side) * ball.vel;
       game.motes.push({
         x: ballX(ball),
-        y: BALL_Y + (game.rng() - 0.5) * 4,
+        y: BALL_Y + (game.rng() - 0.5) * 3,
         r: 1.4 + game.rng() * 2.4,
-        vx: -outward(ball.side) * (0.15 + game.rng() * 0.35),
+        vx: -screenVel * (0.22 + game.rng() * 0.2),
+        vy: (game.rng() - 0.5) * 0.5,
         life: Math.round(TRAIL_LIFE * (0.6 + game.rng() * 0.4)),
         max: TRAIL_LIFE,
         side: ball.side,
@@ -626,9 +677,10 @@ function draw(t) {
     ctx.globalAlpha = cl.a;
     ctx.fillStyle = dark;
     ctx.beginPath();
-    ctx.ellipse(cl.x + cl.w * 0.3, cl.y, cl.w * 0.34, cl.h * 0.62, 0, 0, Math.PI * 2);
-    ctx.ellipse(cl.x + cl.w * 0.58, cl.y + cl.h * 0.18, cl.w * 0.28, cl.h * 0.5, 0, 0, Math.PI * 2);
-    ctx.ellipse(cl.x + cl.w * 0.75, cl.y - cl.h * 0.08, cl.w * 0.24, cl.h * 0.42, 0, 0, Math.PI * 2);
+    // Mirrored: the bulk sits on the right and the wisp tapers off to the left.
+    ctx.ellipse(cl.x + cl.w * 0.7, cl.y, cl.w * 0.34, cl.h * 0.62, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.42, cl.y + cl.h * 0.18, cl.w * 0.28, cl.h * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.25, cl.y - cl.h * 0.08, cl.w * 0.24, cl.h * 0.42, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -806,14 +858,21 @@ const el = (id) => document.getElementById(id);
 function syncUI() {
   const over = game.status === 'over';
   const ready = game.status === 'ready';
-  el('overlay').hidden = !(over || ready);
-  el('ov-scores').hidden = !over;
+  const paused = game.status === 'playing' && game.paused;
+
+  el('overlay').hidden = !(over || ready || paused);
+  el('ov-scores').hidden = !(over || paused);
   el('ov-keys').hidden = over;
-  el('ov-title').textContent = over ? 'CRASHED' : 'TWINS';
+  el('ov-btn2').hidden = !paused;
+  el('pause-btn').hidden = !(game.status === 'playing' && !game.paused);
+
+  el('ov-title').textContent = over ? 'CRASHED' : paused ? 'PAUSED' : 'TWINS';
   el('ov-text').textContent = over
     ? `Your ${game.dead === 0 ? 'left' : 'right'} ball clipped a spike.`
-    : 'Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.';
-  el('ov-btn').textContent = over ? 'Again' : 'Play';
+    : paused
+      ? 'Take your time — the course is holding.'
+      : 'Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.';
+  el('ov-btn').textContent = over ? 'Again' : paused ? 'Resume' : 'Play';
   el('ov-score').textContent = String(Math.round(game.score));
   el('ov-best').textContent = String(game.best);
 }
@@ -840,11 +899,24 @@ function start() {
   else if (game.status === 'over') { reset((Math.random() * 0xffffffff) >>> 0); game.status = 'playing'; }
 }
 
+function setPaused(value) {
+  if (game.status !== 'playing') return { ok: false, reason: `game is ${game.status}` };
+  const next = value === undefined ? !game.paused : !!value;
+  if (next === game.paused) return { ok: false, reason: next ? 'already paused' : 'not paused' };
+  game.paused = next;
+  // Drop any held input on pause, so resuming does not fire a stale hold.
+  if (game.paused) { HELD[0] = false; HELD[1] = false; }
+  else { last = performance.now(); acc = 0; }
+  syncUI();
+  return { ok: true, paused: game.paused };
+}
+
 /**
  * Input index is the *control*, not the panel: after a swap the left control
  * still drives the ball it was driving, which is now on the right.
  */
 function hold(which, down) {
+  if (game.paused) return;      // the pause button is the only way back in
   if (down) start();
   HELD[which] = down;
 }
@@ -854,6 +926,7 @@ const KEY_RIGHT = new Set(['arrowright', 'l', 'm']);
 
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
+  if (k === 'p' || k === 'escape') { e.preventDefault(); setPaused(); return; }
   if (KEY_LEFT.has(k)) { e.preventDefault(); hold(0, true); }
   else if (KEY_RIGHT.has(k)) { e.preventDefault(); hold(1, true); }
 });
@@ -875,6 +948,7 @@ function halfOf(e) {
 
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
+  if (game.paused) return;
   canvas.setPointerCapture?.(e.pointerId);
   const half = halfOf(e);
   activePointers.set(e.pointerId, half);
@@ -892,7 +966,18 @@ canvas.addEventListener('pointerup', release);
 canvas.addEventListener('pointercancel', release);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-el('ov-btn').addEventListener('click', (e) => { e.stopPropagation(); start(); });
+el('pause-btn').addEventListener('click', (e) => { e.stopPropagation(); setPaused(true); });
+el('ov-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (game.paused) setPaused(false);
+  else start();
+});
+el('ov-btn2').addEventListener('click', (e) => {
+  e.stopPropagation();
+  reset((Math.random() * 0xffffffff) >>> 0);
+  game.status = 'playing';
+  syncUI();
+});
 window.addEventListener('resize', fit);
 
 /* ======================================================= harness contract */
@@ -1064,6 +1149,25 @@ function runSelfTest() {
   for (let i = 0; i < 400; i++) tick();
   check('trail motes are culled, not accumulated', game.motes.length < 200, String(game.motes.length));
 
+  // ---- pause ------------------------------------------------------------
+  reset(31);
+  game.status = 'playing';
+  for (let i = 0; i < 40; i++) tick();
+  setPaused(true);
+  const frozen = JSON.stringify({ d: game.distance, s: game.spikes.map((x) => Math.round(x.y)) });
+  for (let i = 0; i < 60; i++) tick();
+  check('pause freezes the course', JSON.stringify({ d: game.distance, s: game.spikes.map((x) => Math.round(x.y)) }) === frozen);
+  check('pause is reported in state', game.paused === true);
+  check('a held input is dropped on pause', HELD[0] === false && HELD[1] === false);
+  check('holding while paused does nothing', (hold(0, true), HELD[0] === false));
+
+  setPaused(false);
+  for (let i = 0; i < 20; i++) tick();
+  check('resume restarts the course', game.distance > JSON.parse(frozen).d);
+  check('pausing twice is rejected', (setPaused(true), setPaused(true).ok === false));
+  setPaused(false);
+  check('pausing a finished game is rejected', (game.status = 'over', setPaused(true).ok === false));
+
   // Determinism.
   const runOf = (s) => {
     reset(s);
@@ -1104,6 +1208,7 @@ window.__GAME__ = {
       ticks: game.ticks,
       speed: Math.round(speed() * 100) / 100,
       theme: THEMES[game.theme].name,
+      paused: game.paused,
       multiplier: game.x2Ticks > 0 ? 2 : 1,
       x2Ticks: game.x2Ticks,
       orbsTaken: game.orbsTaken,
@@ -1149,6 +1254,8 @@ window.__GAME__ = {
         hold(which, payload.down !== false);
         return { ok: true };
       }
+      case 'pause': return setPaused(true);
+      case 'resume': return setPaused(false);
       case 'swap': swap(); return { ok: true };
       case 'start': start(); return { ok: true, status: game.status };
       case 'restart': this.reset(payload?.seed ?? game.seed); return { ok: true };
@@ -1157,7 +1264,7 @@ window.__GAME__ = {
     }
   },
 
-  actions: () => ['holdLeft', 'holdRight', 'releaseLeft', 'releaseRight', 'hold', 'swap', 'start', 'restart', 'selftest'],
+  actions: () => ['holdLeft', 'holdRight', 'releaseLeft', 'releaseRight', 'hold', 'pause', 'resume', 'swap', 'start', 'restart', 'selftest'],
 };
 
 /* ==================================================================== go */
