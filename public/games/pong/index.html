@@ -119,10 +119,15 @@ const WIN_SCORE = 11, WIN_BY = 2;
 const SERVE_TICKS = 78;                 // ~1.3s countdown after a point
 const MAX_SUBSTEP = 5;                  // px per collision sub-step (paddle is 14px wide)
 
+// `err` alone can never make the AI miss: the offset stays inside half a
+// paddle, so it still meets the ball. What actually decides whether a rally
+// can be won is whether the AI *predicts the bounce*. `slip` is the chance it
+// commits to the ball's current line instead of the true impact point, which
+// is what leaves an opening -- rarely on hard, often on easy.
 const DIFF = {
-  easy:   { lag:20, speed:300, err:0.55, predict:false, react:0.55 },
-  normal: { lag:11, speed:405, err:0.36, predict:true,  react:0.80 },
-  hard:   { lag:6,  speed:485, err:0.17, predict:true,  react:1.00 },
+  easy:   { lag:20, speed:300, err:0.55, predict:false, react:0.55, slip:0.75 },
+  normal: { lag:11, speed:405, err:0.36, predict:true,  react:0.80, slip:0.34 },
+  hard:   { lag:6,  speed:485, err:0.17, predict:true,  react:1.00, slip:0.26 },
 };
 
 const C = {
@@ -318,6 +323,7 @@ function aiPaddle(p, dt, isRight){
   if (G.ai.timer <= 0){
     G.ai.timer = 34 + Math.floor(G.rng()*30);
     G.ai.err = (G.rng()*2 - 1) * d.err * PH;
+    G.ai.slip = G.rng() < d.slip;   // this read, does it see the bounce coming?
   }
   // read a delayed snapshot of the ball -> reaction lag
   const idx = ((G.ai.hi - d.lag) % HIST_N + HIST_N) % HIST_N;
@@ -326,7 +332,7 @@ function aiPaddle(p, dt, isRight){
   let target;
   if (towards && G.phase === 'rally'){
     const face = isRight ? p.x : p.x + PW;
-    target = d.predict ? predictImpact(snap, face) : snap.y;
+    target = (d.predict && !G.ai.slip) ? predictImpact(snap, face) : snap.y;
     target += G.ai.err;
     // do not commit fully when the ball is still far away
     const dist = Math.abs(snap.x - face) / LW;

@@ -216,7 +216,9 @@ export const FEATURE_CHECKS = {
     await openIcon(page, "files");
     const explorer = page.locator("[data-testid='explorer']");
     const rootText = await explorer.innerText();
-    await explorer.getByText("Board Games", { exact: false }).first().dblclick();
+    // Folders open on a single click; a double-click navigates in and then
+    // lands the second click on whichever game card is now under the cursor.
+    await page.locator("[data-testid='explorer-folder-Board Games']").click();
     await page.waitForTimeout(200);
     const games = await page.locator("[data-testid^='explorer-game-']").count();
     await page.locator("[data-testid='explorer-game-tris']").click();

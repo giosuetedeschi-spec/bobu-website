@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Twin Drift</title>
+<title>Mirror Drift</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -203,7 +203,7 @@ button:active { transform: translateY(1px); }
 
   <div class="overlay" id="overlay">
     <div class="panel">
-      <h2 id="ov-title">Twin Drift</h2>
+      <h2 id="ov-title">Mirror Drift</h2>
       <p id="ov-text">You steer <strong>both</strong> cars at once — and they mirror each other. Thread them through the gaps together.</p>
       <div class="scores" id="ov-scores" hidden>
         <div><div class="n" id="ov-score">0</div><div class="k">Score</div></div>
@@ -272,7 +272,7 @@ const game = {
   score: 0,
   driftTime: 0,
   multiplier: 1,
-  best: Number(safeGet("twindrift-best", "0")) || 0,
+  best: Number(safeGet("mirrordrift-best", "0")) || 0,
   shake: 0,
   crashed: null,
 };
@@ -340,7 +340,7 @@ function crash(car) {
       life: 1, hue: 280 + game.rng() * 60,
     });
   }
-  if (game.score > game.best) { game.best = Math.round(game.score); safeSet("twindrift-best", String(game.best)); }
+  if (game.score > game.best) { game.best = Math.round(game.score); safeSet("mirrordrift-best", String(game.best)); }
 }
 
 const overlaps = (car, o) =>
@@ -768,10 +768,10 @@ function runSelfTest() {
 }
 
 window.__GAME__ = {
-  id: "twin-drift",
+  id: "mirror-drift",
   version: 1,
   ready: true,
-  meta: { name: "Twin Drift", players: "1", mode: "realtime" },
+  meta: { name: "Mirror Drift", players: "1", mode: "realtime" },
 
   getState() {
     return {

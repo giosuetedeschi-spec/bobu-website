@@ -367,7 +367,7 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
           ))}
           <div className={styles.vDivider} />
           {GAME_FOLDERS.map(folder => (
-            <button key={folder.name} onClick={() => setCurrentPath(folder.name)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
+            <button key={folder.name} data-testid={`explorer-folder-${folder.name}`} onClick={() => setCurrentPath(folder.name)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
               <span className={styles.iconGlyphYellow}>{ICONS[folder.icon]}</span>
               <span className={styles.miniLabel}>{folder.name}</span>
             </button>
@@ -683,13 +683,18 @@ export default function Home() {
   const [windows, setWindows] = useState<WindowState[]>([]);
   const [nextZ, setNextZ] = useState(10);
   const [startOpen, setStartOpen] = useState(false);
-  const [time, setTime] = useState(new Date());
+  // Starts null on purpose: the clock is the one piece of markup that cannot
+  // agree between the server render and the client, so it stays empty until
+  // after mount rather than tripping a hydration mismatch on every visit.
+  const [time, setTime] = useState<Date | null>(null);
   const [wallpaper, setWallpaper] = useState("lofi");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const winIdRef = useRef(0);
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTime(new Date());
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -896,8 +901,8 @@ export default function Home() {
 
         {/* System tray */}
         <div className={styles.systemTray}>
-          <span>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-          <span>{time.toLocaleDateString([], { day: "2-digit", month: "short" })}</span>
+          <span suppressHydrationWarning>{time ? time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</span>
+          <span suppressHydrationWarning>{time ? time.toLocaleDateString([], { day: "2-digit", month: "short" }) : ""}</span>
         </div>
       </div>
 

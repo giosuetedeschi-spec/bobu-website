@@ -133,6 +133,9 @@ export function PyodideRunner({
     useEffect(() => {
         if (pyodide && !autoRunRef.current) {
             autoRunRef.current = true;
+            // Kicks off an async run once the interpreter is up. The state it
+            // sets lands in later microtasks, not synchronously in this render.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             runGame();
         }
     }, [pyodide, runGame]);

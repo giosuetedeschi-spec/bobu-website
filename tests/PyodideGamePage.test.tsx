@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { PyodideGamePage } from '@/components/games/PyodideGamePage';
@@ -16,6 +15,6 @@ describe('PyodideGamePage', () => {
     expect(screen.getByText('Test Game')).toBeInTheDocument();
     expect(screen.getByText('Test Tag')).toBeInTheDocument();
     expect(screen.getByText('Test description')).toBeInTheDocument();
-    expect(screen.getByText(/Loading Python environment/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading pyodide runtime/i)).toBeInTheDocument();
   });
 });

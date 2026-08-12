@@ -1135,7 +1135,91 @@
   newGame(1);
   syncHud();
 
-  const ACTIONS = ["left", "right", "release", "launch", "move", "pause", "resume", "restart"];
+  const ACTIONS = ["left", "right", "release", "launch", "move", "pause", "resume", "restart", "selftest"];
+
+  /**
+   * Rules selftest, driven entirely through the public contract so it exercises
+   * the same surface a player does.
+   */
+  function runSelfTest() {
+    const results = [];
+    const check = (name, ok, detail) => { results.push({ name, ok: !!ok, detail: String(detail ?? "") }); };
+    const api = window.__GAME__;
+    const st = () => api.getState();
+
+    // The ball must actually break bricks and score.
+    api.reset(4);
+    api.input("launch");
+    const before = st();
+    api.step(2000);
+    const after = st();
+    check("the ball breaks bricks", after.bricksLeft < before.bricksLeft,
+      before.bricksLeft + " -> " + after.bricksLeft);
+    check("breaking bricks scores", after.score > before.score, before.score + " -> " + after.score);
+
+    // Speed is capped, and the ball never leaves the play area (no tunnelling
+    // through a wall or a brick at high speed).
+    api.reset(9);
+    api.input("launch");
+    let escaped = null, maxSpeed = 0;
+    for (let i = 0; i < 4000; i++) {
+      api.step(1);
+      const s = st();
+      for (const b of s.balls) {
+        maxSpeed = Math.max(maxSpeed, b.speed);
+        if (b.x < -2 || b.x > s.world.w + 2 || b.y < -2) escaped = b;
+      }
+      if (s.status === "over") break;
+    }
+    check("no ball ever leaves the play area", escaped === null, escaped ? JSON.stringify(escaped) : "");
+    check("ball speed stays finite and bounded", maxSpeed > 0 && maxSpeed < 5000, maxSpeed.toFixed(1));
+
+    // Never moving the paddle must cost lives. It does not necessarily end the
+    // game -- a centred paddle can sustain a rally indefinitely on some seeds --
+    // so the claim worth asserting is that missing is actually punished.
+    api.reset(11);
+    const livesAtStart = st().lives;
+    api.input("launch");
+    for (let i = 0; i < 12000 && st().status !== "over"; i++) api.step(1);
+    const dead = st();
+    check("never moving the paddle costs lives", dead.lives < livesAtStart || dead.status === "over",
+      "lives " + livesAtStart + " -> " + dead.lives + ", status " + dead.status);
+
+    // Paddle input actually moves the paddle, and it stays on screen.
+    api.reset(2);
+    const px0 = st().paddle.x;
+    api.input("left");
+    api.step(40);
+    const pxL = st().paddle.x;
+    api.input("release");
+    api.input("right");
+    api.step(80);
+    const pxR = st().paddle.x;
+    api.input("release");
+    check("the paddle moves left", pxL < px0, px0 + " -> " + pxL);
+    check("the paddle moves right", pxR > pxL, pxL + " -> " + pxR);
+    const w = st().world.w;
+    api.input("left");
+    api.step(600);
+    api.input("release");
+    check("the paddle stays on screen", st().paddle.x >= -1 && st().paddle.x <= w + 1, String(st().paddle.x));
+
+    // Determinism through the contract.
+    const run = (seed) => {
+      api.reset(seed);
+      api.input("launch");
+      api.step(400);
+      const s = st();
+      return JSON.stringify({ b: s.balls, br: s.bricksLeft, sc: s.score });
+    };
+    const a = run(31), b = run(31), c = run(32);
+    check("same seed reproduces the same run", a === b);
+    check("different seeds diverge", a !== c);
+
+    api.reset(1);
+    const passed = results.filter((r) => r.ok).length;
+    return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+  }
 
   window.__GAME__ = {
     id: "breakout",
@@ -1189,6 +1273,8 @@
         case "restart":
           restart(payload && typeof payload.seed === "number" ? payload.seed : undefined);
           return { ok: true };
+        case "selftest":
+          return runSelfTest();
         default:
           return { ok: false, reason: "unknown action: " + String(action) };
       }

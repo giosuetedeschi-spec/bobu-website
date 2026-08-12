@@ -1168,7 +1168,10 @@ function selftest() {
   ok("centre: leftover tiles slide to the centre", g4.centre.length === 2, g4.centre.join(","));
   ok("centre: marker untouched while nobody takes from the centre", g4.centreFirst === true);
   g4.current = 1;
-  applyMove(g4, { src: "centre", colour: 1, row: 0 });   // AI takes from the centre
+  // Row 1 holds exactly the two tiles taken, so the only thing that reaches
+  // the floor is the marker itself -- otherwise the overflow tile lands there
+  // too and the marker assertions below measure the wrong thing.
+  applyMove(g4, { src: "centre", colour: 1, row: 1 });   // AI takes from the centre
   ok("centre: first taker gets the marker on their floor", g4.players[1].floor.length === 1 && g4.players[1].floor[0] === FIRST, g4.players[1].floor.join(","));
   ok("centre: first taker starts the next round", g4.starter === 1, g4.starter);
   ok("centre: marker leaves the centre", g4.centreFirst === false);

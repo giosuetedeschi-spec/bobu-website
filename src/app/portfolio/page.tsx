@@ -13,12 +13,12 @@ import Link from "next/link";
 
 const projects = [
   {
-    id: "twin-drift",
-    title: "Twin Drift",
-    category: "React + Three.js",
-    description: "A high-octane racing game built with React and Three.js, featuring physics-based drifting mechanics.",
+    id: "twins",
+    title: "Twins",
+    category: "Canvas + two thumbs",
+    description: "Two balls, two obstacle courses, one on each thumb. Hold a side to swing that ball out over the spikes, and hold your nerve through the swap gates.",
     image: "/projects/twins.webp",
-    href: "/progetti/twin-drift",
+    href: "/progetti/twins",
   },
   {
     id: "breakout",

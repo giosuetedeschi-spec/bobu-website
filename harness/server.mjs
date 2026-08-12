@@ -29,11 +29,9 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { SiteHarness } from "./api.mjs";
 import { CATALOG, findGame } from "./registry.mjs";
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 7331);
 
 const site = await SiteHarness.launch();
