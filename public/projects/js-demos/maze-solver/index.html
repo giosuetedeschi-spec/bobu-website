@@ -2,36 +2,79 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maze Solver - Pathfinding Flow</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maze Solver</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="app">
-        <header>
-            <h1>Maze Solver</h1>
-            <div class="controls">
-                <button id="btn-new-maze" class="secondary">New Maze</button>
-                <div class="divider"></div>
-                <select id="algo-select">
-                    <option value="dfs">Depth-First Search (DFS)</option>
-                    <option value="bfs">Breadth-First Search (BFS)</option>
-                    <option value="astar">A* (A-Star)</option>
-                </select>
-                <button id="btn-solve">Solve</button>
-                <button id="btn-clear" class="danger">Clear Path</button>
-            </div>
-        </header>
-        <main>
-            <canvas id="canvas"></canvas>
-        </main>
-        <footer>
-            <p>Interactive Pathfinding &bull; Native JS Visualization</p>
-        </footer>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="mark"></span>
+      <h1>Maze Solver</h1>
     </div>
-    <script type="module" src="src/main.js"></script>
+
+    <div class="controls">
+      <label class="field">
+        <span>Algorithm</span>
+        <select id="algo-select">
+          <option value="bfs">Breadth-First Search</option>
+          <option value="dfs">Depth-First Search</option>
+          <option value="astar">A* (Manhattan)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Speed</span>
+        <input type="range" id="speed-range" min="1" max="80" value="14">
+      </label>
+
+      <button id="btn-solve" class="primary">Solve</button>
+      <button id="btn-clear">Clear path</button>
+      <button id="btn-new">New maze</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <canvas id="canvas"></canvas>
+      <div id="toast"></div>
+    </div>
+
+    <aside id="side">
+      <p id="algo-blurb" class="blurb"></p>
+
+      <div class="stats">
+        <div class="stat"><span class="label">Visited</span><span class="value" id="stat-visited">—</span></div>
+        <div class="stat"><span class="label">Frontier</span><span class="value" id="stat-frontier">—</span></div>
+        <div class="stat"><span class="label">Path length</span><span class="value" id="stat-path">—</span></div>
+        <div class="stat"><span class="label">Shortest?</span><span class="value" id="stat-optimal">—</span></div>
+      </div>
+
+      <div class="compare">
+        <h2>Same maze, all three</h2>
+        <table id="compare-table">
+          <thead><tr><th>Algorithm</th><th>Visited</th><th>Path</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="note" id="compare-note">Solve to fill this in.</p>
+      </div>
+
+      <div class="legend">
+        <h2>Legend</h2>
+        <p><i class="chip visited"></i> visited — cells the search has already expanded</p>
+        <p><i class="chip frontier"></i> frontier — queued, not yet expanded</p>
+        <p><i class="chip path"></i> the path it settled on</p>
+        <p><i class="chip start"></i> start &nbsp; <i class="chip goal"></i> goal</p>
+        <p class="note">These mazes are <strong>perfect</strong> — exactly one route between any two cells — so all three return the same path. What separates them is <strong>how many cells they visit</strong> to find it. BFS sweeps almost everything closer than the goal; A* aims at it; DFS gets lucky or unlucky depending on which corridor it picks first.</p>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script type="module" src="src/main.js"></script>
 </body>
 
 </html>
