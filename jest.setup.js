@@ -24,6 +24,9 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/'), // Default path for tests
+  // MUI's AppRouterCacheProvider registers its emotion <style> tags through
+  // this hook; without it the root layout cannot render under jsdom.
+  useServerInsertedHTML: jest.fn(),
   useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),

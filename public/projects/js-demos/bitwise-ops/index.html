@@ -2,139 +2,661 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Interactive Bitwise Operations - Learn binary operations visually">
-    <title>Bitwise Operations Interactive</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Prism.js for code highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitwise Ops</title>
+<style>
+:root {
+  --bg: #070b14;
+  --panel: rgba(20, 27, 44, 0.82);
+  --line: rgba(148, 163, 184, 0.16);
+  --text: #e6edf7;
+  --muted: #8ba0bd;
+  --a: #38bdf8;
+  --b: #f472b6;
+  --r: #34d399;
+  --off: rgba(148, 163, 184, 0.14);
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background:
+    radial-gradient(1000px 560px at 12% -10%, #16213c 0%, transparent 60%),
+    radial-gradient(800px 460px at 100% 108%, #221741 0%, transparent 62%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#app {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 16px clamp(10px, 2.4vw, 24px) 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.mark {
+  width: 13px; height: 13px; border-radius: 4px;
+  background: linear-gradient(140deg, var(--a), var(--b));
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  font-weight: 650;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.sub { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
+
+/* ---------------------------------------------------------------- inputs */
+
+.inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.field {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field label {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field input, .field select {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--text);
+  background: rgba(8, 12, 22, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 11px;
+  width: 100%;
+}
+
+.field.a input { color: var(--a); }
+.field.b input { color: var(--b); }
+.field input:focus, .field select:focus { outline: 2px solid rgba(56, 189, 248, 0.5); outline-offset: 1px; }
+.field .hint { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); }
+
+/* ------------------------------------------------------------------- ops */
+
+.ops { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.op {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 15px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.op:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.34); }
+.op:active { transform: translateY(1px); }
+
+.op[aria-pressed="true"] {
+  color: #04121c;
+  background: linear-gradient(140deg, #7dd3fc, var(--a));
+  border-color: transparent;
+  box-shadow: 0 8px 22px rgba(56, 189, 248, 0.26);
+}
+
+/* ------------------------------------------------------------------ bits */
+
+.rows {
+  padding: 16px 14px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.row { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+.row:last-child { margin-bottom: 0; }
+
+.row .tag {
+  width: 78px;
+  flex: 0 0 78px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.row.result .tag { color: var(--r); font-weight: 650; }
+
+.bits { display: flex; gap: 2px; }
+
+.bit {
+  width: 21px;
+  height: 27px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 620;
+  background: var(--off);
+  color: rgba(230, 237, 247, 0.4);
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+
+.bit.on { color: #041018; }
+.row.a .bit.on { background: var(--a); box-shadow: 0 0 12px rgba(56, 189, 248, 0.5); }
+.row.b .bit.on { background: var(--b); box-shadow: 0 0 12px rgba(244, 114, 182, 0.5); }
+.row.result .bit.on { background: var(--r); box-shadow: 0 0 12px rgba(52, 211, 153, 0.5); }
+
+/* The bit the pointer is on, and its counterparts in the other rows. */
+.bit.focus { transform: translateY(-3px); box-shadow: 0 0 0 2px #fff, 0 6px 14px rgba(0, 0, 0, 0.5); }
+
+.bits .gap { width: 7px; }
+
+.row .val {
+  margin-left: auto;
+  padding-left: 14px;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.row.a .val { color: var(--a); }
+.row.b .val { color: var(--b); }
+.row.result .val { color: var(--r); font-weight: 650; }
+
+.ruler { display: flex; gap: 2px; margin-left: 90px; }
+.ruler span {
+  width: 21px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  color: rgba(139, 160, 189, 0.6);
+}
+.ruler .gap { width: 7px; }
+
+/* --------------------------------------------------------------- explain */
+
+.explain {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.explain h2 {
+  margin: 0 0 8px;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.explain p { margin: 0 0 8px; font-size: 0.84rem; line-height: 1.6; color: #c3d1e6; }
+.explain code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: #a5e4ff;
+}
+
+.explain .note { color: var(--muted); font-size: 0.76rem; margin-bottom: 0; }
+
+/* -------------------------------------------------------------- examples */
+
+.examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+
+.example {
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.example:hover { border-color: rgba(56, 189, 248, 0.42); }
+.example:active { transform: translateY(1px); }
+
+.example h3 { margin: 0 0 5px; font-size: 0.86rem; font-weight: 620; }
+.example p { margin: 0; font-size: 0.76rem; line-height: 1.5; color: var(--muted); }
+.example .expr { font-family: var(--mono); color: #a5e4ff; font-size: 0.76rem; }
+
+@media (max-width: 640px) {
+  .bit { width: 16px; height: 23px; font-size: 0.64rem; }
+  .ruler span { width: 16px; }
+  .row .tag { width: 56px; flex-basis: 56px; font-size: 0.7rem; }
+  .ruler { margin-left: 68px; }
+}
+</style>
 </head>
 
 <body>
-    <button class="btn-home" onclick="location.href='../../../index.html'">← Back to Home</button>
+<div id="app">
+  <header>
+    <span class="mark"></span>
+    <h1>Bitwise Ops</h1>
+    <span class="sub">JavaScript coerces both operands to <strong>32-bit signed</strong> integers first</span>
+  </header>
 
-    <div class="container">
-        <header class="header">
-            <h1 class="title">Bitwise Operations Interactive</h1>
-            <p class="subtitle">Learn Binary Operations Through Visualization</p>
-        </header>
-
-        <!-- Tab Navigation -->
-        <div class="tabs">
-            <button class="tab active" data-tab="bitwise">Bitwise Operations</button>
-            <button class="tab" data-tab="arithmetic">Binary Arithmetic</button>
-        </div>
-
-        <!-- Bitwise Operations Tab -->
-        <div id="bitwise-tab" class="tab-content active">
-            <div class="section">
-                <h2>Bitwise Operations</h2>
-
-                <div class="input-group">
-                    <div class="input-field">
-                        <label>Number A (decimal):</label>
-                        <input type="number" id="input-a" value="12" min="0" max="255">
-                        <span class="binary-display" id="binary-a">00001100</span>
-                    </div>
-
-                    <div class="input-field">
-                        <label>Number B (decimal):</label>
-                        <input type="number" id="input-b" value="10" min="0" max="255">
-                        <span class="binary-display" id="binary-b">00001010</span>
-                    </div>
-                </div>
-
-                <div class="operations-grid">
-                    <button class="op-btn" data-op="and">AND (&)</button>
-                    <button class="op-btn" data-op="or">OR (|)</button>
-                    <button class="op-btn" data-op="xor">XOR (^)</button>
-                    <button class="op-btn" data-op="not">NOT (~)</button>
-                    <button class="op-btn" data-op="lshift">Left Shift (<<)< /button>
-                            <button class="op-btn" data-op="rshift">Right Shift (>>)</button>
-                </div>
-
-                <!-- Visualization Area -->
-                <div id="visualization" class="visualization">
-                    <div class="vis-placeholder">
-                        Select an operation to see the visualization
-                    </div>
-                </div>
-
-                <!-- Result Display -->
-                <div id="result" class="result hidden">
-                    <h3>Result</h3>
-                    <div class="result-content">
-                        <span class="result-binary"></span>
-                        <span class="result-decimal"></span>
-                    </div>
-                </div>
-
-                <!-- Code Display -->
-                <div id="code-display" class="code-display hidden">
-                    <h3>JavaScript Code</h3>
-                    <pre><code class="language-javascript" id="code-content"></code></pre>
-                </div>
-            </div>
-        </div>
-
-        <!-- Binary Arithmetic Tab -->
-        <div id="arithmetic-tab" class="tab-content">
-            <div class="section">
-                <h2>Binary Arithmetic</h2>
-
-                <div class="input-group">
-                    <div class="input-field">
-                        <label>Number A (decimal):</label>
-                        <input type="number" id="arith-a" value="13" min="0" max="127">
-                        <span class="binary-display" id="arith-binary-a">00001101</span>
-                    </div>
-
-                    <div class="input-field">
-                        <label>Number B (decimal):</label>
-                        <input type="number" id="arith-b" value="7" min="0" max="127">
-                        <span class="binary-display" id="arith-binary-b">00000111</span>
-                    </div>
-                </div>
-
-                <div class="operations-grid">
-                    <button class="op-btn" data-op="add">Addition (+)</button>
-                    <button class="op-btn" data-op="sub">Subtraction (-)</button>
-                    <button class="op-btn" data-op="mul">Multiplication (×)</button>
-                    <button class="op-btn" data-op="div">Division (÷)</button>
-                </div>
-
-                <!-- Algorithm Visualization -->
-                <div id="algorithm-vis" class="algorithm-vis">
-                    <div class="vis-placeholder">
-                        Select an operation to see the algorithm
-                    </div>
-                </div>
-
-                <!-- Algorithm Steps -->
-                <div id="algorithm-steps" class="algorithm-steps hidden">
-                    <h3>Algorithm Steps</h3>
-                    <div id="steps-content"></div>
-                    <div class="step-controls">
-                        <button id="prev-step" class="step-btn">← Previous</button>
-                        <span id="step-counter"></span>
-                        <button id="next-step" class="step-btn">Next →</button>
-                    </div>
-                </div>
-
-                <!-- Code Display for Arithmetic -->
-                <div id="arith-code-display" class="code-display hidden">
-                    <h3>Binary Arithmetic Algorithm</h3>
-                    <pre><code class="language-javascript" id="arith-code-content"></code></pre>
-                </div>
-            </div>
-        </div>
+  <div class="inputs">
+    <div class="field a">
+      <label for="in-a">Operand A</label>
+      <input id="in-a" type="text" value="12" spellcheck="false" autocomplete="off">
+      <span class="hint" id="hint-a"></span>
     </div>
+    <div class="field b">
+      <label for="in-b">Operand B <span id="b-role"></span></label>
+      <input id="in-b" type="text" value="10" spellcheck="false" autocomplete="off">
+      <span class="hint" id="hint-b"></span>
+    </div>
+  </div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script type="module" src="js/main.js"></script>
+  <div class="ops" id="ops"></div>
+
+  <div class="rows" id="rows">
+    <div class="ruler" id="ruler"></div>
+    <div class="row a" id="row-a"></div>
+    <div class="row b" id="row-b"></div>
+    <div class="row result" id="row-r"></div>
+  </div>
+
+  <div class="explain">
+    <h2>What just happened</h2>
+    <p id="explain-text"></p>
+    <p class="note" id="explain-note"></p>
+  </div>
+
+  <div class="examples" id="examples"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================ operations */
+
+const OPS = {
+  AND:  { symbol: "&",   binary: true,  apply: (a, b) => a & b,
+          blurb: "A bit is 1 only where <em>both</em> operands have a 1. Used to mask bits off." },
+  OR:   { symbol: "|",   binary: true,  apply: (a, b) => a | b,
+          blurb: "A bit is 1 where <em>either</em> operand has a 1. Used to switch bits on." },
+  XOR:  { symbol: "^",   binary: true,  apply: (a, b) => a ^ b,
+          blurb: "A bit is 1 where the operands <em>differ</em>. Used to toggle bits, and it is its own inverse." },
+  NOT:  { symbol: "~",   binary: false, apply: (a) => ~a,
+          blurb: "Every bit flips. On two's-complement integers this means <code>~n === -n - 1</code>." },
+  SHL:  { symbol: "<<",  binary: true,  apply: (a, b) => a << b,
+          blurb: "Bits slide left, zeros fill in on the right. Each step doubles the value — until it overflows 32 bits." },
+  SHR:  { symbol: ">>",  binary: true,  apply: (a, b) => a >> b,
+          blurb: "Arithmetic right shift: bits slide right and the <em>sign bit</em> is copied in, so negatives stay negative." },
+  USHR: { symbol: ">>>", binary: true,  apply: (a, b) => a >>> b,
+          blurb: "Logical right shift: zeros fill in from the left, so the result is always non-negative." },
+};
+
+const SHIFTS = new Set(["SHL", "SHR", "USHR"]);
+
+/* ================================================================= state */
+
+const state = { a: 12, b: 10, op: "AND", focusBit: null };
+
+const el = (id) => document.getElementById(id);
+
+const toInt = (v) => {
+  const s = String(v).trim();
+  if (s === "") return 0;
+  const n = /^[-+]?0[bB][01]+$/.test(s) ? parseInt(s.replace(/0[bB]/, ""), 2)
+    : /^[-+]?0[xX][0-9a-fA-F]+$/.test(s) ? Number(s)
+    : Number(s);
+  return Number.isFinite(n) ? n | 0 : 0;
+};
+
+const bits32 = (n) => {
+  const v = n >>> 0;
+  const out = [];
+  for (let i = 31; i >= 0; i--) out.push((v >>> i) & 1);
+  return out;
+};
+
+const hex = (n) => `0x${(n >>> 0).toString(16).toUpperCase().padStart(8, "0")}`;
+
+// Every operator but >>> yields a signed 32-bit int. Coercing >>> with `| 0`
+// would fold its result straight back to a negative number and destroy the one
+// property that distinguishes it from >>.
+const norm = (op, v) => (op === "USHR" ? v >>> 0 : v | 0);
+
+function result() {
+  const op = OPS[state.op];
+  return norm(state.op, op.binary ? op.apply(state.a, state.b) : op.apply(state.a));
+}
+
+/* ================================================================= paint */
+
+function bitRow(container, value, rowKind) {
+  const bits = bits32(value);
+  const frag = document.createDocumentFragment();
+  bits.forEach((bit, i) => {
+    // i counts from the most significant bit; index is the bit's power.
+    const index = 31 - i;
+    if (i > 0 && i % 8 === 0) {
+      const gap = document.createElement("span");
+      gap.className = "gap";
+      frag.appendChild(gap);
+    }
+    const node = document.createElement("span");
+    node.className = `bit${bit ? " on" : ""}${state.focusBit === index ? " focus" : ""}`;
+    node.textContent = String(bit);
+    node.dataset.bit = String(index);
+    node.title = `bit ${index} (value ${index < 31 ? 2 ** index : "-2147483648"})`;
+    node.addEventListener("mouseenter", () => { state.focusBit = index; paint(); });
+    node.addEventListener("mouseleave", () => { state.focusBit = null; paint(); });
+    node.addEventListener("click", () => toggleBit(rowKind, index));
+    frag.appendChild(node);
+  });
+  container.replaceChildren(frag);
+}
+
+function toggleBit(rowKind, index) {
+  if (rowKind === "a") state.a = (state.a ^ (1 << index)) | 0;
+  else if (rowKind === "b" && OPS[state.op].binary && !SHIFTS.has(state.op)) state.b = (state.b ^ (1 << index)) | 0;
+  else return;
+  syncInputs();
+  paint();
+}
+
+function row(rootId, tag, value, kind) {
+  const root = el(rootId);
+  root.replaceChildren();
+
+  const label = document.createElement("span");
+  label.className = "tag";
+  label.textContent = tag;
+
+  const bits = document.createElement("span");
+  bits.className = "bits";
+  bitRow(bits, value, kind);
+
+  const val = document.createElement("span");
+  val.className = "val";
+  val.textContent = `${value}   ${hex(value)}`;
+
+  root.append(label, bits, val);
+}
+
+function paintRuler() {
+  const frag = document.createDocumentFragment();
+  for (let i = 31; i >= 0; i--) {
+    if (i < 31 && (31 - i) % 8 === 0) {
+      const gap = document.createElement("span");
+      gap.className = "gap";
+      frag.appendChild(gap);
+    }
+    const s = document.createElement("span");
+    s.textContent = i % 4 === 0 ? String(i) : "";
+    frag.appendChild(s);
+  }
+  el("ruler").replaceChildren(frag);
+}
+
+function paint() {
+  const op = OPS[state.op];
+  const res = result();
+
+  row("row-a", "A", state.a, "a");
+  if (op.binary) {
+    el("row-b").hidden = false;
+    row("row-b", SHIFTS.has(state.op) ? `by ${state.b & 31}` : "B", SHIFTS.has(state.op) ? (state.b & 31) : state.b, "b");
+  } else {
+    el("row-b").hidden = true;
+  }
+  row("row-r", `A ${op.symbol}${op.binary ? " B" : ""}`, res, "r");
+
+  el("hint-a").textContent = `${hex(state.a)}  ·  0b${((state.a | 0) >>> 0).toString(2)}`;
+  el("hint-b").textContent = op.binary ? `${hex(state.b)}  ·  0b${((state.b | 0) >>> 0).toString(2)}` : "not used by ~";
+  el("b-role").textContent = SHIFTS.has(state.op) ? "(shift amount, masked to 0-31)" : "";
+  el("in-b").disabled = !op.binary;
+
+  const expr = op.binary ? `${state.a} ${op.symbol} ${state.b}` : `${op.symbol}${state.a}`;
+  el("explain-text").innerHTML = `<code>${expr} === ${res}</code> &nbsp; ${op.blurb}`;
+
+  let note = "";
+  if (SHIFTS.has(state.op)) {
+    note = `The shift amount is taken modulo 32, so B = ${state.b} shifts by ${state.b & 31}.`;
+    if (state.op === "SHR" && state.a < 0) note += " Because A is negative, ones are shifted in from the left.";
+    if (state.op === "USHR" && state.a < 0) note += " >>> treats A as unsigned, which is why a negative A gives a large positive result.";
+  } else if (state.op === "NOT") {
+    note = `~${state.a} === ${-state.a - 1}: flipping every bit of a two's-complement integer negates it and subtracts one.`;
+  } else {
+    note = "Hover a bit to line it up across the rows; click a bit in A or B to flip it.";
+  }
+  el("explain-note").textContent = note;
+
+  for (const btn of el("ops").children) btn.setAttribute("aria-pressed", String(btn.dataset.op === state.op));
+}
+
+function syncInputs() {
+  el("in-a").value = String(state.a);
+  el("in-b").value = String(state.b);
+}
+
+/* ============================================================== examples */
+
+const EXAMPLES = [
+  { title: "Mask the low nibble", a: 0b10110110, b: 0x0F, op: "AND",
+    text: "AND with <span class='expr'>0x0F</span> keeps the bottom four bits and clears the rest." },
+  { title: "Set a flag", a: 0b1000, b: 0b0010, op: "OR",
+    text: "OR switches a bit on without disturbing the others." },
+  { title: "Toggle with XOR", a: 0b1010, b: 0b1111, op: "XOR",
+    text: "XOR twice with the same mask returns the original — that is why it toggles." },
+  { title: "Multiply by 8", a: 5, b: 3, op: "SHL",
+    text: "<span class='expr'>5 << 3</span> is 5 x 2³ = 40. Shifting left doubles per step." },
+  { title: "Negative right shift", a: -8, b: 1, op: "SHR",
+    text: "<span class='expr'>-8 >> 1</span> is -4: the sign bit is copied in, so it stays negative." },
+  { title: "The >>> surprise", a: -8, b: 1, op: "USHR",
+    text: "<span class='expr'>-8 >>> 1</span> is 2147483644 — zeros fill from the left, so the sign is lost." },
+  { title: "The sign bit", a: 1, b: 31, op: "SHL",
+    text: "<span class='expr'>1 << 31</span> lands on bit 31 and reads as -2147483648." },
+  { title: "Two's complement", a: 5, b: 0, op: "NOT",
+    text: "<span class='expr'>~5</span> is -6, because <span class='expr'>~n === -n - 1</span>." },
+];
+
+function buildExamples() {
+  const frag = document.createDocumentFragment();
+  for (const ex of EXAMPLES) {
+    const b = document.createElement("button");
+    b.className = "example";
+    b.innerHTML = `<h3>${ex.title}</h3><p>${ex.text}</p>`;
+    b.addEventListener("click", () => {
+      state.a = ex.a | 0;
+      state.b = ex.b | 0;
+      state.op = ex.op;
+      syncInputs();
+      paint();
+    });
+    frag.appendChild(b);
+  }
+  el("examples").replaceChildren(frag);
+}
+
+function buildOps() {
+  const frag = document.createDocumentFragment();
+  for (const [key, op] of Object.entries(OPS)) {
+    const b = document.createElement("button");
+    b.className = "op";
+    b.dataset.op = key;
+    b.type = "button";
+    b.textContent = `${key}  ${op.symbol}`;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => { state.op = key; paint(); });
+    frag.appendChild(b);
+  }
+  el("ops").replaceChildren(frag);
+}
+
+/* ================================================================ wiring */
+
+el("in-a").addEventListener("input", (e) => { state.a = toInt(e.target.value); paint(); });
+el("in-b").addEventListener("input", (e) => { state.b = toInt(e.target.value); paint(); });
+
+buildOps();
+buildExamples();
+paintRuler();
+syncInputs();
+paint();
+
+/* ===================================================== harness contract */
+
+function runSelfTest() {
+  const results = [];
+  const check = (name, got, want) => {
+    const ok = Object.is(got, want);
+    results.push({ name, ok, detail: ok ? "" : `got ${got}, want ${want}` });
+  };
+
+  const run = (a, b, op) => norm(op, OPS[op].binary ? OPS[op].apply(a, b) : OPS[op].apply(a));
+
+  check("12 & 10 === 8", run(12, 10, "AND"), 8);
+  check("12 | 10 === 14", run(12, 10, "OR"), 14);
+  check("12 ^ 10 === 6", run(12, 10, "XOR"), 6);
+  check("~5 === -6", run(5, 0, "NOT"), -6);
+  check("~-1 === 0", run(-1, 0, "NOT"), 0);
+  check("5 << 3 === 40", run(5, 3, "SHL"), 40);
+  check("1 << 31 === -2147483648", run(1, 31, "SHL"), -2147483648);
+  check("-8 >> 1 === -4", run(-8, 1, "SHR"), -4);
+  check("-8 >>> 1 === 2147483644", run(-8, 1, "USHR"), 2147483644);
+  check("-1 >>> 0 === 4294967295", run(-1, 0, "USHR"), 4294967295);
+  check("shift count is masked to 32 (1 << 32 === 1)", run(1, 32, "SHL"), 1);
+  check("XOR is its own inverse", run(run(0b1010, 0b0110, "XOR"), 0b0110, "XOR"), 0b1010);
+  check("AND with 0x0F masks the low nibble", run(0b10110110, 0x0F, "AND"), 0b0110);
+  check("power-of-two check: 16 & 15 === 0", run(16, 15, "AND"), 0);
+  check("non-power-of-two: 18 & 17 !== 0", run(18, 17, "AND") !== 0, true);
+
+  // The bit renderer must agree with the arithmetic.
+  const b = bits32(-8);
+  check("bits32(-8) has 32 bits", b.length, 32);
+  check("bits32(-8) sign bit is 1", b[0], 1);
+  check("bits32(5) reads 101 at the bottom", bits32(5).slice(-3).join(""), "101");
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+window.__GAME__ = {
+  id: "bitwise-ops",
+  version: 1,
+  ready: true,
+  meta: { name: "Bitwise Ops", players: "0", mode: "visualiser" },
+
+  getState() {
+    return {
+      status: "playing",
+      turn: null,
+      score: result(),
+      a: state.a,
+      b: state.b,
+      operation: state.op,
+      symbol: OPS[state.op].symbol,
+      result: result(),
+      bitsA: bits32(state.a),
+      bitsB: bits32(state.b),
+      bitsResult: bits32(result()),
+      operations: Object.keys(OPS),
+    };
+  },
+
+  reset(seed = 1) {
+    // Deterministic from the seed, and still a legible pair of operands.
+    const s = (seed >>> 0) || 1;
+    state.a = (s % 256) | 0;
+    state.b = ((s >>> 8) % 32) | 0;
+    state.op = "AND";
+    state.focusBit = null;
+    syncInputs();
+    paint();
+  },
+
+  step() {
+    return { ok: false, reason: "bitwise-ops is not a simulation; use input()" };
+  },
+
+  input(action, payload) {
+    switch (action) {
+      case "setOperands": {
+        if (payload?.a === undefined && payload?.b === undefined) {
+          return { ok: false, reason: "setOperands needs { a } and/or { b }" };
+        }
+        if (payload.a !== undefined) state.a = toInt(payload.a);
+        if (payload.b !== undefined) state.b = toInt(payload.b);
+        syncInputs();
+        paint();
+        return { ok: true, a: state.a, b: state.b, result: result() };
+      }
+      case "setOperand": {
+        const which = payload?.which;
+        if (which !== "a" && which !== "b") return { ok: false, reason: "setOperand needs { which: 'a' | 'b' }" };
+        state[which] = toInt(payload.value);
+        syncInputs();
+        paint();
+        return { ok: true, [which]: state[which], result: result() };
+      }
+      case "setOperation": {
+        const op = String(payload?.op ?? payload ?? "").toUpperCase();
+        if (!OPS[op]) return { ok: false, reason: `unknown operation '${op}'` };
+        state.op = op;
+        paint();
+        return { ok: true, operation: op, result: result() };
+      }
+      case "toggleBit": {
+        const which = payload?.which ?? "a";
+        const index = Number(payload?.index);
+        if (!Number.isInteger(index) || index < 0 || index > 31) return { ok: false, reason: "index must be 0-31" };
+        toggleBit(which, index);
+        return { ok: true, [which]: state[which], result: result() };
+      }
+      case "selftest":
+        return runSelfTest();
+      default:
+        return { ok: false, reason: `unknown action '${action}'` };
+    }
+  },
+
+  actions: () => ["setOperands", "setOperand", "setOperation", "toggleBit", "selftest"],
+};
+</script>
 </body>
 
 </html>

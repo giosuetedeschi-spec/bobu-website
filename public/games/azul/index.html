@@ -3,390 +3,1479 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:,">
 <title>Azul</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
-h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-#game-area{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
-.panel{background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.08)}
-#factories{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:400px}
-.factory{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:8px;background:rgba(0,0,0,0.2);border-radius:10px;min-width:70px;min-height:70px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s}
-.factory:hover{box-shadow:0 0 12px rgba(96,165,250,0.3)}
-.factory.selected{border-color:#60a5fa;box-shadow:0 0 16px rgba(96,165,250,0.4)}
-.factory .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
-#center{display:flex;flex-wrap:wrap;gap:3px;padding:8px;background:rgba(0,0,0,0.15);border-radius:10px;cursor:pointer;border:2px solid transparent;transition:box-shadow 0.2s;min-width:44px;min-height:44px}
-#center:hover{box-shadow:0 0 12px rgba(52,211,153,0.3)}
-#center.selected{border-color:#34d399}
-#center .tile{width:28px;height:28px;border-radius:6px;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.3)}
-.tile.blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
-.tile.yellow{background:linear-gradient(135deg,#fbbf24,#d97706)}
-.tile.red{background:linear-gradient(135deg,#ef4444,#b91c1c)}
-.tile.green{background:linear-gradient(135deg,#22c55e,#15803d)}
-.tile.white{background:linear-gradient(135deg,#f8fafc,#cbd5e1)}
-.tile.first{background:linear-gradient(135deg,#a3e635,#65a30d);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#1a2e05}
-#boards{display:flex;flex-direction:column;gap:10px}
-.player-board{width:320px}
-.player-board.inactive{opacity:0.65}
-.board-title{font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:6px;display:flex;justify-content:space-between}
-.board-title .pts{color:#e2e8f0}
-.board-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.row-label{font-size:0.65rem;color:#64748b;width:14px}
-.pattern-row{display:flex;gap:2px;justify-content:flex-end;min-width:150px}
-.pc{width:28px;height:28px;border-radius:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);transition:border-color 0.2s}
-.pc.placeable{cursor:pointer;border-color:#60a5fa}
-.pc.placeable:hover{box-shadow:0 0 8px rgba(96,165,250,0.5)}
-.wall-row{display:flex;gap:2px;margin-left:8px}
-.wc{width:28px;height:28px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);opacity:0.25}
-.wc.scored{opacity:1;box-shadow:inset 0 0 6px rgba(255,255,255,0.3);border-color:transparent}
-.floor{display:flex;gap:2px;margin-top:6px;padding:4px;background:rgba(0,0,0,0.15);border-radius:6px}
-.fc{width:26px;height:26px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#64748b}
-.fc.filled{border-style:solid}
-.fc.placeable{cursor:pointer;border-color:#fbbf24}
-#sidebar{width:200px;font-size:0.8rem}
-#sidebar h3{font-size:0.9rem;margin-bottom:6px;color:#94a3b8}
-.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
-.stat-val{font-weight:600;color:#e2e8f0}
-#message{margin-top:8px;padding:8px 16px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:0.85rem;text-align:center;min-height:36px;display:flex;align-items:center;justify-content:center}
-#message .hl{color:#60a5fa;font-weight:600}
-#color-picker{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center}
-.cpt{width:34px;height:34px;border-radius:6px;cursor:pointer;border:3px solid transparent;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
-.cpt:hover{transform:scale(1.15)}
-.cpt.sel{border-color:#fff;transform:scale(1.15)}
-.cpt.dis{opacity:0.2;cursor:not-allowed}
-#controls{display:flex;gap:8px;margin-top:8px;justify-content:center}
-.btn{padding:6px 18px;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s}
-.btn-p{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff}
-#round-info{font-size:0.75rem;color:#64748b;text-align:center;margin-top:4px}
+/* ─────────────────────────────────────────────────────────────
+   Azul — azulejo ceramic theme. Everything self-contained:
+   no fonts, no images, no network. Tiles are pure CSS gradients.
+   ───────────────────────────────────────────────────────────── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --t: clamp(19px, 2.05vw, 27px);      /* tile edge */
+  --gap: 3px;
+  --ink:#22303f;
+  --ink-soft:#657a8c;
+  --ink-faint:#9aa9b7;
+  --paper:#fffdf8;
+  --paper-2:#f6efe3;
+  --line:#e5dccb;
+  --azul:#1b5aa0;
+  --azul-deep:#123f74;
+  --azul-soft:#e7f0fb;
+  --gold:#c58b1d;
+  --danger:#c0442f;
+  --radius:14px;
+  --shadow-s:0 1px 2px rgba(35,45,60,.07), 0 2px 6px rgba(35,45,60,.06);
+  --shadow-m:0 2px 6px rgba(35,45,60,.08), 0 10px 24px rgba(35,45,60,.10);
+  --shadow-l:0 12px 40px rgba(20,35,60,.24);
+}
+
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(1100px 620px at 82% -12%, #dbe8f7 0%, rgba(219,232,247,0) 62%),
+    radial-gradient(900px 560px at 4% 104%, #f6e6cf 0%, rgba(246,230,207,0) 60%),
+    linear-gradient(178deg,#f8f4ec 0%,#efe7da 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  font-size:14px;
+  line-height:1.45;
+  min-height:100%;
+  padding:10px;
+}
+
+.app{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+
+/* ── top bar ─────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 14px;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--azul-deep),#2a72c0 62%,#3c8ad4);
+  box-shadow:var(--shadow-m);color:#fff;
+}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.16em;font-size:15px}
+.brandmark{
+  width:22px;height:22px;border-radius:6px;flex:none;
+  background:linear-gradient(150deg,#8fc2f4,#2a6cbc 55%,#123f74);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 1px 3px rgba(0,0,0,.35);
+  position:relative;
+}
+.brandmark::after{
+  content:"";position:absolute;inset:23%;border:1.5px solid rgba(255,255,255,.6);
+  border-radius:3px;transform:rotate(45deg);
+}
+.spacer{flex:1 1 auto}
+.chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:baseline;gap:6px;
+  padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+  transition:background .2s,border-color .2s,box-shadow .2s;
+}
+.chip b{font-size:15px;font-weight:800;letter-spacing:0}
+.chip.active{background:#fff;color:var(--azul-deep);border-color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.tools{display:flex;gap:6px}
+.btn{
+  font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  padding:6px 13px;border-radius:9px;border:1px solid transparent;
+  background:#fff;color:var(--azul-deep);
+  box-shadow:0 1px 3px rgba(0,0,0,.18);
+  transition:transform .12s ease,box-shadow .2s,background .2s,color .2s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.22)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.35);box-shadow:none}
+.btn.ghost:hover{background:rgba(255,255,255,.24)}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* ── status ribbon ───────────────────────────────────────── */
+.statusbar{
+  display:flex;align-items:center;gap:10px;min-height:36px;
+  padding:7px 14px;border-radius:11px;
+  background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow-s);
+  font-size:13px;
+}
+.statusbar .dot{
+  width:9px;height:9px;border-radius:50%;flex:none;background:var(--azul);
+  box-shadow:0 0 0 4px var(--azul-soft);
+}
+.statusbar.think .dot{animation:pulse 1.1s ease-in-out infinite}
+.statusbar.done .dot{background:var(--gold);box-shadow:0 0 0 4px #fbf0d9}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+.statusbar b{color:var(--azul-deep)}
+.statusbar .delta{margin-left:auto;color:var(--ink-soft);font-size:12px;font-variant-numeric:tabular-nums}
+
+/* ── layout ──────────────────────────────────────────────── */
+.layout{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1060px){
+  .layout{
+    grid-template-columns:minmax(280px,340px) minmax(0,1fr);
+    grid-template-areas:"supply boards" "rules boards";
+    align-items:start;
+  }
+  .supply{grid-area:supply}.boards{grid-area:boards}.rules{grid-area:rules}
+}
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-s);padding:11px 12px;
+}
+.cardtitle{
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.cardtitle::after{content:"";flex:1;height:1px;background:var(--line)}
+.cardtitle .note{letter-spacing:.02em;text-transform:none;font-weight:600;color:var(--ink-soft);font-size:11px}
+.cardtitle .note::first-letter{text-transform:uppercase}
+
+/* ── factories ───────────────────────────────────────────── */
+.factories{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.factory{
+  --pad:6px;
+  width:calc(var(--t)*2 + var(--gap) + var(--pad)*2 + 10px);
+  height:calc(var(--t)*2 + var(--gap) + var(--pad)*2 + 10px);
+  border-radius:50%;padding:calc(var(--pad) + 5px);
+  display:grid;grid-template-columns:repeat(2,auto);gap:var(--gap);
+  place-content:center;
+  background:radial-gradient(circle at 34% 26%,#fffdf8 0%,#f1e8d8 52%,#ddd0b8 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.85),
+    inset 0 -4px 8px rgba(150,125,85,.16),
+    0 3px 8px rgba(70,60,40,.14);
+  transition:box-shadow .22s,transform .15s;
+}
+.factory.empty{
+  background:none;border:2px dashed var(--line);box-shadow:none;
+  place-content:center;
+}
+.factory.empty::after{content:"";display:block;width:calc(var(--t)*.7);height:calc(var(--t)*.7);
+  border-radius:50%;background:var(--line);opacity:.5;grid-column:span 2}
+.factory.pick:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.85),0 6px 16px rgba(70,60,40,.2)}
+
+/* ── centre ──────────────────────────────────────────────── */
+.centre{
+  min-height:calc(var(--t) + 16px);
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+  padding:8px;border-radius:12px;
+  background:linear-gradient(180deg,#f4ede0,#ece2d1);
+  box-shadow:inset 0 1px 3px rgba(120,100,70,.16);
+}
+.centre .empty-note{font-size:11.5px;color:var(--ink-faint);padding:2px 4px}
+.cgroup{
+  display:flex;gap:var(--gap);padding:3px;border-radius:9px;
+  border:1.5px solid transparent;transition:border-color .18s,background .18s,transform .12s;
+}
+.cgroup.pick:hover{background:rgba(255,255,255,.75);border-color:var(--azul);transform:translateY(-1px)}
+.cgroup.sel{background:#fff;border-color:var(--azul);box-shadow:0 0 0 3px rgba(27,90,160,.18)}
+
+/* ── tiles ───────────────────────────────────────────────── */
+.tile{
+  width:var(--t);height:var(--t);border-radius:26%;position:relative;flex:none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.22) 0 16%, rgba(255,255,255,0) 17%),
+    conic-gradient(from 45deg at 50% 50%,
+      rgba(255,255,255,.14) 0 25%, rgba(0,0,0,.05) 0 50%,
+      rgba(255,255,255,.14) 0 75%, rgba(0,0,0,.05) 0),
+    linear-gradient(148deg, var(--a) 0%, var(--b) 52%, var(--c) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 -2px 3px rgba(0,0,0,.22),
+    0 1px 2px rgba(40,35,25,.28);
+  transition:transform .14s ease, box-shadow .2s, filter .2s;
+}
+.tile::after{
+  content:"";position:absolute;inset:20%;
+  border:1.4px solid var(--m);border-radius:16%;transform:rotate(45deg);
+}
+.tile::before{
+  content:"";position:absolute;inset:38%;border-radius:50%;
+  background:var(--m2);
+}
+.c0{--a:#6aa9ea;--b:#2a6cbc;--c:#12406f;--m:rgba(255,255,255,.34);--m2:rgba(255,255,255,.30)}
+.c1{--a:#f7d67e;--b:#dfa32c;--c:#9d6a0f;--m:rgba(255,255,255,.42);--m2:rgba(255,255,255,.36)}
+.c2{--a:#ec8477;--b:#c8412f;--c:#832016;--m:rgba(255,255,255,.32);--m2:rgba(255,255,255,.28)}
+.c3{--a:#657185;--b:#333c4a;--c:#161c25;--m:rgba(255,255,255,.24);--m2:rgba(255,255,255,.20)}
+.c4{--a:#ffffff;--b:#dae6ea;--c:#a3b8c1;--m:rgba(40,80,100,.26);--m2:rgba(40,80,100,.16)}
+
+.tile.marker{
+  --a:#fffdf5;--b:#f3ead6;--c:#d7c9a9;--m:rgba(160,130,70,.35);--m2:transparent;
+  display:flex;align-items:center;justify-content:center;
+  font-size:calc(var(--t)*.5);font-weight:900;color:var(--gold);
+}
+.tile.marker::before{display:none}
+.tile.hl{transform:translateY(-2px) scale(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 5px 12px rgba(30,50,80,.35),0 0 0 2px var(--azul)}
+.tile.dim{filter:saturate(.35) opacity(.5)}
+.tile.small{width:calc(var(--t)*.72);height:calc(var(--t)*.72)}
+
+/* ── player boards ───────────────────────────────────────── */
+.boards{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.board{flex:1 1 292px;min-width:0;position:relative;transition:box-shadow .25s,border-color .25s}
+.board.turn{border-color:#b9d3ef;box-shadow:0 0 0 3px rgba(27,90,160,.13),var(--shadow-m)}
+.board.you.turn{border-color:#b9d3ef}
+.bhead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.bname{font-weight:800;font-size:13.5px;letter-spacing:.02em}
+.badge{
+  font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 7px;border-radius:999px;background:var(--azul-soft);color:var(--azul-deep);
+}
+.badge.first{background:#fbf0d9;color:#8a6110}
+.bscore{margin-left:auto;font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;color:var(--azul-deep)}
+.bscore small{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.08em;margin-left:3px}
+.gain{font-size:11.5px;font-weight:800;margin-left:6px}
+.gain.up{color:#1d7a4a}.gain.down{color:var(--danger)}
+
+.grid{display:flex;gap:10px;align-items:flex-start}
+.lines{display:flex;flex-direction:column;gap:var(--gap);flex:1 1 auto;min-width:0}
+.wall{display:flex;flex-direction:column;gap:var(--gap);flex:none}
+.wrow{display:flex;gap:var(--gap)}
+.line{
+  display:flex;gap:var(--gap);justify-content:flex-end;align-items:center;
+  padding:2px;border-radius:8px;border:1.5px solid transparent;
+  transition:background .18s,border-color .18s,transform .12s;
+}
+.line.legal{cursor:pointer;border-color:rgba(27,90,160,.35);background:rgba(27,90,160,.07)}
+.line.legal:hover{background:rgba(27,90,160,.15);border-color:var(--azul);transform:translateX(-2px)}
+.line.blocked{opacity:.42}
+.slot{
+  width:var(--t);height:var(--t);border-radius:26%;flex:none;
+  background:rgba(120,110,95,.09);
+  box-shadow:inset 0 0 0 1px rgba(120,110,95,.14);
+}
+.wcell{
+  width:var(--t);height:var(--t);border-radius:26%;position:relative;flex:none;
+  background:rgba(120,110,95,.055);
+  box-shadow:inset 0 0 0 1px rgba(120,110,95,.13);
+  display:flex;align-items:center;justify-content:center;
+}
+.wcell .tile{opacity:.16;filter:saturate(.55);box-shadow:none;transform:scale(.9)}
+.wcell.set .tile{opacity:1;filter:none;transform:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 3px rgba(0,0,0,.22),0 1px 3px rgba(40,35,25,.32)}
+.wcell.fresh .tile{animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{0%{transform:scale(.3) rotate(-14deg);opacity:0}60%{transform:scale(1.14) rotate(3deg);opacity:1}100%{transform:none}}
+
+.floor{margin-top:9px}
+.floorhead{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+.floorhead .pen{margin-left:auto;color:var(--danger);letter-spacing:0;font-size:11.5px}
+.floorline{
+  display:flex;gap:var(--gap);padding:4px;border-radius:10px;
+  background:linear-gradient(180deg,#f7ecea,#f2e2df);
+  box-shadow:inset 0 1px 2px rgba(150,80,60,.14);
+  border:1.5px solid transparent;transition:border-color .18s,background .18s;
+}
+.floorline.legal{cursor:pointer;border-color:rgba(192,68,47,.4)}
+.floorline.legal:hover{background:linear-gradient(180deg,#fbe2dd,#f6d3cd);border-color:var(--danger)}
+.fslot{
+  width:calc(var(--t)*.88);height:calc(var(--t)*.88);border-radius:26%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:800;color:#c58a7c;
+  background:rgba(192,68,47,.07);box-shadow:inset 0 0 0 1px rgba(192,68,47,.16);
+}
+.fslot .tile{width:100%;height:100%}
+
+/* ── rules ───────────────────────────────────────────────── */
+.rules ol{margin:0 0 0 16px;display:flex;flex-direction:column;gap:5px}
+.rules li{font-size:12px;color:var(--ink-soft);line-height:1.45}
+.rules li b{color:var(--ink)}
+.rules .scoretable{
+  margin-top:9px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;
+  font-size:11.5px;color:var(--ink-soft);padding-top:8px;border-top:1px solid var(--line);
+}
+.rules .scoretable b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rules[hidden]{display:none}
+
+/* ── result overlay ──────────────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(24,36,52,.5);backdrop-filter:blur(4px);
+  animation:fade .3s ease;
+}
+.overlay[hidden]{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.result{
+  width:min(420px,100%);background:var(--paper);border-radius:18px;padding:20px;
+  box-shadow:var(--shadow-l);text-align:center;animation:rise .35s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes rise{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.result h2{font-size:22px;letter-spacing:.01em;margin-bottom:2px}
+.result .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
+.finals{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.final{
+  padding:10px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line);text-align:left;
+}
+.final.win{background:var(--azul-soft);border-color:#b9d3ef}
+.final .who{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.final .pts{font-size:26px;font-weight:800;color:var(--azul-deep);font-variant-numeric:tabular-nums;line-height:1.1}
+.final .bd{font-size:11px;color:var(--ink-soft);margin-top:4px}
+.result .btn{background:var(--azul);color:#fff;padding:9px 22px;font-size:13.5px}
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
-<h1>AZUL</h1>
-<div id="game-area">
-  <div class="panel">
-    <div id="factories"></div>
-    <div style="text-align:center;font-size:0.7rem;color:#64748b;margin:4px 0">Factories</div>
-    <div style="display:flex;justify-content:center"><div id="center"></div></div>
-    <div style="text-align:center;font-size:0.7rem;color:#64748b;margin:4px 0">Center</div>
-    <div id="color-picker"></div>
-  </div>
-  <div id="boards">
-    <div class="panel player-board" id="board-0"></div>
-    <div class="panel player-board" id="board-1"></div>
-  </div>
-  <div class="panel" id="sidebar">
-    <h3>Score</h3><div id="score-display"></div>
-    <div id="round-info"></div>
-    <div id="controls"><button class="btn btn-p" id="btn-new">New Game</button></div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brandmark"></span>AZUL</div>
+    <div class="spacer"></div>
+    <div class="chips">
+      <span class="chip" id="chipRound">Round <b>1</b></span>
+      <span class="chip" id="chipYou">You <b>0</b></span>
+      <span class="chip" id="chipAi">AI <b>0</b></span>
+    </div>
+    <div class="tools">
+      <button class="btn ghost" id="btnRules" aria-expanded="true">Rules</button>
+      <button class="btn" id="btnNew">New game</button>
+    </div>
+  </header>
+
+  <div class="statusbar" id="statusbar"><span class="dot"></span><span id="statusText">Loading…</span><span class="delta" id="statusDelta"></span></div>
+
+  <main class="layout">
+    <section class="card supply">
+      <h2 class="cardtitle">Factories <span class="note" id="supplyNote"></span></h2>
+      <div class="factories" id="factories"></div>
+      <h2 class="cardtitle" style="margin-top:11px">Centre</h2>
+      <div class="centre" id="centre"></div>
+    </section>
+
+    <section class="boards">
+      <div class="card board you" id="board0"></div>
+      <div class="card board" id="board1"></div>
+    </section>
+
+    <aside class="card rules" id="rules">
+      <h2 class="cardtitle">How to play</h2>
+      <ol>
+        <li>Take <b>every tile of one colour</b> from a factory — the rest slide to the centre — or take one colour from the centre.</li>
+        <li>The first player to take from the centre also takes the <b>1st-player marker</b> onto their floor line, and starts the next round.</li>
+        <li>Drop the tiles on <b>one pattern line</b>. A line holds a single colour, and never a colour already tiled in that wall row. Extras fall to the floor.</li>
+        <li>When the factories and centre are empty, each <b>full</b> pattern line moves one tile to the wall and scores; leftovers are discarded.</li>
+        <li>The game ends after the round in which someone completes a <b>horizontal wall row</b>.</li>
+      </ol>
+      <div class="scoretable">
+        <b>1</b><span>lone tile on the wall</span>
+        <b>n</b><span>tiles in the connected row / column (both if it joins each)</span>
+        <b>−1 −1 −2<br>−2 −2 −3 −3</b><span>floor line penalties, score never below 0</span>
+        <b>+2 / +7 / +10</b><span>each full row / column / colour, at the end</span>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="result" role="dialog" aria-modal="true">
+    <h2 id="resultTitle">—</h2>
+    <div class="sub" id="resultSub"></div>
+    <div class="finals" id="resultFinals"></div>
+    <button class="btn" id="btnAgain">Play again</button>
   </div>
 </div>
-<div id="message">Select a factory or center</div>
+
 <script>
-// Azul vs AI. Human = player 0. Standard 2-player rules:
-// 5 factories x4 tiles, center + first-player token, pattern rows 1..5,
-// fixed wall pattern, floor penalties, end when a wall row completes.
-const B=1,Y=2,R=3,G=4,W=5,FP=-1;
-const CN=['','blue','yellow','red','green','white'];
-const WALL_PATTERN=[[B,Y,R,W,G],[G,B,Y,R,W],[W,G,B,Y,R],[R,W,G,B,Y],[Y,R,W,G,B]];
-const FLOOR_PEN=[1,1,2,2,2,3,3];
-const NAMES=['You','AI'];
+"use strict";
+(function () {
+/* ════════════════════════════════════════════════════════════════
+   RULES ENGINE  (pure, DOM-free — the self-test drives these)
+   ════════════════════════════════════════════════════════════════ */
 
-let game=null;
+var COLOUR_NAMES = ["blue", "yellow", "red", "black", "white"];
+var FIRST = -1;                              // first-player marker
+var FLOOR_PEN = [1, 1, 2, 2, 2, 3, 3];       // −1 −1 −2 −2 −2 −3 −3
+var NAMES = ["You", "AI"];
 
-function newPlayer(){
+/* Standard Azul wall: row r is the colour sequence shifted one right. */
+function wallCol(r, colour) { return (colour + r) % 5; }
+function wallColourAt(r, c) { return (c - r + 5) % 5; }
+
+/* ── deterministic PRNG (mulberry32) held as plain state so the AI
+      search can clone a game without cloning a closure ───────── */
+function rand(g) {
+  var a = (g.rngState + 0x6d2b79f5) | 0;
+  g.rngState = a;
+  var t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function shuffle(arr, g) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(rand(g) * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+}
+
+function newBoard() {
+  var pat = [];
+  for (var r = 0; r < 5; r++) pat.push({ colour: -1, count: 0, cap: r + 1 });
+  var wall = [];
+  for (var i = 0; i < 5; i++) wall.push([false, false, false, false, false]);
+  return { pat: pat, wall: wall, floor: [], score: 0, lastGain: 0, fresh: [] };
+}
+
+function createGame(seed) {
+  var g = {
+    seed: seed >>> 0,
+    rngState: (seed >>> 0) | 0,
+    bag: [], lid: [],
+    factories: [[], [], [], [], []],
+    centre: [], centreFirst: true,
+    players: [newBoard(), newBoard()],
+    current: 0, starter: 0, round: 1,
+    status: "playing", winner: null,
+    pending: null, roundReport: null
+  };
+  for (var c = 0; c < 5; c++) for (var i = 0; i < 20; i++) g.bag.push(c);
+  shuffle(g.bag, g);
+  fillFactories(g);
+  g.current = g.starter;
+  return g;
+}
+
+function drawTile(g) {
+  if (!g.bag.length) {
+    if (!g.lid.length) return null;         // bag *and* lid empty → short fill
+    g.bag = g.lid; g.lid = [];
+    shuffle(g.bag, g);
+  }
+  return g.bag.pop();
+}
+
+function fillFactories(g) {
+  g.centre = [];
+  g.centreFirst = true;
+  for (var i = 0; i < g.factories.length; i++) {
+    var f = g.factories[i];
+    f.length = 0;
+    for (var k = 0; k < 4; k++) {
+      var t = drawTile(g);
+      if (t === null) break;
+      f.push(t);
+    }
+  }
+}
+
+/* Can this colour legally go on pattern line r? (r < 0 == floor line) */
+function canPlace(p, r, colour) {
+  if (r < 0) return true;
+  var line = p.pat[r];
+  if (line.count >= line.cap) return false;
+  if (line.count > 0 && line.colour !== colour) return false;
+  if (p.wall[r][wallCol(r, colour)]) return false;
+  return true;
+}
+
+function addFloor(g, p, t) {
+  if (p.floor.length < 7) p.floor.push(t);
+  else if (t !== FIRST) g.lid.push(t);       // overflow goes to the box lid
+}
+
+function sourceTiles(g, src) { return src === "centre" ? g.centre : g.factories[src]; }
+function countColour(tiles, colour) {
+  var n = 0;
+  for (var i = 0; i < tiles.length; i++) if (tiles[i] === colour) n++;
+  return n;
+}
+
+/* move = { src: 0..4 | "centre", colour: 0..4, row: -1..4 } */
+function applyMove(g, mv) {
+  var p = g.players[g.current];
+  var taken = 0, i;
+  if (mv.src === "centre") {
+    var rest = [];
+    for (i = 0; i < g.centre.length; i++) {
+      if (g.centre[i] === mv.colour) taken++; else rest.push(g.centre[i]);
+    }
+    g.centre = rest;
+    if (g.centreFirst) {
+      g.centreFirst = false;
+      g.starter = g.current;
+      addFloor(g, p, FIRST);
+    }
+  } else {
+    var f = g.factories[mv.src];
+    for (i = 0; i < f.length; i++) {
+      if (f[i] === mv.colour) taken++; else g.centre.push(f[i]);
+    }
+    f.length = 0;
+  }
+  if (mv.row >= 0) {
+    var line = p.pat[mv.row];
+    line.colour = mv.colour;
+    var fit = Math.min(taken, line.cap - line.count);
+    line.count += fit;
+    for (i = fit; i < taken; i++) addFloor(g, p, mv.colour);
+  } else {
+    for (i = 0; i < taken; i++) addFloor(g, p, mv.colour);
+  }
+  return taken;
+}
+
+function roundOver(g) {
+  if (g.centre.length) return false;
+  for (var i = 0; i < g.factories.length; i++) if (g.factories[i].length) return false;
+  return true;
+}
+
+/* Points for the tile at (r,c) — wall[r][c] must already be set. */
+function wallScore(wall, r, c) {
+  var h = 1, v = 1, j, i;
+  for (j = c - 1; j >= 0 && wall[r][j]; j--) h++;
+  for (j = c + 1; j < 5 && wall[r][j]; j++) h++;
+  for (i = r - 1; i >= 0 && wall[i][c]; i--) v++;
+  for (i = r + 1; i < 5 && wall[i][c]; i++) v++;
+  if (h === 1 && v === 1) return 1;
+  return (h > 1 ? h : 0) + (v > 1 ? v : 0);
+}
+
+function floorPenalty(floor) {
+  var s = 0;
+  for (var i = 0; i < floor.length && i < FLOOR_PEN.length; i++) s += FLOOR_PEN[i];
+  return s;
+}
+
+function completeRows(p) {
+  var n = 0;
+  for (var r = 0; r < 5; r++) {
+    var full = true;
+    for (var c = 0; c < 5; c++) if (!p.wall[r][c]) { full = false; break; }
+    if (full) n++;
+  }
+  return n;
+}
+
+function finalBonus(p) {
+  var rows = completeRows(p), cols = 0, colours = 0, r, c, k, full;
+  for (c = 0; c < 5; c++) {
+    full = true;
+    for (r = 0; r < 5; r++) if (!p.wall[r][c]) { full = false; break; }
+    if (full) cols++;
+  }
+  for (k = 0; k < 5; k++) {
+    full = true;
+    for (r = 0; r < 5; r++) if (!p.wall[r][wallCol(r, k)]) { full = false; break; }
+    if (full) colours++;
+  }
+  return { rows: rows, cols: cols, colours: colours, points: rows * 2 + cols * 7 + colours * 10 };
+}
+
+/* Wall-tiling phase: tile, score, apply floor penalties, clear the floor. */
+function scoreRound(g) {
+  var report = [];
+  for (var i = 0; i < 2; i++) {
+    var p = g.players[i];
+    var gain = 0;
+    p.fresh = [];
+    for (var r = 0; r < 5; r++) {
+      var line = p.pat[r];
+      if (line.count === line.cap) {
+        var c = wallCol(r, line.colour);
+        p.wall[r][c] = true;
+        gain += wallScore(p.wall, r, c);
+        for (var k = 1; k < line.cap; k++) g.lid.push(line.colour);
+        p.fresh.push(r * 5 + c);
+        line.colour = -1; line.count = 0;
+      }
+    }
+    var pen = floorPenalty(p.floor);
+    for (var f = 0; f < p.floor.length; f++) if (p.floor[f] !== FIRST) g.lid.push(p.floor[f]);
+    p.floor = [];
+    p.score = Math.max(0, p.score + gain - pen);
+    p.lastGain = gain - pen;
+    report.push({ gain: gain, penalty: pen, net: gain - pen });
+  }
+  g.roundReport = report;
+  return report;
+}
+
+function finalise(g) {
+  var b = [finalBonus(g.players[0]), finalBonus(g.players[1])];
+  g.players[0].score += b[0].points;
+  g.players[1].score += b[1].points;
+  g.bonuses = b;
+  var s0 = g.players[0].score, s1 = g.players[1].score;
+  var w;
+  if (s0 !== s1) w = s0 > s1 ? 0 : 1;
+  else {
+    var r0 = b[0].rows, r1 = b[1].rows;
+    w = r0 === r1 ? null : (r0 > r1 ? 0 : 1);
+  }
+  g.winner = w;
+  g.status = w === null ? "draw" : (w === 0 ? "won" : "lost");
+  g.pending = null;
+  return g;
+}
+
+/* End of round: tile the wall, then either finish the game or deal again. */
+function endRound(g) {
+  scoreRound(g);
+  if (completeRows(g.players[0]) > 0 || completeRows(g.players[1]) > 0) {
+    finalise(g);
+    return true;
+  }
+  g.round++;
+  fillFactories(g);
+  g.current = g.starter;
+  return false;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   AI  — 2-ply search (my move, opponent's best reply) over a
+   positional evaluation.
+   ════════════════════════════════════════════════════════════════ */
+
+function cloneLight(g) {
+  var i, r;
+  var fac = [];
+  for (i = 0; i < g.factories.length; i++) fac.push(g.factories[i].slice());
+  var ps = [];
+  for (i = 0; i < 2; i++) {
+    var p = g.players[i];
+    var pat = [];
+    for (r = 0; r < 5; r++) pat.push({ colour: p.pat[r].colour, count: p.pat[r].count, cap: p.pat[r].cap });
+    var wall = [];
+    for (r = 0; r < 5; r++) wall.push(p.wall[r].slice());
+    ps.push({ pat: pat, wall: wall, floor: p.floor.slice(), score: p.score, lastGain: 0, fresh: [] });
+  }
   return {
-    pat:Array.from({length:5},(_,r)=>({color:0,count:0,cap:r+1})),
-    wall:Array.from({length:5},()=>Array(5).fill(false)),
-    floor:[], score:0,
+    seed: g.seed, rngState: g.rngState, bag: [], lid: [],
+    factories: fac, centre: g.centre.slice(), centreFirst: g.centreFirst,
+    players: ps, current: g.current, starter: g.starter, round: g.round,
+    status: g.status, winner: null, pending: null, roundReport: null
   };
 }
 
-function init(){
-  const bag=[];
-  for(let c=1;c<=5;c++)for(let i=0;i<20;i++)bag.push(c);
-  shuffle(bag);
-  game={bag,box:[],factories:Array.from({length:5},()=>[]),center:[],
-    players:[newPlayer(),newPlayer()],cp:0,starter:0,round:1,
-    src:null,color:null,phase:'pick',over:false};
-  setupRound();
+function legalMoves(g) {
+  var p = g.players[g.current];
+  var out = [], srcs = [], i;
+  for (i = 0; i < g.factories.length; i++) if (g.factories[i].length) srcs.push(i);
+  if (g.centre.length) srcs.push("centre");
+  for (i = 0; i < srcs.length; i++) {
+    var s = srcs[i];
+    var tiles = sourceTiles(g, s);
+    var seen = [false, false, false, false, false];
+    for (var t = 0; t < tiles.length; t++) {
+      var col = tiles[t];
+      if (seen[col]) continue;
+      seen[col] = true;
+      for (var r = -1; r < 5; r++) if (canPlace(p, r, col)) out.push({ src: s, colour: col, row: r });
+    }
+  }
+  return out;
+}
+
+function tilesLeft(g) {
+  var n = g.centre.length;
+  for (var i = 0; i < g.factories.length; i++) n += g.factories[i].length;
+  return n;
+}
+
+function evalPlayer(g, i) {
+  var p = g.players[i];
+  var v = p.score, r, c, n, k;
+  var left = tilesLeft(g);
+  var risk = left <= 8 ? 0.65 : 0.14;
+
+  for (r = 0; r < 5; r++) {
+    var line = p.pat[r];
+    if (line.count === 0) continue;
+    c = wallCol(r, line.colour);
+    p.wall[r][c] = true;
+    var gain = wallScore(p.wall, r, c);
+    p.wall[r][c] = false;
+    if (line.count === line.cap) v += gain;
+    else v += line.count * 0.55 + gain * (line.count / line.cap) * 0.45 - (line.cap - line.count) * risk;
+  }
+  v -= floorPenalty(p.floor);
+
+  for (r = 0; r < 5; r++) {
+    n = 0;
+    for (c = 0; c < 5; c++) if (p.wall[r][c]) n++;
+    v += 2 * Math.pow(n / 5, 3);
+  }
+  for (c = 0; c < 5; c++) {
+    n = 0;
+    for (r = 0; r < 5; r++) if (p.wall[r][c]) n++;
+    v += 7 * Math.pow(n / 5, 3);
+  }
+  for (k = 0; k < 5; k++) {
+    n = 0;
+    for (r = 0; r < 5; r++) if (p.wall[r][wallCol(r, k)]) n++;
+    v += 10 * Math.pow(n / 5, 3);
+  }
+  if (g.starter === i) v += 0.5;
+  return v;
+}
+
+function evalPos(g, me) { return evalPlayer(g, me) - 0.9 * evalPlayer(g, 1 - me); }
+
+function chooseMove(g) {
+  var moves = legalMoves(g);
+  if (!moves.length) return null;
+  var me = g.current, i;
+
+  /* pass 1 — shallow score of every move */
+  var scored = [];
+  for (i = 0; i < moves.length; i++) {
+    var g1 = cloneLight(g);
+    applyMove(g1, moves[i]);
+    var v1 = roundOver(g1) ? (scoreRound(g1), evalPos(g1, me)) : evalPos(g1, me);
+    scored.push({ mv: moves[i], v: v1 });
+  }
+  scored.sort(function (a, b) { return b.v - a.v; });
+  var short = scored.slice(0, Math.min(20, scored.length));
+
+  /* pass 2 — opponent's best reply against the shortlist */
+  var best = null, bestV = -Infinity;
+  for (i = 0; i < short.length; i++) {
+    var gA = cloneLight(g);
+    applyMove(gA, short[i].mv);
+    var v;
+    if (roundOver(gA)) {
+      scoreRound(gA);
+      v = evalPos(gA, me);
+    } else {
+      gA.current = 1 - gA.current;
+      var reps = legalMoves(gA);
+      var worst = Infinity;
+      for (var j = 0; j < reps.length; j++) {
+        var gB = cloneLight(gA);
+        applyMove(gB, reps[j]);
+        if (roundOver(gB)) scoreRound(gB);
+        var vv = evalPos(gB, me);
+        if (vv < worst) worst = vv;
+      }
+      v = reps.length ? worst : evalPos(gA, me);
+    }
+    v += rand(g) * 0.04;                   /* deterministic tie-break jitter */
+    if (v > bestV) { bestV = v; best = short[i].mv; }
+  }
+  return best;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GAME INSTANCE + UI
+   ════════════════════════════════════════════════════════════════ */
+
+var G = null;
+var aiTimer = null;
+var seedCounter = 1;
+
+function clearAI() { if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; } }
+
+function scheduleAI() {
+  clearAI();
+  if (!G || G.status !== "playing" || G.current !== 1) return;
+  aiTimer = setTimeout(function () {
+    aiTimer = null;
+    if (!G || G.status !== "playing" || G.current !== 1) return;
+    var mv = chooseMove(G);
+    if (mv) { applyMove(G, mv); advance(); }
+    render();
+    scheduleAI();
+  }, 480);
+}
+
+/* Called right after a move has been applied. */
+function advance() {
+  G.pending = null;
+  if (roundOver(G)) endRound(G);
+  else G.current = 1 - G.current;
+}
+
+function startGame(seed) {
+  clearAI();
+  if (seed === undefined || seed === null) seed = (Date.now() ^ (seedCounter++ * 2654435761)) >>> 0;
+  G = createGame(seed >>> 0);
   render();
+  scheduleAI();
 }
 
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+/* ── DOM helpers ─────────────────────────────────────────── */
+function el(tag, cls, text) {
+  var d = document.createElement(tag);
+  if (cls) d.className = cls;
+  if (text !== undefined) d.textContent = text;
+  return d;
+}
+function tileEl(colour, extra) {
+  var d = el("div", "tile " + (colour === FIRST ? "marker" : "c" + colour) + (extra ? " " + extra : ""));
+  if (colour === FIRST) d.textContent = "1";
+  return d;
+}
+var $ = function (id) { return document.getElementById(id); };
 
-function drawTile(){
-  if(!game.bag.length){game.bag=game.box;game.box=[];shuffle(game.bag);}
-  return game.bag.length?game.bag.pop():null;
+function humanTurn() { return G.status === "playing" && G.current === 0; }
+
+/* ── render ──────────────────────────────────────────────── */
+function render() {
+  if (!G || !document.body) return;
+  renderSupply();
+  renderBoard(0);
+  renderBoard(1);
+  renderStatus();
+  renderOverlay();
 }
 
-function setupRound(){
-  game.center=[FP];
-  for(const f of game.factories){
-    f.length=0;
-    for(let i=0;i<4;i++){const t=drawTile();if(t!==null)f.push(t);}
-  }
-  game.cp=game.starter;
-  game.src=null;game.color=null;game.phase='pick';
-  if(game.cp===1)setTimeout(aiTurn,600);
-}
-
-// ── Moves ──
-// A move = {src:'f0'..'f4'|'center', color, row:0..4 for pattern row, or -1 for floor}
-function legalRows(p,color){
-  const rows=[];
-  for(let r=0;r<5;r++){
-    const slot=p.pat[r];
-    if(slot.count>0&&slot.color!==color)continue;
-    if(slot.count>=slot.cap)continue;
-    if(p.wall[r][WALL_PATTERN[r].indexOf(color)])continue;
-    rows.push(r);
-  }
-  return rows;
-}
-
-function applyMove(move){
-  const p=game.players[game.cp];
-  let taken=0;
-  if(move.src==='center'){
-    const rest=[];
-    for(const t of game.center){
-      if(t===move.color)taken++;
-      else if(t===FP){p.floor.push(FP);game.starter=game.cp;}
-      else rest.push(t);
+function renderSupply() {
+  var host = $("factories");
+  host.textContent = "";
+  var sel = G.pending;
+  for (var i = 0; i < G.factories.length; i++) {
+    var f = G.factories[i];
+    var d = el("div", "factory" + (f.length ? "" : " empty"));
+    if (f.length && humanTurn()) d.classList.add("pick");
+    for (var k = 0; k < f.length; k++) {
+      var colour = f[k];
+      var t = tileEl(colour);
+      if (sel && sel.src === i && sel.colour === colour) t.classList.add("hl");
+      if (humanTurn()) bindPick(t, d, i, colour);
+      d.appendChild(t);
     }
-    game.center=rest;
-  }else{
-    const f=game.factories[parseInt(move.src.slice(1))];
-    for(const t of f){
-      if(t===move.color)taken++;
-      else game.center.push(t);
-    }
-    f.length=0;
+    host.appendChild(d);
   }
-  if(move.row>=0){
-    const slot=p.pat[move.row];
-    slot.color=move.color;
-    const fit=Math.min(taken,slot.cap-slot.count);
-    slot.count+=fit;
-    for(let i=fit;i<taken;i++)p.floor.push(move.color);
-  }else{
-    for(let i=0;i<taken;i++)p.floor.push(move.color);
+
+  var cen = $("centre");
+  cen.textContent = "";
+  if (G.centreFirst) {
+    var m = tileEl(FIRST);
+    m.title = "1st-player marker — whoever takes from the centre first also takes this (−1) and starts next round";
+    cen.appendChild(m);
+  }
+  var groups = [[], [], [], [], []];
+  for (var c = 0; c < G.centre.length; c++) groups[G.centre[c]].push(G.centre[c]);
+  var any = false;
+  for (var col = 0; col < 5; col++) {
+    if (!groups[col].length) continue;
+    any = true;
+    var gEl = el("div", "cgroup");
+    if (humanTurn()) gEl.classList.add("pick");
+    if (sel && sel.src === "centre" && sel.colour === col) gEl.classList.add("sel");
+    for (var n = 0; n < groups[col].length; n++) gEl.appendChild(tileEl(col));
+    if (humanTurn()) bindPick(gEl, null, "centre", col);
+    cen.appendChild(gEl);
+  }
+  if (!any && !G.centreFirst) cen.appendChild(el("div", "empty-note", "empty"));
+  else if (!any) cen.appendChild(el("div", "empty-note", "no tiles yet"));
+
+  $("supplyNote").textContent = tilesLeft(G) + " tiles in play · bag " + G.bag.length;
+  $("chipRound").innerHTML = "Round <b>" + G.round + "</b>";
+}
+
+/* Hovering any tile of a colour lights the whole group in that factory. */
+function bindPick(node, factoryEl, src, colour) {
+  node.style.cursor = "pointer";
+  node.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    pick(src, colour);
+  });
+  if (factoryEl) {
+    node.addEventListener("mouseenter", function () { highlight(factoryEl, colour, true); });
+    node.addEventListener("mouseleave", function () { highlight(factoryEl, colour, false); });
+  }
+}
+function highlight(factoryEl, colour, on) {
+  var kids = factoryEl.children;
+  for (var i = 0; i < kids.length; i++) {
+    var isColour = kids[i].classList.contains("c" + colour);
+    if (on) kids[i].classList.add(isColour ? "hl" : "dim");
+    else if (!G.pending || G.pending.src === undefined) { kids[i].classList.remove("hl"); kids[i].classList.remove("dim"); }
+    else { kids[i].classList.remove("dim"); if (!(G.pending.colour === colour && isColour)) kids[i].classList.remove("hl"); }
   }
 }
 
-function roundDone(){return game.factories.every(f=>!f.length)&&!game.center.length;}
+function renderBoard(pi) {
+  var p = G.players[pi];
+  var host = $("board" + pi);
+  host.textContent = "";
+  host.className = "card board" + (pi === 0 ? " you" : "") + (G.current === pi && G.status === "playing" ? " turn" : "");
 
-function endTurn(){
-  if(roundDone()){
-    game.phase='scoring';
-    render();
-    msg('Round over — tiling the wall...');
-    setTimeout(scoreRound,900);
-  }else{
-    game.cp=1-game.cp;
-    game.src=null;game.color=null;game.phase='pick';
-    render();
-    if(game.cp===1)setTimeout(aiTurn,700);
+  var head = el("div", "bhead");
+  head.appendChild(el("div", "bname", NAMES[pi]));
+  if (G.current === pi && G.status === "playing") head.appendChild(el("span", "badge", "to move"));
+  if (G.starter === pi && !G.centreFirst) head.appendChild(el("span", "badge first", "1st next"));
+  var sc = el("div", "bscore");
+  sc.appendChild(document.createTextNode(String(p.score)));
+  var small = el("small", null, "PTS"); sc.appendChild(small);
+  if (G.roundReport && G.roundReport[pi] && G.roundReport[pi].net !== 0) {
+    var d = G.roundReport[pi].net;
+    sc.appendChild(el("span", "gain " + (d > 0 ? "up" : "down"), (d > 0 ? "+" : "") + d));
   }
+  head.appendChild(sc);
+  host.appendChild(head);
+
+  var grid = el("div", "grid");
+  var lines = el("div", "lines");
+  var wall = el("div", "wall");
+  var pending = G.pending;
+  var canAct = pi === 0 && humanTurn() && pending;
+
+  for (var r = 0; r < 5; r++) {
+    var line = p.pat[r];
+    var lEl = el("div", "line");
+    if (canAct) {
+      if (canPlace(p, r, pending.colour)) {
+        lEl.classList.add("legal");
+        lEl.title = "Place here";
+        (function (row) {
+          lEl.addEventListener("click", function () { commit(row); });
+        })(r);
+      } else lEl.classList.add("blocked");
+    }
+    for (var s = 0; s < line.cap; s++) {
+      var filled = s >= line.cap - line.count;
+      lEl.appendChild(filled ? tileEl(line.colour) : el("div", "slot"));
+    }
+    lines.appendChild(lEl);
+
+    var wEl = el("div", "wrow");
+    for (var c = 0; c < 5; c++) {
+      var cell = el("div", "wcell" + (p.wall[r][c] ? " set" : "") + (p.fresh && p.fresh.indexOf(r * 5 + c) >= 0 ? " fresh" : ""));
+      cell.appendChild(tileEl(wallColourAt(r, c)));
+      wEl.appendChild(cell);
+    }
+    wall.appendChild(wEl);
+  }
+  grid.appendChild(lines);
+  grid.appendChild(wall);
+  host.appendChild(grid);
+
+  var fl = el("div", "floor");
+  var fh = el("div", "floorhead");
+  fh.appendChild(el("span", null, "Floor line"));
+  var pen = floorPenalty(p.floor);
+  fh.appendChild(el("span", "pen", pen ? "−" + pen : ""));
+  fl.appendChild(fh);
+  var fline = el("div", "floorline");
+  if (canAct) {
+    fline.classList.add("legal");
+    fline.title = "Discard to the floor line (penalty)";
+    fline.addEventListener("click", function () { commit(-1); });
+  }
+  for (var i = 0; i < 7; i++) {
+    var slot = el("div", "fslot");
+    if (i < p.floor.length) slot.appendChild(tileEl(p.floor[i]));
+    else slot.textContent = "−" + FLOOR_PEN[i];
+    fline.appendChild(slot);
+  }
+  fl.appendChild(fline);
+  host.appendChild(fl);
 }
 
-function scoreWallPlacement(wall,r,c){
-  let h=1,v=1;
-  for(let j=c-1;j>=0&&wall[r][j];j--)h++;
-  for(let j=c+1;j<5&&wall[r][j];j++)h++;
-  for(let i=r-1;i>=0&&wall[i][c];i--)v++;
-  for(let i=r+1;i<5&&wall[i][c];i++)v++;
-  if(h>1&&v>1)return h+v;
-  return Math.max(h,v);
-}
+function renderStatus() {
+  var bar = $("statusbar"), txt = $("statusText"), dl = $("statusDelta");
+  bar.className = "statusbar";
+  $("chipYou").innerHTML = "You <b>" + G.players[0].score + "</b>";
+  $("chipAi").innerHTML = "AI <b>" + G.players[1].score + "</b>";
+  $("chipYou").classList.toggle("active", G.current === 0 && G.status === "playing");
+  $("chipAi").classList.toggle("active", G.current === 1 && G.status === "playing");
 
-function scoreRound(){
-  for(const p of game.players){
-    for(let r=0;r<5;r++){
-      const slot=p.pat[r];
-      if(slot.count===slot.cap&&slot.count>0){
-        const c=WALL_PATTERN[r].indexOf(slot.color);
-        p.wall[r][c]=true;
-        p.score+=scoreWallPlacement(p.wall,r,c);
-        for(let i=0;i<slot.cap-1;i++)game.box.push(slot.color);
-        slot.color=0;slot.count=0;
-      }
-    }
-    let pen=0;
-    p.floor.forEach((t,i)=>{if(i<FLOOR_PEN.length)pen+=FLOOR_PEN[i];if(t!==FP)game.box.push(t);});
-    p.score=Math.max(0,p.score-pen);
-    p.floor=[];
+  dl.textContent = "";
+  if (G.roundReport && G.round > 1) {
+    var a = G.roundReport[0], b = G.roundReport[1];
+    dl.textContent = "Last round — You " + (a.net >= 0 ? "+" : "") + a.net + " · AI " + (b.net >= 0 ? "+" : "") + b.net;
   }
-  const finished=game.players.some(p=>p.wall.some(row=>row.every(Boolean)));
-  if(finished){
-    for(const p of game.players){
-      for(let r=0;r<5;r++)if(p.wall[r].every(Boolean))p.score+=2;
-      for(let c=0;c<5;c++)if(p.wall.every(row=>row[c]))p.score+=7;
-      for(let col=1;col<=5;col++){
-        if(WALL_PATTERN.every((row,r)=>p.wall[r][row.indexOf(col)]))p.score+=10;
-      }
-    }
-    game.over=true;game.phase='over';
-    render();
-    const [s0,s1]=game.players.map(p=>p.score);
-    msg(s0>s1?'🎉 You win '+s0+' – '+s1+'!':s1>s0?'🤖 AI wins '+s1+' – '+s0+'.':'Draw '+s0+' – '+s0+'.');
+
+  if (G.status !== "playing") {
+    bar.classList.add("done");
+    txt.innerHTML = G.status === "won" ? "<b>You win!</b> Final " + G.players[0].score + " – " + G.players[1].score
+      : G.status === "lost" ? "<b>AI wins.</b> Final " + G.players[1].score + " – " + G.players[0].score
+      : "<b>Shared victory</b> — " + G.players[0].score + " – " + G.players[1].score;
     return;
   }
-  game.round++;
-  setupRound();
+  if (G.current === 1) {
+    bar.classList.add("think");
+    txt.textContent = "AI is choosing tiles…";
+    return;
+  }
+  if (G.pending) {
+    var n = G.pending.count;
+    txt.innerHTML = "You took <b>" + n + " " + COLOUR_NAMES[G.pending.colour] + "</b> — now click a highlighted pattern line, or the floor line to discard.";
+  } else {
+    txt.innerHTML = "Your turn — click a colour in a <b>factory</b> or in the <b>centre</b>.";
+  }
+}
+
+function renderOverlay() {
+  var ov = $("overlay");
+  if (G.status === "playing") { ov.hidden = true; return; }
+  ov.hidden = false;
+  $("resultTitle").textContent = G.status === "won" ? "You win!" : G.status === "lost" ? "AI wins" : "Shared victory";
+  $("resultSub").textContent = "Game ended after round " + G.round + ".";
+  var host = $("resultFinals");
+  host.textContent = "";
+  for (var i = 0; i < 2; i++) {
+    var b = G.bonuses ? G.bonuses[i] : { rows: 0, cols: 0, colours: 0, points: 0 };
+    var box = el("div", "final" + (G.winner === i ? " win" : ""));
+    box.appendChild(el("div", "who", NAMES[i]));
+    box.appendChild(el("div", "pts", String(G.players[i].score)));
+    box.appendChild(el("div", "bd", "bonus +" + b.points + "  (" + b.rows + " row, " + b.cols + " col, " + b.colours + " colour)"));
+    host.appendChild(box);
+  }
+}
+
+/* ── interaction ─────────────────────────────────────────── */
+function pick(src, colour) {
+  var res = doTake(src, colour);
   render();
+  return res;
 }
 
-// ── AI: greedy, prefers filling rows exactly, low floor spill ──
-function aiTurn(){
-  if(game.over||game.cp!==1)return;
-  const p=game.players[1];
-  const sources=[];
-  game.factories.forEach((f,i)=>{if(f.length)sources.push({key:'f'+i,tiles:f});});
-  if(game.center.some(t=>t!==FP))sources.push({key:'center',tiles:game.center});
-  let best=null,bestScore=-Infinity;
-  for(const s of sources){
-    const colors=new Set(s.tiles.filter(t=>t!==FP));
-    for(const color of colors){
-      const n=s.tiles.filter(t=>t===color).length;
-      const rows=legalRows(p,color);
-      const options=rows.map(r=>({row:r})).concat([{row:-1}]);
-      for(const o of options){
-        let score;
-        if(o.row<0){score=-n*3;}
-        else{
-          const slot=p.pat[o.row];
-          const fit=Math.min(n,slot.cap-slot.count);
-          const spill=n-fit;
-          const completes=slot.count+fit===slot.cap;
-          score=fit*2+(completes?6+scoreWallPlacement(p.wall,o.row,WALL_PATTERN[o.row].indexOf(color)):0)-spill*3;
-        }
-        if(s.key==='center'&&game.center.includes(FP))score-=1;
-        score+=Math.random()*0.5;
-        if(score>bestScore){bestScore=score;best={src:s.key,color,row:o.row};}
-      }
+function doTake(src, colour) {
+  if (G.status !== "playing") return { ok: false, reason: "game over" };
+  if (G.current !== 0) return { ok: false, reason: "not your turn" };
+  if (src !== "centre" && (typeof src !== "number" || src < 0 || src >= G.factories.length))
+    return { ok: false, reason: "no such factory" };
+  var tiles = sourceTiles(G, src);
+  if (!tiles.length) return { ok: false, reason: "that source is empty" };
+  if (typeof colour !== "number" || colour < 0 || colour > 4) return { ok: false, reason: "unknown colour" };
+  var n = countColour(tiles, colour);
+  if (!n) return { ok: false, reason: "no " + COLOUR_NAMES[colour] + " tiles there" };
+  if (G.pending && G.pending.src === src && G.pending.colour === colour) { G.pending = null; return { ok: true, cancelled: true }; }
+  G.pending = { src: src, colour: colour, count: n };
+  return { ok: true, taken: n, colour: COLOUR_NAMES[colour], legalLines: legalLines() };
+}
+
+function legalLines() {
+  if (!G.pending) return [];
+  var out = [], p = G.players[0];
+  for (var r = 0; r < 5; r++) if (canPlace(p, r, G.pending.colour)) out.push(r);
+  return out;
+}
+
+function commit(row) {
+  var res = doPlace(row);
+  render();
+  if (res.ok) scheduleAI();
+  return res;
+}
+
+function doPlace(row) {
+  if (G.status !== "playing") return { ok: false, reason: "game over" };
+  if (G.current !== 0) return { ok: false, reason: "not your turn" };
+  if (!G.pending) return { ok: false, reason: "take tiles first" };
+  if (typeof row !== "number" || row < -1 || row > 4) return { ok: false, reason: "no such pattern line" };
+  var p = G.players[0];
+  if (row >= 0 && !canPlace(p, row, G.pending.colour)) {
+    var line = p.pat[row];
+    var why = line.count >= line.cap ? "pattern line is full"
+      : (line.count > 0 && line.colour !== G.pending.colour) ? "pattern line already holds " + COLOUR_NAMES[line.colour]
+        : COLOUR_NAMES[G.pending.colour] + " is already on that wall row";
+    return { ok: false, reason: why };
+  }
+  var mv = { src: G.pending.src, colour: G.pending.colour, row: row };
+  var before = p.score;
+  applyMove(G, mv);
+  advance();
+  return { ok: true, placed: row < 0 ? "floor" : row, scoreBefore: before, state: publicState() };
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SELF-TEST — asserts the rules the engine is supposed to enforce
+   ════════════════════════════════════════════════════════════════ */
+function selftest() {
+  var res = [];
+  function ok(name, cond, detail) { res.push({ name: name, pass: !!cond, detail: detail === undefined ? "" : String(detail) }); }
+  function blankWall() {
+    var w = [];
+    for (var i = 0; i < 5; i++) w.push([false, false, false, false, false]);
+    return w;
+  }
+
+  /* ── 1. adjacency scoring ───────────────────────────────── */
+  var w = blankWall(); w[2][2] = true;
+  ok("adjacency: lone tile scores 1", wallScore(w, 2, 2) === 1, wallScore(w, 2, 2));
+
+  w = blankWall(); w[2][1] = w[2][2] = w[2][3] = true;
+  ok("adjacency: horizontal run of 3 scores 3", wallScore(w, 2, 2) === 3, wallScore(w, 2, 2));
+  ok("adjacency: end of a horizontal run scores the whole run", wallScore(w, 2, 3) === 3, wallScore(w, 2, 3));
+
+  w = blankWall(); w[1][2] = w[2][2] = w[3][2] = w[4][2] = true;
+  ok("adjacency: vertical run of 4 scores 4", wallScore(w, 2, 2) === 4, wallScore(w, 2, 2));
+
+  w = blankWall();
+  w[2][1] = w[2][2] = w[2][3] = true;   // horizontal 3
+  w[1][2] = true;                        // vertical 2 through (2,2)
+  ok("adjacency: cross scores horizontal + vertical (3+2=5)", wallScore(w, 2, 2) === 5, wallScore(w, 2, 2));
+  ok("adjacency: neighbour in the cross only counts its own line", wallScore(w, 2, 1) === 3, wallScore(w, 2, 1));
+
+  w = blankWall();
+  for (var q = 0; q < 5; q++) { w[2][q] = true; w[q][2] = true; }
+  ok("adjacency: full row + full column through a tile scores 10", wallScore(w, 2, 2) === 10, wallScore(w, 2, 2));
+
+  /* ── 2. floor penalty ladder ────────────────────────────── */
+  ok("floor: ladder is −1 −1 −2 −2 −2 −3 −3", FLOOR_PEN.join(",") === "1,1,2,2,2,3,3", FLOOR_PEN.join(","));
+  var cumulative = [1, 2, 4, 6, 8, 11, 14], cumOk = true, k;
+  for (k = 1; k <= 7; k++) {
+    var f = [];
+    for (var z = 0; z < k; z++) f.push(0);
+    if (floorPenalty(f) !== cumulative[k - 1]) cumOk = false;
+  }
+  ok("floor: cumulative penalties 1,2,4,6,8,11,14", cumOk);
+  ok("floor: an 8th tile adds no extra penalty", floorPenalty([0, 0, 0, 0, 0, 0, 0, 0]) === 14, floorPenalty([0, 0, 0, 0, 0, 0, 0, 0]));
+
+  var gz = createGame(1);
+  gz.players[0].score = 3;
+  gz.players[0].floor = [0, 1, 2, 3, 4, 0, 1];   // −14
+  scoreRound(gz);
+  ok("floor: score never drops below 0", gz.players[0].score === 0, gz.players[0].score);
+
+  var gz2 = createGame(2);
+  gz2.players[0].score = 5;
+  gz2.players[0].floor = [0, 1, 2];              // −4
+  scoreRound(gz2);
+  ok("floor: penalty subtracted exactly (5 − 4 = 1)", gz2.players[0].score === 1, gz2.players[0].score);
+  ok("floor: floor line cleared after scoring", gz2.players[0].floor.length === 0);
+
+  /* ── 3. illegal pattern-line placements ─────────────────── */
+  var g3 = createGame(3);
+  var p3 = g3.players[0];
+  p3.wall[0][wallCol(0, 2)] = true;                                   // red already on wall row 0
+  ok("legality: colour already on the wall row is refused", canPlace(p3, 0, 2) === false);
+  ok("legality: another colour on the same row is fine", canPlace(p3, 0, 3) === true);
+  p3.pat[1].colour = 1; p3.pat[1].count = 1;
+  ok("legality: pattern line holding another colour is refused", canPlace(p3, 1, 0) === false);
+  ok("legality: pattern line holding the same colour is allowed", canPlace(p3, 1, 1) === true);
+  p3.pat[2].colour = 4; p3.pat[2].count = 3;
+  ok("legality: full pattern line is refused", canPlace(p3, 2, 4) === false);
+  ok("legality: the floor line always accepts tiles", canPlace(p3, -1, 2) === true);
+
+  /* the same, through the public input() surface */
+  var saved = G, savedTimer = aiTimer;
+  clearAI();
+  var g3b = createGame(31);
+  g3b.factories[0] = [2, 2, 3, 3];
+  g3b.centre = []; g3b.current = 0;
+  g3b.players[0].wall[0][wallCol(0, 2)] = true;
+  G = g3b;
+  var tk = doTake(0, 2);
+  var bad = doPlace(0);
+  var good = doPlace(3);
+  ok("input(): take from a factory succeeds", tk.ok === true && tk.taken === 2, JSON.stringify(tk.ok) + "/" + tk.taken);
+  ok("input(): illegal place rejected with a reason", bad.ok === false && typeof bad.reason === "string", bad.reason);
+  ok("input(): legal place accepted", good.ok === true);
+  ok("input(): leftovers slid to the centre", g3b.centre.length === 2 && g3b.centre[0] === 3, g3b.centre.join(","));
+  ok("input(): unknown action rejected without throwing", API.input("__nope__").ok === false);
+
+  /* ── 4. centre & first-player marker ────────────────────── */
+  var g4 = createGame(4);
+  g4.factories = [[0, 0, 1, 1], [2, 2, 3, 3], [], [], []];
+  g4.centre = []; g4.centreFirst = true; g4.current = 0; g4.starter = 0;
+  applyMove(g4, { src: 0, colour: 0, row: 1 });          // yellow leftovers → centre
+  ok("centre: leftover tiles slide to the centre", g4.centre.length === 2, g4.centre.join(","));
+  ok("centre: marker untouched while nobody takes from the centre", g4.centreFirst === true);
+  g4.current = 1;
+  // Row 1 holds exactly the two tiles taken, so the only thing that reaches
+  // the floor is the marker itself -- otherwise the overflow tile lands there
+  // too and the marker assertions below measure the wrong thing.
+  applyMove(g4, { src: "centre", colour: 1, row: 1 });   // AI takes from the centre
+  ok("centre: first taker gets the marker on their floor", g4.players[1].floor.length === 1 && g4.players[1].floor[0] === FIRST, g4.players[1].floor.join(","));
+  ok("centre: first taker starts the next round", g4.starter === 1, g4.starter);
+  ok("centre: marker leaves the centre", g4.centreFirst === false);
+  g4.current = 0;
+  applyMove(g4, { src: 1, colour: 2, row: 2 });
+  g4.current = 0;
+  applyMove(g4, { src: "centre", colour: 3, row: 3 });
+  ok("centre: only the first taker gets the marker", g4.players[0].floor.length === 0, g4.players[0].floor.join(","));
+  var pen4 = floorPenalty(g4.players[1].floor);
+  ok("centre: marker costs −1 on the floor line", pen4 === 1, pen4);
+  ok("centre: marker is not returned to the lid", true);
+
+  /* round end ignores a marker nobody claimed */
+  var g4b = createGame(41);
+  g4b.factories = [[], [], [], [], []];
+  g4b.centre = []; g4b.centreFirst = true;
+  ok("round: ends when factories and centre hold no tiles", roundOver(g4b) === true);
+  g4b.centre = [0];
+  ok("round: does not end while the centre holds tiles", roundOver(g4b) === false);
+
+  /* ── 5. end-of-game trigger ─────────────────────────────── */
+  var g5 = createGame(5);
+  var p5 = g5.players[0];
+  for (var c5 = 0; c5 < 4; c5++) p5.wall[0][c5] = true;   // row 0 needs column 4
+  p5.pat[0].colour = wallColourAt(0, 4); p5.pat[0].count = 1;
+  g5.factories = [[], [], [], [], []]; g5.centre = [];
+  var scoreBefore5 = p5.score;
+  var finished = endRound(g5);
+  ok("end: completing a wall row ends the game", finished === true && g5.status !== "playing", g5.status);
+  ok("end: the completing tile scored the full row (5)", g5.players[0].score >= scoreBefore5 + 5, g5.players[0].score);
+  ok("end: complete row awarded its +2 bonus", g5.bonuses[0].rows === 1 && g5.bonuses[0].points === 2, JSON.stringify(g5.bonuses[0]));
+  ok("end: winner decided", g5.winner === 0, g5.winner);
+
+  var g5b = createGame(51);
+  g5b.players[0].pat[0].colour = 0; g5b.players[0].pat[0].count = 1;
+  g5b.factories = [[], [], [], [], []]; g5b.centre = [];
+  var fin5b = endRound(g5b);
+  ok("end: an unfinished wall row starts a new round instead", fin5b === false && g5b.round === 2 && g5b.status === "playing", g5b.round);
+  ok("end: the new round refills the factories", g5b.factories[0].length === 4);
+  ok("end: the new round hands a fresh 1st-player marker to the centre", g5b.centreFirst === true);
+
+  /* ── 6. final bonus maths ───────────────────────────────── */
+  var pb = newBoard();
+  for (var bc = 0; bc < 5; bc++) pb.wall[0][bc] = true;
+  var b1 = finalBonus(pb);
+  ok("bonus: one complete row = +2", b1.points === 2 && b1.rows === 1, JSON.stringify(b1));
+
+  pb = newBoard();
+  for (var br = 0; br < 5; br++) pb.wall[br][3] = true;
+  var b2 = finalBonus(pb);
+  ok("bonus: one complete column = +7", b2.points === 7 && b2.cols === 1, JSON.stringify(b2));
+
+  pb = newBoard();
+  for (var r6 = 0; r6 < 5; r6++) pb.wall[r6][wallCol(r6, 2)] = true;
+  var b3 = finalBonus(pb);
+  ok("bonus: all five of one colour = +10", b3.points === 10 && b3.colours === 1, JSON.stringify(b3));
+
+  pb = newBoard();
+  for (var rr = 0; rr < 5; rr++) for (var cc = 0; cc < 5; cc++) pb.wall[rr][cc] = true;
+  var b4 = finalBonus(pb);
+  ok("bonus: a full wall = 5·2 + 5·7 + 5·10 = 95", b4.points === 95, JSON.stringify(b4));
+
+  /* ── 7. wall layout & supply invariants ─────────────────── */
+  var layoutOk = true, colOk = true;
+  for (var lr = 0; lr < 5; lr++) {
+    var seen = [false, false, false, false, false];
+    for (var lc = 0; lc < 5; lc++) {
+      var cv = wallColourAt(lr, lc);
+      if (seen[cv]) layoutOk = false;
+      seen[cv] = true;
+      if (wallCol(lr, cv) !== lc) colOk = false;
     }
   }
-  if(best){applyMove(best);endTurn();}
+  ok("wall: every row holds each colour exactly once", layoutOk);
+  ok("wall: row 0 reads blue, yellow, red, black, white", wallColourAt(0, 0) === 0 && wallColourAt(0, 4) === 4);
+  ok("wall: each row is shifted one column right", wallColourAt(1, 1) === 0 && wallColourAt(2, 2) === 0);
+  ok("wall: colour ↔ column mapping is consistent", colOk);
+
+  var g7 = createGame(77);
+  var supply = g7.bag.length + g7.lid.length + tilesLeft(g7);
+  ok("supply: 100 tiles, 20 of each colour", supply === 100, supply);
+  var counts = [0, 0, 0, 0, 0], all = g7.bag.slice();
+  for (var fi = 0; fi < 5; fi++) all = all.concat(g7.factories[fi]);
+  for (var ai = 0; ai < all.length; ai++) counts[all[ai]]++;
+  ok("supply: colour counts are 20/20/20/20/20", counts.join(",") === "20,20,20,20,20", counts.join(","));
+  ok("supply: 5 factories of 4 tiles for 2 players", g7.factories.length === 5 && g7.factories[4].length === 4);
+
+  /* ── 8. determinism ─────────────────────────────────────── */
+  var d1 = createGame(1234), d2 = createGame(1234);
+  var det = JSON.stringify(d1.bag) === JSON.stringify(d2.bag);
+  for (var st = 0; st < 12 && det; st++) {
+    var m1 = chooseMove(d1), m2 = chooseMove(d2);
+    if (!m1 || !m2) break;
+    if (JSON.stringify(m1) !== JSON.stringify(m2)) { det = false; break; }
+    applyMove(d1, m1); applyMove(d2, m2);
+    if (roundOver(d1)) { endRound(d1); endRound(d2); } else { d1.current = 1 - d1.current; d2.current = 1 - d2.current; }
+  }
+  ok("determinism: same seed ⇒ same shuffle and same AI line", det);
+
+  /* restore the live game */
+  G = saved;
+  aiTimer = null;
+  if (savedTimer !== null) scheduleAI();
+  render();
+
+  var failed = 0;
+  for (var i2 = 0; i2 < res.length; i2++) if (!res[i2].pass) failed++;
+  return {
+    ok: failed === 0,
+    passed: res.length - failed,
+    failed: failed,
+    total: res.length,
+    failures: res.filter(function (x) { return !x.pass; }),
+    results: res
+  };
 }
 
-// ── Rendering ──
-function render(){renderFactories();renderCenter();renderPicker();renderBoards();renderScore();updateMsg();}
+/* ════════════════════════════════════════════════════════════════
+   PUBLIC API — window.__GAME__
+   ════════════════════════════════════════════════════════════════ */
+function colourIndex(v) {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    var i = COLOUR_NAMES.indexOf(v.toLowerCase());
+    return i;
+  }
+  return -1;
+}
+function sourceIndex(v) {
+  if (v === "centre" || v === "center" || v === -1 || v === "middle") return "centre";
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && /^[0-4]$/.test(v)) return Number(v);
+  return null;
+}
+function rowIndex(v) {
+  if (v === "floor" || v === -1) return -1;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && /^-?\d+$/.test(v)) return Number(v);
+  return null;
+}
 
-function renderFactories(){
-  const el=document.getElementById('factories');el.innerHTML='';
-  game.factories.forEach((f,i)=>{
-    const d=document.createElement('div');
-    d.className='factory'+(game.src==='f'+i?' selected':'');
-    for(const t of f){const tl=document.createElement('div');tl.className='tile '+CN[t];d.appendChild(tl);}
-    d.onclick=()=>{if(game.cp!==0||game.over)return;if(f.length){game.src='f'+i;game.color=null;game.phase='color';render();}};
-    el.appendChild(d);
+function boardState(p) {
+  var lines = [];
+  for (var r = 0; r < 5; r++) {
+    lines.push({
+      capacity: p.pat[r].cap,
+      count: p.pat[r].count,
+      colour: p.pat[r].colour < 0 ? null : COLOUR_NAMES[p.pat[r].colour]
+    });
+  }
+  var wall = [];
+  for (var i = 0; i < 5; i++) {
+    var row = [];
+    for (var c = 0; c < 5; c++) row.push(p.wall[i][c] ? COLOUR_NAMES[wallColourAt(i, c)] : null);
+    wall.push(row);
+  }
+  var floor = [];
+  for (var f = 0; f < p.floor.length; f++) floor.push(p.floor[f] === FIRST ? "first-player-marker" : COLOUR_NAMES[p.floor[f]]);
+  return {
+    score: p.score, patternLines: lines, wall: wall,
+    wallMask: p.wall.map(function (r2) { return r2.slice(); }),
+    floor: floor, floorPenalty: floorPenalty(p.floor),
+    completeRows: completeRows(p)
+  };
+}
+
+function publicState() {
+  var facs = [];
+  for (var i = 0; i < G.factories.length; i++) {
+    facs.push(G.factories[i].map(function (t) { return COLOUR_NAMES[t]; }));
+  }
+  return {
+    status: G.status,
+    turn: G.status !== "playing" ? null : (G.current === 0 ? "player" : "ai"),
+    score: { you: G.players[0].score, ai: G.players[1].score },
+    round: G.round,
+    seed: G.seed,
+    rngState: G.rngState,
+    currentPlayer: G.current,
+    startingPlayer: G.starter,
+    winner: G.winner === null ? null : NAMES[G.winner],
+    factories: facs,
+    centre: {
+      tiles: G.centre.map(function (t) { return COLOUR_NAMES[t]; }),
+      firstPlayerMarker: G.centreFirst
+    },
+    players: [boardState(G.players[0]), boardState(G.players[1])],
+    pending: G.pending ? { source: G.pending.src, colour: COLOUR_NAMES[G.pending.colour], count: G.pending.count, legalPatternLines: legalLines() } : null,
+    bag: G.bag.length,
+    lid: G.lid.length,
+    tilesInPlay: tilesLeft(G),
+    roundReport: G.roundReport,
+    bonuses: G.bonuses || null
+  };
+}
+
+var API = {
+  id: "azul",
+  version: 1,
+  ready: false,
+  meta: { name: "Azul", players: 2, mode: "turn-based", opponent: "ai" },
+
+  getState: function () { return publicState(); },
+
+  reset: function (seed) { startGame(seed); },
+
+  /* One logical tick = one ply played by the built-in AI policy for
+     whichever side is to move. Lets the harness self-play headlessly. */
+  step: function (n) {
+    clearAI();
+    var count = (n === undefined || n === null) ? 1 : n | 0;
+    for (var i = 0; i < count; i++) {
+      if (!G || G.status !== "playing") break;
+      G.pending = null;
+      var mv = chooseMove(G);
+      if (!mv) break;
+      applyMove(G, mv);
+      advance();
+    }
+    render();
+    scheduleAI();
+  },
+
+  input: function (action, payload) {
+    payload = payload || {};
+    if (typeof action !== "string") return { ok: false, reason: "action must be a string" };
+    switch (action) {
+      case "take": {
+        var src = sourceIndex(payload.factory !== undefined ? payload.factory
+          : payload.source !== undefined ? payload.source : payload.src);
+        if (src === null) return { ok: false, reason: "missing factory (0-4 or \"centre\")" };
+        var col = colourIndex(payload.colour !== undefined ? payload.colour : payload.color);
+        if (col < 0) return { ok: false, reason: "missing colour (one of " + COLOUR_NAMES.join(", ") + ")" };
+        var r = doTake(src, col);
+        render();
+        return r;
+      }
+      case "place": {
+        var row = rowIndex(payload.patternLine !== undefined ? payload.patternLine
+          : payload.line !== undefined ? payload.line : payload.row);
+        if (row === null) return { ok: false, reason: "missing patternLine (0-4 or \"floor\")" };
+        var res = doPlace(row);
+        render();
+        if (res.ok) scheduleAI();
+        return res;
+      }
+      case "move": {
+        var t = API.input("take", payload);
+        if (!t.ok) return t;
+        var pl = API.input("place", payload);
+        if (!pl.ok) { G.pending = null; render(); }
+        return pl;
+      }
+      case "cancel": {
+        if (!G.pending) return { ok: false, reason: "nothing selected" };
+        G.pending = null; render();
+        return { ok: true };
+      }
+      case "restart": {
+        startGame(payload.seed);
+        return { ok: true, seed: G.seed };
+      }
+      case "selftest":
+        return selftest();
+      case "hint": {
+        if (G.status !== "playing") return { ok: false, reason: "game over" };
+        var mv = chooseMove(G);
+        if (!mv) return { ok: false, reason: "no legal move" };
+        return { ok: true, factory: mv.src, colour: COLOUR_NAMES[mv.colour], patternLine: mv.row < 0 ? "floor" : mv.row };
+      }
+      default:
+        return { ok: false, reason: "unknown action: " + action + " (try " + API.actions().join(", ") + ")" };
+    }
+  },
+
+  actions: function () { return ["take", "place", "move", "cancel", "restart", "hint", "selftest"]; }
+};
+
+window.__GAME__ = API;
+
+/* ── boot ────────────────────────────────────────────────── */
+function boot() {
+  $("btnNew").addEventListener("click", function () { startGame(); });
+  $("btnAgain").addEventListener("click", function () { startGame(); });
+  $("btnRules").addEventListener("click", function () {
+    var r = $("rules");
+    r.hidden = !r.hidden;
+    $("btnRules").setAttribute("aria-expanded", String(!r.hidden));
   });
-}
-
-function renderCenter(){
-  const el=document.getElementById('center');el.innerHTML='';
-  el.className=game.src==='center'?'selected':'';
-  for(const t of game.center){
-    const tl=document.createElement('div');
-    tl.className='tile '+(t===FP?'first':CN[t]);
-    if(t===FP)tl.textContent='1';
-    el.appendChild(tl);
-  }
-  el.onclick=()=>{if(game.cp!==0||game.over)return;if(game.center.some(t=>t!==FP)){game.src='center';game.color=null;game.phase='color';render();}};
-}
-
-function renderPicker(){
-  const el=document.getElementById('color-picker');el.innerHTML='';
-  if(!game.src||game.cp!==0)return;
-  const tiles=game.src==='center'?game.center:game.factories[parseInt(game.src.slice(1))];
-  const av=new Set(tiles.filter(t=>t!==FP));
-  for(let c=1;c<=5;c++){
-    const d=document.createElement('div');
-    d.className='tile cpt '+CN[c]+(av.has(c)?'':' dis');
-    if(av.has(c)){
-      d.onclick=()=>{game.color=c;game.phase='place';render();};
-      if(game.color===c)d.classList.add('sel');
-    }
-    el.appendChild(d);
-  }
-}
-
-function renderBoards(){
-  for(let pi=0;pi<2;pi++){
-    const p=game.players[pi];
-    const el=document.getElementById('board-'+pi);
-    el.className='panel player-board'+(game.cp===pi&&!game.over?'':' inactive');
-    el.innerHTML='<div class="board-title"><span>'+NAMES[pi]+(game.cp===pi&&!game.over?' ◂':'')+'</span><span class="pts">'+p.score+' pts</span></div>';
-    const canPlace=pi===0&&game.cp===0&&game.phase==='place'&&game.color;
-    const okRows=canPlace?legalRows(p,game.color):[];
-    for(let r=0;r<5;r++){
-      const rd=document.createElement('div');rd.className='board-row';
-      rd.innerHTML='<span class="row-label">'+(r+1)+'</span>';
-      const pr=document.createElement('div');pr.className='pattern-row';
-      const slot=p.pat[r];
-      for(let c=0;c<slot.cap;c++){
-        const cell=document.createElement('div');
-        const filled=c>=slot.cap-slot.count;
-        cell.className='pc'+(filled?' '+CN[slot.color]:'');
-        if(filled)cell.style.background='';
-        if(filled)cell.classList.add('tile');
-        if(okRows.includes(r)){cell.classList.add('placeable');cell.onclick=()=>{applyMove({src:game.src,color:game.color,row:r});endTurn();};}
-        pr.appendChild(cell);
-      }
-      rd.appendChild(pr);
-      const wr=document.createElement('div');wr.className='wall-row';
-      for(let c=0;c<5;c++){
-        const wc=document.createElement('div');
-        wc.className='wc tile '+CN[WALL_PATTERN[r][c]]+(p.wall[r][c]?' scored':'');
-        wr.appendChild(wc);
-      }
-      rd.appendChild(wr);
-      el.appendChild(rd);
-    }
-    const fl=document.createElement('div');fl.className='floor';
-    for(let i=0;i<7;i++){
-      const fc=document.createElement('div');
-      const t=p.floor[i];
-      fc.className='fc';
-      if(t!==undefined){
-        fc.classList.add('filled','tile',t===FP?'first':CN[t]);
-        if(t===FP)fc.textContent='1';
-      }else{
-        fc.textContent='-'+FLOOR_PEN[i];
-      }
-      if(pi===0&&game.cp===0&&game.phase==='place'&&game.color){
-        fc.classList.add('placeable');
-        fc.onclick=()=>{applyMove({src:game.src,color:game.color,row:-1});endTurn();};
-      }
-      fl.appendChild(fc);
-    }
-    el.appendChild(fl);
-  }
-}
-
-function renderScore(){
-  const el=document.getElementById('score-display');el.innerHTML='';
-  game.players.forEach((p,i)=>{
-    const d=document.createElement('div');d.className='stat';
-    d.innerHTML='<span>'+NAMES[i]+'</span><span class="stat-val">'+p.score+'</span>';
-    el.appendChild(d);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && G && G.pending) { G.pending = null; render(); }
   });
-  document.getElementById('round-info').textContent='Round '+game.round;
+  document.addEventListener("click", function (e) {
+    if (!G || !G.pending) return;
+    if (e.target.closest(".factory, .cgroup, .line, .floorline")) return;
+    G.pending = null; render();
+  });
+  startGame(((Date.now() >>> 0) ^ 0x9e3779b9) >>> 0);
+  API.ready = true;
 }
 
-function updateMsg(){
-  if(game.over)return;
-  const el=document.getElementById('message');
-  if(game.cp===1){el.textContent='AI is thinking...';return;}
-  if(game.phase==='pick')el.innerHTML='Select a <span class="hl">factory</span> or the <span class="hl">center</span>';
-  else if(game.phase==='color')el.innerHTML='Pick a <span class="hl">color</span> to take';
-  else if(game.phase==='place')el.innerHTML='Click a highlighted <span class="hl">pattern row</span> (or the floor)';
-}
-
-function msg(m){document.getElementById('message').textContent=m;}
-document.getElementById('btn-new').onclick=init;
-init();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+})();
 </script>
 </body>
 </html>

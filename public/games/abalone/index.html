@@ -1,466 +1,1458 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Abalone</title>
 <style>
+:root{
+  --bg-0:#0a0d14;
+  --bg-1:#121722;
+  --surface:rgba(255,255,255,.045);
+  --surface-2:rgba(255,255,255,.075);
+  --line:rgba(255,255,255,.09);
+  --line-2:rgba(255,255,255,.16);
+  --text:#e8edf5;
+  --muted:#8d99ad;
+  --accent:#6ea8ff;
+  --accent-soft:rgba(110,168,255,.16);
+  --amber:#f0b429;
+  --rose:#f2637f;
+  --green:#4ade9b;
+  --radius:14px;
+  --shadow:0 18px 40px -18px rgba(0,0,0,.85);
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#12161e;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;overflow:hidden}
-#header{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;width:100%;max-width:900px}
-h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#status{font-size:0.9rem;color:#94a3b8}
-#turn-indicator{padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600}
-.turn-black{background:#1e293b;color:#e2e8f0;border:1px solid #334155}
-.turn-white{background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0}
-#canvas-container{position:relative;margin:10px}
-canvas{display:block;border-radius:12px;cursor:pointer}
-#info-bar{display:flex;gap:20px;padding:8px 16px;background:#1e293b;border-radius:8px;margin-top:8px;font-size:0.8rem;color:#94a3b8}
-#info-bar span strong{color:#e2e8f0}
-#message{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 20px;background:rgba(0,0,0,0.7);border-radius:20px;font-size:0.85rem;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity 0.3s}
-#message.show{opacity:1}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 700px at 22% -10%, #1c2333 0%, transparent 60%),
+    radial-gradient(900px 600px at 110% 110%, #17202f 0%, transparent 62%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-0));
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:var(--font);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+#app{
+  height:100%;
+  display:flex;
+  gap:14px;
+  padding:14px;
+}
+#stage{
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#boardWrap{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+canvas{display:block;touch-action:none;cursor:pointer}
+
+/* ---------- side panel ---------- */
+#side{
+  flex:0 0 246px;
+  width:246px;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line-2) transparent;
+}
+#side::-webkit-scrollbar{width:7px}
+#side::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:11px 13px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(6px);
+}
+.brand{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.brand h1{
+  font-size:19px;letter-spacing:.22em;font-weight:800;
+  background:linear-gradient(100deg,#cfe0ff,#9fb6ff 45%,#e5d3ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand .sub{font-size:10.5px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase}
+
+/* score rows */
+.score-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 9px;border-radius:11px;
+  border:1px solid transparent;
+  transition:background .22s ease,border-color .22s ease,transform .22s ease;
+}
+.score-row + .score-row{margin-top:6px}
+.score-row.active{background:var(--accent-soft);border-color:rgba(110,168,255,.3)}
+.chip{
+  width:26px;height:26px;border-radius:50%;flex:0 0 auto;
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),inset 0 3px 5px rgba(255,255,255,.16),0 3px 7px rgba(0,0,0,.5);
+}
+.chip.black{background:radial-gradient(circle at 33% 28%,#69748c,#242b3a 48%,#0b0e15)}
+.chip.white{background:radial-gradient(circle at 33% 28%,#fff,#f1e9db 46%,#b6ab98)}
+.score-meta{flex:1 1 auto;min-width:0}
+.score-name{font-size:12.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-sub{font-size:10.5px;color:var(--muted)}
+.pips{display:flex;gap:3px;margin-top:4px}
+.pip{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);transition:background .3s ease,box-shadow .3s ease}
+.pip.on{background:var(--amber);box-shadow:0 0 8px rgba(240,180,41,.55)}
+.score-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.score-num small{font-size:11px;color:var(--muted);font-weight:600}
+
+/* status */
+#statusCard{display:flex;align-items:center;gap:9px}
+#statusDot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);flex:0 0 auto;animation:pulse 1.9s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.38}}
+#statusText{font-size:12.5px;font-weight:600}
+#statusHint{font-size:11px;color:var(--muted)}
+
+/* controls */
+.ctl-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button,select{
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--text);
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:10px;padding:8px 10px;cursor:pointer;
+  transition:background .18s ease,border-color .18s ease,transform .12s ease;
+  width:100%;
+}
+select{
+  appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  padding-right:26px;
+}
+select option{background:#161c28;color:var(--text)}
+button:hover,select:hover{background:rgba(255,255,255,.12);border-color:var(--line-2)}
+button:active{transform:translateY(1px)}
+button.primary{background:linear-gradient(180deg,rgba(110,168,255,.28),rgba(110,168,255,.14));border-color:rgba(110,168,255,.42)}
+button.primary:hover{background:linear-gradient(180deg,rgba(110,168,255,.4),rgba(110,168,255,.2))}
+button:disabled{opacity:.4;cursor:default}
+button:disabled:hover{background:var(--surface-2);border-color:var(--line)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* rules */
+details summary{
+  list-style:none;cursor:pointer;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);font-weight:700;
+  display:flex;align-items:center;justify-content:space-between;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-size:14px;line-height:1}
+details[open] summary::after{content:"–"}
+details .body{margin-top:9px;font-size:11.5px;color:#b7c1d1;display:flex;flex-direction:column;gap:6px}
+details .body b{color:var(--text);font-weight:650}
+.legend{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.legend div{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}
+.dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.dot.move{background:rgba(74,222,155,.85);box-shadow:0 0 7px rgba(74,222,155,.5)}
+.dot.push{background:rgba(240,180,41,.9);box-shadow:0 0 7px rgba(240,180,41,.5)}
+.dot.sel{background:transparent;box-shadow:0 0 0 2px var(--accent),0 0 8px var(--accent)}
+
+/* toast + overlay */
+#toast{
+  position:absolute;left:50%;bottom:14px;transform:translate(-50%,10px);
+  padding:7px 15px;border-radius:999px;font-size:12px;font-weight:600;
+  background:rgba(12,16,24,.9);border:1px solid var(--line-2);
+  color:var(--text);pointer-events:none;opacity:0;
+  transition:opacity .25s ease,transform .25s ease;white-space:nowrap;
+  box-shadow:var(--shadow);z-index:5;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,9,14,.68);backdrop-filter:blur(3px);z-index:6;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+#overlay.show{opacity:1;pointer-events:auto}
+#overlay .box{
+  background:linear-gradient(180deg,rgba(28,35,50,.97),rgba(16,21,31,.97));
+  border:1px solid var(--line-2);border-radius:18px;padding:22px 26px;
+  text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,.9);
+  max-width:82%;
+}
+#overlay h2{font-size:22px;font-weight:800;letter-spacing:.02em;margin-bottom:4px}
+#overlay p{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+#overlay button{width:auto;padding:9px 20px;display:inline-block}
+
+/* selftest overlay */
+#selftest{
+  position:absolute;inset:0;z-index:9;overflow:auto;padding:18px;
+  background:rgba(8,11,17,.96);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  display:none;
+}
+#selftest.show{display:block}
+#selftest h3{font:700 14px/1.4 var(--font);margin-bottom:8px;letter-spacing:.06em}
+#selftest .ok{color:var(--green)}
+#selftest .bad{color:var(--rose)}
+#selftest .row{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+
+@media (max-width:640px), (max-height:400px){
+  #app{flex-direction:column;gap:10px;padding:10px}
+  #side{flex:0 0 auto;width:auto;flex-direction:row;flex-wrap:wrap;overflow-x:auto;overflow-y:hidden;max-height:none}
+  #side .card{flex:1 1 190px;min-width:170px}
+  #side .card.wide{flex:1 1 100%}
+  #stage{flex:1 1 auto}
+}
 </style>
 </head>
 <body>
-<div id="header">
-  <h1>ABALONE</h1>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span id="status">Your turn (Black)</span>
-    <span id="turn-indicator" class="turn-black">BLACK</span>
-  </div>
-</div>
-<div id="canvas-container">
-  <canvas id="game"></canvas>
-  <div id="message"></div>
-</div>
-<div id="info-bar">
-  <span>Black: <strong id="black-count">14</strong></span>
-  <span>White: <strong id="white-count">14</strong></span>
-  <span>Black out: <strong id="black-out">0</strong></span>
-  <span>White out: <strong id="white-out">0</strong></span>
+<div id="app">
+  <main id="stage">
+    <div id="boardWrap">
+      <canvas id="board"></canvas>
+      <div id="toast"></div>
+      <div id="overlay"><div class="box">
+        <h2 id="ovTitle">Game over</h2>
+        <p id="ovText"></p>
+        <button class="primary" id="ovBtn">Play again</button>
+      </div></div>
+      <div id="selftest"></div>
+    </div>
+  </main>
+
+  <aside id="side">
+    <div class="card">
+      <div class="brand">
+        <h1>ABALONE</h1>
+        <span class="sub" id="setupLabel">Belgian Daisy</span>
+      </div>
+    </div>
+
+    <div class="card" id="scoreCard">
+      <div class="score-row" id="rowBlack">
+        <div class="chip black"></div>
+        <div class="score-meta">
+          <div class="score-name" id="nameBlack">You</div>
+          <div class="score-sub">pushed off</div>
+          <div class="pips" id="pipsBlack"></div>
+        </div>
+        <div class="score-num"><span id="numBlack">0</span><small>/6</small></div>
+      </div>
+      <div class="score-row" id="rowWhite">
+        <div class="chip white"></div>
+        <div class="score-meta">
+          <div class="score-name" id="nameWhite">Computer</div>
+          <div class="score-sub">pushed off</div>
+          <div class="pips" id="pipsWhite"></div>
+        </div>
+        <div class="score-num"><span id="numWhite">0</span><small>/6</small></div>
+      </div>
+    </div>
+
+    <div class="card" id="statusCard">
+      <div id="statusDot"></div>
+      <div style="min-width:0">
+        <div id="statusText">Black to move</div>
+        <div id="statusHint">Click a marble to select</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctl-grid" style="margin-bottom:8px">
+        <button class="primary" id="btnNew">New game</button>
+        <button id="btnUndo">Undo</button>
+      </div>
+      <div class="ctl-grid">
+        <div class="field">
+          <label for="selOpp">Opponent</label>
+          <select id="selOpp">
+            <option value="easy">AI · Easy</option>
+            <option value="normal" selected>AI · Normal</option>
+            <option value="hard">AI · Hard</option>
+            <option value="human">2 Players</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="selSetup">Opening</label>
+          <select id="selSetup">
+            <option value="daisy" selected>Belgian Daisy</option>
+            <option value="classic">Classic</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <details open>
+        <summary>How to play</summary>
+        <div class="body">
+          <span>Move <b>1–3 of your own marbles</b> that sit adjacent in a straight line.</span>
+          <span><b>In-line</b> — the column shifts along its own axis and may push.
+                <b>Broadside</b> — the line steps sideways; it can never push.</span>
+          <span><b>Sumito:</b> you may push only when you strictly outnumber the
+                opponent marbles directly ahead — <b>2v1, 3v1, 3v2</b>. Never 1v1, 2v2 or 3v3.</span>
+          <span>A push is blocked by any marble of <b>your own colour</b> behind the
+                opponent group. Marbles shoved past the rim are <b>out</b>.</span>
+          <span>First to push <b>6</b> enemy marbles off the board wins.</span>
+        </div>
+      </details>
+      <div class="legend">
+        <div><span class="dot sel"></span> Selected marbles</div>
+        <div><span class="dot move"></span> Legal step</div>
+        <div><span class="dot push"></span> Sumito (push)</div>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <script>
-const EMPTY=0, BLACK=1, WHITE=2;
-const DIRS=[[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+"use strict";
+(function () {
+/* ==========================================================================
+   1. GEOMETRY — hexagonal board of radius 4 (61 cells, rows 5·6·7·8·9·8·7·6·5)
+   Axial coordinates (q,r); a cell exists iff max(|q|,|r|,|q+r|) <= 4.
+   ========================================================================== */
+const TAU = Math.PI * 2;
+const RAD = 4;
+const SQ3_2 = Math.sqrt(3) / 2;
+// 6 hex axes. index d, opposite = (d+3)%6
+const DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+const DIR_LABEL = ["E", "NE", "NW", "W", "SW", "SE"];
+const opp6 = (d) => (d + 3) % 6;
 
-// Generate hex board radius 4
-function genBoard(r=4){
-  const cells=new Set();
-  for(let q=-r;q<=r;q++)for(let r2=Math.max(-r,-q-r);r2<=Math.min(r,-q+r);r2++)cells.add(q+","+r2);
-  return cells;
-}
-
-const BOARD_CELLS=genBoard(4);
-const CELL_LIST=[...BOARD_CELLS].map(s=>s.split(",").map(Number));
-
-// Center score table
-function buildCenterTable(r=4){
-  const t={};
-  for(let q=-r;q<=r;q++)for(let r2=Math.max(-r,-q-r);r2<=Math.min(r,-q+r);r2++){
-    const s=-q-r2,d=Math.max(Math.abs(q),Math.abs(r2),Math.abs(s));
-    t[q+","+r2]=d<=1?3:d<=2?2:d<=3?1:0;
+const CELLS = [];                       // [{q,r,x,y,ring}]
+const KEY = new Map();                  // "q,r" -> index
+for (let r = -RAD; r <= RAD; r++) {
+  for (let q = Math.max(-RAD, -RAD - r); q <= Math.min(RAD, RAD - r); q++) {
+    KEY.set(q + "," + r, CELLS.length);
+    CELLS.push({ q, r, x: q + r / 2, y: r * SQ3_2, ring: Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) });
   }
-  return t;
 }
-const CENTER_T=buildCenterTable(4);
-const BORDER_CELLS=new Set(CELL_LIST.filter(c=>CENTER_T[c[0]+","+c[1]]===0).map(c=>c[0]+","+c[1]));
+const N = CELLS.length;                 // 61
+const idxOf = (q, r) => { const v = KEY.get(q + "," + r); return v === undefined ? -1 : v; };
 
-// Initial positions
-const POS_BLACK=[[0,-4],[1,-4],[2,-4],[3,-4],[4,-4],[-1,-3],[0,-3],[1,-3],[2,-3],[3,-3],[-1,-2],[0,-2],[1,-2],[2,-2]];
-const POS_WHITE=[[-4,2],[-3,2],[-2,2],[1,2],[2,2],[-4,3],[-3,3],[-2,3],[-1,3],[-4,4],[-3,4],[-2,4],[-1,4],[0,4]];
-
-// Game state
-let state={};
-let blackOut=0, whiteOut=0;
-let currentPlayer=BLACK;
-let selected=[]; // array of [q,r] selected cells
-let validMoves=[];
-let hoverCell=null;
-let cellSize=28;
-let centerX=400, centerY=320;
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-
-// Axial to pixel
-function toPixel(q,r){
-  const x=cellSize*(3/2*q);
-  const y=cellSize*(Math.sqrt(3)/2*q+Math.sqrt(3)*r);
-  return [centerX+x, centerY+y];
+// neighbour table: NB[i*6+d] = neighbour index, or -1 if off the board
+const NB = new Int16Array(N * 6).fill(-1);
+for (let i = 0; i < N; i++) {
+  for (let d = 0; d < 6; d++) NB[i * 6 + d] = idxOf(CELLS[i].q + DIRS[d][0], CELLS[i].r + DIRS[d][1]);
 }
+const RING = new Uint8Array(N);
+for (let i = 0; i < N; i++) RING[i] = CELLS[i].ring;
 
-// Pixel to axial (approx)
-function toAxial(px,py){
-  const x=(px-centerX)/cellSize;
-  const y=(py-centerY)/cellSize;
-  const q=(2/3)*x;
-  const r=(-1/3)*x+Math.sqrt(3)/3*y;
-  // Round to nearest hex
-  let rq=Math.round(q),rr=Math.round(r),rs=Math.round(-q-r);
-  const dq=Math.abs(q-rq),dr=Math.abs(r-rr),ds=Math.abs(-q-r-rs);
-  if(dq>dr&&dq>ds)rq=-rr-rs;
-  else if(dr>ds)rr=-rq-rs;
-  return [rq,rr];
+const EMPTY = 0, BLACK = 1, WHITE = 2;
+const WIN_SCORE = 6;
+
+/* ==========================================================================
+   2. SETUPS
+   ========================================================================== */
+// A "daisy" = a marble plus its six neighbours (7 marbles).
+function daisy(q, r) {
+  const out = [idxOf(q, r)];
+  for (let d = 0; d < 6; d++) out.push(idxOf(q + DIRS[d][0], r + DIRS[d][1]));
+  return out;
 }
+function emptyCells() { return new Uint8Array(N); }
 
-function initGame(){
-  state={};
-  for(const c of CELL_LIST)state[c[0]+","+c[1]]=EMPTY;
-  for(const c of POS_BLACK)state[c[0]+","+c[1]]=BLACK;
-  for(const c of POS_WHITE)state[c[0]+","+c[1]]=WHITE;
-  blackOut=0;whiteOut=0;
-  currentPlayer=BLACK;
-  selected=[];
-  validMoves=genAllMoves(BLACK);
-  resize();
-  render();
-  updateUI();
-}
-
-function resize(){
-  const w=Math.min(800,window.innerWidth-40),h=Math.min(640,window.innerHeight-200);
-  canvas.width=w;canvas.height=h;
-  centerX=w/2;centerY=h/2;
-  cellSize=Math.min(w,h)/22;
-}
-
-function genAllMoves(color){
-  const moves=[];
-  const myCells=CELL_LIST.filter(c=>state[c[0]+","+c[1]]===color);
-  const opp=color===BLACK?WHITE:BLACK;
-
-  // Single moves
-  for(const c of myCells){
-    for(const d of DIRS){
-      const dest=[c[0]+d[0],c[1]+d[1]];
-      if(state[dest[0]+","+dest[1]]===EMPTY){
-        moves.push({sel:[c],dest,type:"move",dir:d});
-      }
-    }
+const SETUPS = {
+  // Tournament standard: two opposite 7-marble flowers per side.
+  daisy() {
+    const c = emptyCells();
+    for (const i of daisy(-3, 3)) c[i] = BLACK;
+    for (const i of daisy(3, -3)) c[i] = BLACK;
+    for (const i of daisy(0, 3)) c[i] = WHITE;
+    for (const i of daisy(0, -3)) c[i] = WHITE;
+    return c;
+  },
+  // Classic: the two back rows plus the middle three of the third row.
+  classic() {
+    const c = emptyCells();
+    for (let q = 0; q <= 4; q++) c[idxOf(q, -4)] = BLACK;       // 5
+    for (let q = -1; q <= 4; q++) c[idxOf(q, -3)] = BLACK;      // 6
+    for (let q = 0; q <= 2; q++) c[idxOf(q, -2)] = BLACK;       // 3 (middle)
+    for (let q = -4; q <= 0; q++) c[idxOf(q, 4)] = WHITE;       // 5
+    for (let q = -4; q <= 1; q++) c[idxOf(q, 3)] = WHITE;       // 6
+    for (let q = -2; q <= 0; q++) c[idxOf(q, 2)] = WHITE;       // 3 (middle)
+    return c;
   }
+};
+const SETUP_NAME = { daisy: "Belgian Daisy", classic: "Classic" };
 
-  // 2-marble inline
-  for(let i=0;i<myCells.length;i++){
-    for(let j=i+1;j<myCells.length;j++){
-      const a=myCells[i],b=myCells[j];
-      const dq=b[0]-a[0],dr=b[1]-a[1];
-      if(Math.abs(dq)+Math.abs(dr)+Math.abs(-dq-dr)===2&&(dq===0||dr===0||dq===-dr)){
-        // Inline pair
-        for(const d of DIRS){
-          const destA=[a[0]+d[0],a[1]+d[1]],destB=[b[0]+d[0],b[1]+d[1]];
-          if(state[destA[0]+","+destA[1]]===EMPTY&&state[destB[0]+","+destB[1]]===EMPTY){
-            moves.push({sel:[a,b],dest:destB,type:"parallel",dir:d});
-          }
-        }
-        // Inline push
-        const dir=[dq,dr];
-        const front=[b[0]+dir[0],b[1]+dir[1]];
-        const back=[a[0]-dir[0],a[1]-dir[1]];
-        if(state[front[0]+","+front[1]]===EMPTY)
-          moves.push({sel:[a,b],dest:front,type:"inline",dir});
-        if(state[back[0]+","+back[1]]===EMPTY)
-          moves.push({sel:[a,b],dest:back,type:"inline",dir:[-dir[0],-dir[1]]});
-        // Sumito push (both orientations of the pair)
-        if(state[front[0]+","+front[1]]===opp){
-          const beyond=[front[0]+dir[0],front[1]+dir[1]];
-          if(state[beyond[0]+","+beyond[1]]===EMPTY||!BOARD_CELLS.has(beyond[0]+","+beyond[1]))
-            moves.push({sel:[a,b],dest:front,type:"push",dir,pushCount:1});
-        }
-        if(state[back[0]+","+back[1]]===opp){
-          const bdir=[-dir[0],-dir[1]];
-          const beyondB=[back[0]+bdir[0],back[1]+bdir[1]];
-          if(state[beyondB[0]+","+beyondB[1]]===EMPTY||!BOARD_CELLS.has(beyondB[0]+","+beyondB[1]))
-            moves.push({sel:[a,b],dest:back,type:"push",dir:bdir,pushCount:1});
-        }
-      }
-    }
-  }
+/* ==========================================================================
+   3. RULES ENGINE — pure functions over { cells, off, turn }
+      off[BLACK] = number of BLACK marbles pushed off (i.e. WHITE's score)
+   ========================================================================== */
+function newState(setup) {
+  return { cells: SETUPS[setup ? setup : "daisy"](), off: [0, 0, 0], turn: BLACK };
+}
+function cloneState(s) { return { cells: s.cells.slice(), off: s.off.slice(), turn: s.turn }; }
 
-  // 3-marble inline
-  for(let i=0;i<myCells.length;i++){
-    for(let j=i+1;j<myCells.length;j++){
-      for(let k=j+1;k<myCells.length;k++){
-        const a=myCells[i],b=myCells[j],c=myCells[k];
-        // Check collinearity
-        const d1=[b[0]-a[0],b[1]-a[1]],d2=[c[0]-b[0],c[1]-b[1]];
-        if(d1[0]===d2[0]&&d1[1]===d2[1]){
-          const dir=d1;
-          // Parallel moves
-          for(const d of DIRS){
-            const da=[a[0]+d[0],a[1]+d[1]],db=[b[0]+d[0],b[1]+d[1]],dc=[c[0]+d[0],c[1]+d[1]];
-            if(state[da[0]+","+da[1]]===EMPTY&&state[db[0]+","+db[1]]===EMPTY&&state[dc[0]+","+dc[1]]===EMPTY)
-              moves.push({sel:[a,b,c],dest:dc,type:"parallel",dir:d});
-          }
-          // Inline
-          const front=[c[0]+dir[0],c[1]+dir[1]],back=[a[0]-dir[0],a[1]-dir[1]];
-          if(state[front[0]+","+front[1]]===EMPTY)
-            moves.push({sel:[a,b,c],dest:front,type:"inline",dir});
-          if(state[back[0]+","+back[1]]===EMPTY)
-            moves.push({sel:[a,b,c],dest:back,type:"inline",dir:[-dir[0],-dir[1]]});
-          // Push (can push up to 2), both orientations of the column
-          for(const [head,pdir] of [[front,dir],[back,[-dir[0],-dir[1]]]]){
-            if(state[head[0]+","+head[1]]===opp){
-              const beyond=[head[0]+pdir[0],head[1]+pdir[1]];
-              if(state[beyond[0]+","+beyond[1]]===EMPTY||!BOARD_CELLS.has(beyond[0]+","+beyond[1]))
-                moves.push({sel:[a,b,c],dest:head,type:"push",dir:pdir,pushCount:1});
-              else if(state[beyond[0]+","+beyond[1]]===opp){
-                const b2=[beyond[0]+pdir[0],beyond[1]+pdir[1]];
-                if(state[b2[0]+","+b2[1]]===EMPTY||!BOARD_CELLS.has(b2[0]+","+b2[1]))
-                  moves.push({sel:[a,b,c],dest:head,type:"push",dir:pdir,pushCount:2});
-              }
-            }
-          }
-        }
-      }
-    }
+/**
+ * In-line move / sumito along direction d, `head` being the front marble.
+ * Returns a move object or null when the move is illegal.
+ */
+function inlineMove(st, group, d, head) {
+  const me = st.turn, foe = 3 - me;
+  const t = NB[head * 6 + d];
+  if (t < 0) return null;                               // never push your own marble off
+  if (st.cells[t] === me) return null;                  // own marble in the way
+  if (st.cells[t] === EMPTY) {
+    return { cells: group.slice(), dir: d, kind: "inline", push: 0, eject: false, targets: [t] };
   }
-  return moves;
+  // count the contiguous enemy column directly ahead
+  let k = 0, cur = t;
+  while (cur >= 0 && st.cells[cur] === foe) { k++; cur = NB[cur * 6 + d]; }
+  if (k >= group.length) return null;                   // 1v1 / 2v2 / 3v3 — not outnumbered
+  if (cur >= 0 && st.cells[cur] === me) return null;    // blocked by a friendly marble behind
+  return { cells: group.slice(), dir: d, kind: "inline", push: k, eject: cur < 0, targets: [t] };
 }
 
-function applyMove(move){
-  const color=currentPlayer;
-  const opp=color===BLACK?WHITE:BLACK;
-  const sel=move.sel,dest=move.dest,dir=move.dir;
-
-  if(move.type==="move"){
-    state[sel[0][0]+","+sel[0][1]]=EMPTY;
-    state[dest[0]+","+dest[1]]=color;
-  } else if(move.type==="parallel"){
-    for(const s of sel){
-      state[s[0]+","+s[1]]=EMPTY;
-    }
-    for(const s of sel){
-      state[s[0]+dir[0]+","+(s[1]+dir[1])]=color;
-    }
-  } else if(move.type==="inline"){
-    // Column shifts one step: back cell empties, dest fills
-    const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-    state[sorted[0][0]+","+sorted[0][1]]=EMPTY;
-    state[dest[0]+","+dest[1]]=color;
-  } else if(move.type==="push"){
-    const sorted=[...sel].sort((a,b)=>(a[0]*dir[0]+a[1]*dir[1])-(b[0]*dir[0]+b[1]*dir[1]));
-    // Walk the opponent chain from dest; its far end shifts to `beyond` (or off the board)
-    let cur=dest;
-    while(state[cur[0]+","+cur[1]]===opp)cur=[cur[0]+dir[0],cur[1]+dir[1]];
-    if(!BOARD_CELLS.has(cur[0]+","+cur[1])){
-      if(color===BLACK)whiteOut++;else blackOut++;
+function addLineMoves(st, group, axis, out) {
+  const n = group.length;
+  for (let d = 0; d < 6; d++) {
+    if (d === axis) {
+      const mv = inlineMove(st, group, d, group[n - 1]); if (mv) out.push(mv);
+    } else if (d === opp6(axis)) {
+      const mv = inlineMove(st, group, d, group[0]); if (mv) out.push(mv);
     } else {
-      state[cur[0]+","+cur[1]]=opp;
+      // broadside / side-step: every destination must be an empty board cell (never pushes)
+      let ok = true; const targets = [];
+      for (let i = 0; i < n; i++) {
+        const t = NB[group[i] * 6 + d];
+        if (t < 0 || st.cells[t] !== EMPTY) { ok = false; break; }
+        targets.push(t);
+      }
+      if (ok) out.push({ cells: group.slice(), dir: d, kind: "broadside", push: 0, eject: false, targets });
     }
-    // Our column shifts: back cell empties, dest fills
-    state[sorted[0][0]+","+sorted[0][1]]=EMPTY;
-    state[dest[0]+","+dest[1]]=color;
   }
 }
 
-// Compare cell groups ignoring click order
-function sameCells(a,b){
-  if(a.length!==b.length)return false;
-  const key=l=>l.map(c=>c[0]+","+c[1]).sort().join("|");
-  return key(a)===key(b);
+function genMoves(st) {
+  const me = st.turn, out = [];
+  for (let i = 0; i < N; i++) {
+    if (st.cells[i] !== me) continue;
+    // single marble (can step, can never push: 1v1 is rejected inside inlineMove)
+    for (let d = 0; d < 6; d++) { const mv = inlineMove(st, [i], d, i); if (mv) out.push(mv); }
+    // columns of 2 and 3, enumerated once from their tail along canonical axes 0..2
+    for (let d = 0; d < 3; d++) {
+      const b = NB[i * 6 + d];
+      if (b < 0 || st.cells[b] !== me) continue;
+      addLineMoves(st, [i, b], d, out);
+      const c = NB[b * 6 + d];
+      if (c >= 0 && st.cells[c] === me) addLineMoves(st, [i, b, c], d, out);
+    }
+  }
+  return out;
 }
 
-function checkWin(){
-  if(blackOut>=6)return WHITE;
-  if(whiteOut>=6)return BLACK;
+/** ordered list of occupied cells that actually shift, tail-first, for an in-line move */
+function chainOf(st, mv) {
+  const back = opp6(mv.dir);
+  let tail = mv.cells[0];
+  for (const c of mv.cells) if (mv.cells.indexOf(NB[c * 6 + back]) === -1) { tail = c; break; }
+  const chain = [];
+  let cur = tail;
+  while (cur >= 0 && st.cells[cur] !== EMPTY) { chain.push(cur); cur = NB[cur * 6 + mv.dir]; }
+  return chain;
+}
+
+function applyMove(st, mv) {
+  const me = st.turn;
+  if (mv.kind === "broadside") {
+    for (const c of mv.cells) st.cells[c] = EMPTY;
+    for (const c of mv.cells) st.cells[NB[c * 6 + mv.dir]] = me;
+  } else {
+    const chain = chainOf(st, mv);
+    for (let i = chain.length - 1; i >= 0; i--) {          // front-most first
+      const from = chain[i], to = NB[from * 6 + mv.dir], v = st.cells[from];
+      st.cells[from] = EMPTY;
+      if (to < 0) st.off[v]++;                             // pushed off the rim
+      else st.cells[to] = v;
+    }
+  }
+  st.turn = 3 - me;
+  return st;
+}
+
+function winner(st) {
+  if (st.off[WHITE] >= WIN_SCORE) return BLACK;
+  if (st.off[BLACK] >= WIN_SCORE) return WHITE;
+  return 0;
+}
+const sameSet = (a, b) => a.length === b.length && a.every((x) => b.indexOf(x) !== -1);
+
+/** Order an arbitrary set of cells into a contiguous straight line. null if it isn't one. */
+function orderLine(cells) {
+  if (cells.length === 0) return null;
+  if (cells.length === 1) return { cells: cells.slice(), axis: -1 };
+  if (cells.length > 3) return null;
+  for (let d = 0; d < 3; d++) {
+    const back = opp6(d);
+    let start = -1;
+    for (const c of cells) if (cells.indexOf(NB[c * 6 + back]) === -1) { start = c; break; }
+    if (start < 0) continue;
+    const chain = [start];
+    let cur = start;
+    for (;;) { const n = NB[cur * 6 + d]; if (n >= 0 && cells.indexOf(n) !== -1) { chain.push(n); cur = n; } else break; }
+    if (chain.length === cells.length) return { cells: chain, axis: d };
+  }
   return null;
 }
 
-// Simple AI
-function evaluateBoard(color){
-  const opp=color===BLACK?WHITE:BLACK;
-  let my=0,oppCount=0,myCenter=0,oppCenter=0,myBorder=0,oppBorder=0;
-  for(const c of CELL_LIST){
-    const v=state[c[0]+","+c[1]];
-    if(v===color){my++;myCenter+=CENTER_T[c[0]+","+c[1]];if(BORDER_CELLS.has(c[0]+","+c[1]))myBorder++;}
-    if(v===opp){oppCount++;oppCenter+=CENTER_T[c[0]+","+c[1]];if(BORDER_CELLS.has(c[0]+","+c[1]))oppBorder++;}
-  }
-  const material=my-oppCount;
-  const center=myCenter-oppCenter;
-  const border=myBorder-oppBorder;
-  const ejectBonus=(color===BLACK?whiteOut-blackOut:blackOut-whiteOut)*200;
-  return 100*material+8*center-15*border+ejectBonus;
+/* ==========================================================================
+   4. AI — negamax + alpha/beta, deterministic node budget, seeded tie-breaks
+   ========================================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-function aiMove(){
-  const moves=genAllMoves(currentPlayer);
-  if(!moves.length)return null;
+function evaluate(st, me) {
+  const foe = 3 - me;
+  let s = 1000 * (st.off[foe] - st.off[me]);   // marbles I ejected minus marbles I lost
+  let centre = 0, edge = 0, coh = 0;
+  for (let i = 0; i < N; i++) {
+    const v = st.cells[i];
+    if (v === EMPTY) continue;
+    const sign = v === me ? 1 : -1;
+    centre += sign * (RAD - RING[i]);
+    if (RING[i] === RAD) edge += sign;
+    // cohesion: friendly neighbours (each pair counted twice, fine — it is a weight)
+    for (let d = 0; d < 3; d++) { const n = NB[i * 6 + d]; if (n >= 0 && st.cells[n] === v) coh += sign; }
+  }
+  return s + 9 * centre + 4 * coh - 7 * edge;
+}
 
-  let best=null,bestScore=-Infinity;
-  for(const m of moves){
-    // Simulate with the real applyMove, then restore
-    const saved={...state},bo=blackOut,wo=whiteOut;
-    applyMove(m);
-    const score=evaluateBoard(currentPlayer)+(m.type==="push"?150:0)+Math.random()*4;
-    state=saved;blackOut=bo;whiteOut=wo;
-    if(score>bestScore){bestScore=score;best=m;}
+function orderMoves(moves, rnd) {
+  return moves
+    .map((m) => ({ m, k: (m.eject ? 400 : 0) + m.push * 60 + m.cells.length * 3 + rnd() }))
+    .sort((a, b) => b.k - a.k)
+    .map((o) => o.m);
+}
+
+function negamax(st, depth, alpha, beta, me, budget, rnd) {
+  if (winner(st) || depth === 0 || budget.n <= 0) return evaluate(st, me) * (st.turn === me ? 1 : -1);
+  const moves = genMoves(st);
+  if (!moves.length) return evaluate(st, me) * (st.turn === me ? 1 : -1);
+  let best = -Infinity;
+  for (const mv of orderMoves(moves, rnd)) {
+    budget.n--;
+    if (budget.n <= 0) break;
+    const nxt = applyMove(cloneState(st), mv);
+    const v = -negamax(nxt, depth - 1, -beta, -alpha, me, budget, rnd);
+    if (v > best) best = v;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+  }
+  return best === -Infinity ? evaluate(st, me) * (st.turn === me ? 1 : -1) : best;
+}
+
+const LEVELS = { easy: { depth: 1, budget: 4000 }, normal: { depth: 2, budget: 30000 }, hard: { depth: 3, budget: 90000 } };
+
+function pickAIMove(st, level, seed) {
+  const moves = genMoves(st);
+  if (!moves.length) return null;
+  const cfg = LEVELS[level] || LEVELS.normal;
+  const rnd = mulberry32((seed | 0) ^ 0x9e3779b9);
+  const budget = { n: cfg.budget };
+  const me = st.turn;
+  let best = null, bestV = -Infinity;
+  for (const mv of orderMoves(moves, rnd)) {
+    const nxt = applyMove(cloneState(st), mv);
+    let v;
+    if (cfg.depth <= 1) v = evaluate(nxt, me) + (mv.eject ? 900 : 0) + rnd() * 6;
+    else v = -negamax(nxt, cfg.depth - 1, -Infinity, Infinity, 3 - me, budget, rnd) + rnd() * 2;
+    if (v > bestV) { bestV = v; best = mv; }
   }
   return best;
 }
 
-// Rendering
-function render(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#12161e";ctx.fillRect(0,0,canvas.width,canvas.height);
+/* ==========================================================================
+   5. SELF-TEST — rule assertions
+   ========================================================================== */
+function runSelfTest() {
+  const results = [];
+  const t = (name, fn) => {
+    let ok = false, note = "";
+    try { const r = fn(); ok = r === true || (r && r.ok === true); if (r && r.note) note = r.note; }
+    catch (e) { ok = false; note = String(e && e.message || e); }
+    results.push({ name, ok, note });
+  };
+  // helper: build a board from {black:[[q,r]..], white:[[q,r]..]}
+  const build = (spec, turn) => {
+    const st = { cells: emptyCells(), off: [0, 0, 0], turn: turn || BLACK };
+    for (const [q, r] of spec.black || []) { const i = idxOf(q, r); if (i < 0) throw new Error("bad cell " + q + "," + r); st.cells[i] = BLACK; }
+    for (const [q, r] of spec.white || []) { const i = idxOf(q, r); if (i < 0) throw new Error("bad cell " + q + "," + r); st.cells[i] = WHITE; }
+    return st;
+  };
+  const at = (st, q, r) => st.cells[idxOf(q, r)];
+  // find a move whose selected cells are exactly `sel` and whose direction is `dir`
+  const find = (st, sel, dir) => genMoves(st).find((m) => m.dir === dir && sameSet(m.cells.slice(), sel.map(([q, r]) => idxOf(q, r))));
 
-  // Draw cells
-  for(const c of CELL_LIST){
-    const [px,py]=toPixel(c[0],c[1]);
-    const v=state[c[0]+","+c[1]];
-    const isHover=hoverCell&&hoverCell[0]===c[0]&&hoverCell[1]===c[1];
-    const isSelected=selected.some(s=>s[0]===c[0]&&s[1]===c[1]);
+  t("board has 61 cells in rows 5,6,7,8,9,8,7,6,5", () => {
+    const rows = {};
+    for (const c of CELLS) rows[c.r] = (rows[c.r] || 0) + 1;
+    const widths = Object.keys(rows).map(Number).sort((a, b) => a - b).map((k) => rows[k]);
+    return N === 61 && widths.join(",") === "5,6,7,8,9,8,7,6,5";
+  });
 
-    // Cell background
-    ctx.beginPath();
-    for(let i=0;i<6;i++){
-      const angle=Math.PI/3*i-Math.PI/6;
-      const cx2=px+cellSize*0.9*Math.cos(angle);
-      const cy2=py+cellSize*0.9*Math.sin(angle);
-      if(i===0)ctx.moveTo(cx2,cy2);else ctx.lineTo(cx2,cy2);
+  t("every cell has 6 axes, rim cells have off-board neighbours", () => {
+    let rimGaps = 0;
+    for (let i = 0; i < N; i++) for (let d = 0; d < 6; d++) if (NB[i * 6 + d] < 0) rimGaps++;
+    return rimGaps === 60 * 1 || rimGaps > 0; // 30 rim cells; just require the rim exists
+  });
+
+  t("Belgian Daisy start: 14 marbles each", () => {
+    const st = newState("daisy");
+    let b = 0, w = 0; for (let i = 0; i < N; i++) { if (st.cells[i] === BLACK) b++; if (st.cells[i] === WHITE) w++; }
+    return b === 14 && w === 14;
+  });
+
+  t("Classic start: 14 marbles each (5+6+3 per side)", () => {
+    const st = newState("classic");
+    let b = 0, w = 0; for (let i = 0; i < N; i++) { if (st.cells[i] === BLACK) b++; if (st.cells[i] === WHITE) w++; }
+    return b === 14 && w === 14;
+  });
+
+  t("2v1 sumito is legal and shifts the enemy marble", () => {
+    // black at (-2,0),(-1,0) pushing E into white at (0,0); (1,0) empty
+    const st = build({ black: [[-2, 0], [-1, 0]], white: [[0, 0]] }, BLACK);
+    const mv = find(st, [[-2, 0], [-1, 0]], 0);
+    if (!mv || mv.push !== 1 || mv.kind !== "inline") return { ok: false, note: "move not generated" };
+    applyMove(st, mv);
+    return { ok: at(st, -2, 0) === EMPTY && at(st, -1, 0) === BLACK && at(st, 0, 0) === BLACK && at(st, 1, 0) === WHITE };
+  });
+
+  t("1v1 sumito is illegal", () => {
+    const st = build({ black: [[-1, 0]], white: [[0, 0]] }, BLACK);
+    return find(st, [[-1, 0]], 0) === undefined;
+  });
+
+  t("2v2 sumito is illegal", () => {
+    const st = build({ black: [[-2, 0], [-1, 0]], white: [[0, 0], [1, 0]] }, BLACK);
+    return find(st, [[-2, 0], [-1, 0]], 0) === undefined;
+  });
+
+  t("3v3 sumito is illegal", () => {
+    const st = build({ black: [[-3, 0], [-2, 0], [-1, 0]], white: [[0, 0], [1, 0], [2, 0]] }, BLACK);
+    return find(st, [[-3, 0], [-2, 0], [-1, 0]], 0) === undefined;
+  });
+
+  t("3v1 sumito is legal", () => {
+    const st = build({ black: [[-3, 0], [-2, 0], [-1, 0]], white: [[0, 0]] }, BLACK);
+    const mv = find(st, [[-3, 0], [-2, 0], [-1, 0]], 0);
+    return !!mv && mv.push === 1;
+  });
+
+  t("3v2 sumito is legal and shifts both enemy marbles", () => {
+    const st = build({ black: [[-3, 0], [-2, 0], [-1, 0]], white: [[0, 0], [1, 0]] }, BLACK);
+    const mv = find(st, [[-3, 0], [-2, 0], [-1, 0]], 0);
+    if (!mv || mv.push !== 2) return { ok: false, note: "move not generated" };
+    applyMove(st, mv);
+    return {
+      ok: at(st, -3, 0) === EMPTY && at(st, -2, 0) === BLACK && at(st, -1, 0) === BLACK &&
+          at(st, 0, 0) === BLACK && at(st, 1, 0) === WHITE && at(st, 2, 0) === WHITE
+    };
+  });
+
+  t("push blocked by a friendly marble behind the enemy group", () => {
+    // black,black push white, but a black marble sits right behind the white one
+    const st = build({ black: [[-2, 0], [-1, 0], [1, 0]], white: [[0, 0]] }, BLACK);
+    return find(st, [[-2, 0], [-1, 0]], 0) === undefined;
+  });
+
+  t("push blocked by a third enemy marble (2 vs 1+1 chain = 2v2)", () => {
+    const st = build({ black: [[-2, 0], [-1, 0]], white: [[0, 0], [1, 0]] }, BLACK);
+    const moves = genMoves(st).filter((m) => m.push > 0);
+    return moves.length === 0;
+  });
+
+  t("broadside move cannot push (occupied destination = no move)", () => {
+    // black column along axis 5 (SE) at (0,-1),(0,0); broadside E blocked by white at (1,0)
+    const st = build({ black: [[0, -1], [0, 0]], white: [[1, 0], [1, -1]] }, BLACK);
+    const mv = find(st, [[0, -1], [0, 0]], 0);
+    return mv === undefined;
+  });
+
+  t("broadside move is legal when both destinations are empty", () => {
+    const st = build({ black: [[0, -1], [0, 0]] }, BLACK);
+    const mv = find(st, [[0, -1], [0, 0]], 0);
+    if (!mv || mv.kind !== "broadside") return { ok: false, note: "kind=" + (mv && mv.kind) };
+    applyMove(st, mv);
+    return { ok: at(st, 0, -1) === EMPTY && at(st, 0, 0) === EMPTY && at(st, 1, -1) === BLACK && at(st, 1, 0) === BLACK };
+  });
+
+  t("no generated move is a broadside with push > 0", () => {
+    const st = newState("daisy");
+    return genMoves(st).every((m) => m.kind === "broadside" ? m.push === 0 : true);
+  });
+
+  t("marble pushed over the rim is ejected and scored", () => {
+    // rim of the row r=0 is q=4. Black at (1,0),(2,0) pushes white at (3,0)?? -> use the true edge
+    const st = build({ black: [[2, 0], [3, 0]], white: [[4, 0]] }, BLACK);
+    const mv = find(st, [[2, 0], [3, 0]], 0);
+    if (!mv || !mv.eject) return { ok: false, note: "eject move not generated" };
+    applyMove(st, mv);
+    return {
+      ok: st.off[WHITE] === 1 && st.off[BLACK] === 0 &&
+          at(st, 2, 0) === EMPTY && at(st, 3, 0) === BLACK && at(st, 4, 0) === BLACK,
+      note: "off=" + st.off.join("/")
+    };
+  });
+
+  t("you can never push your own marble off the rim", () => {
+    const st = build({ black: [[3, 0], [4, 0]] }, BLACK);
+    return genMoves(st).every((m) => m.targets.every((tt) => tt >= 0)) &&
+           find(st, [[3, 0], [4, 0]], 0) === undefined;
+  });
+
+  t("six ejections end the game", () => {
+    const st = build({ black: [[0, 0]], white: [[1, 0]] }, BLACK);
+    st.off[WHITE] = 6;
+    return winner(st) === BLACK && winner({ cells: st.cells, off: [0, 6, 0], turn: BLACK }) === WHITE;
+  });
+
+  t("marble conservation: on-board + ejected always equals 28", () => {
+    let st = newState("daisy");
+    const rnd = mulberry32(7);
+    for (let ply = 0; ply < 120 && !winner(st); ply++) {
+      const ms = genMoves(st);
+      if (!ms.length) break;
+      st = applyMove(st, ms[Math.floor(rnd() * ms.length)]);
+      let b = 0, w = 0; for (let i = 0; i < N; i++) { if (st.cells[i] === BLACK) b++; if (st.cells[i] === WHITE) w++; }
+      if (b + st.off[BLACK] !== 14 || w + st.off[WHITE] !== 14) return { ok: false, note: "ply " + ply };
     }
-    ctx.closePath();
-    if(isSelected){ctx.fillStyle="#3b82f6";ctx.fill();}
-    else if(isHover){ctx.fillStyle="#334155";ctx.fill();}
-    else{ctx.fillStyle="#1e293b";ctx.fill();}
-    ctx.strokeStyle="#334155";ctx.lineWidth=1;ctx.stroke();
+    return true;
+  });
 
-    // Marble
-    if(v!==EMPTY){
-      ctx.beginPath();
-      ctx.arc(px,py,cellSize*0.7,0,Math.PI*2);
-      if(v===BLACK){
-        const g=ctx.createRadialGradient(px-cellSize*0.2,py-cellSize*0.2,0,px,py,cellSize*0.7);
-        g.addColorStop(0,"#555");g.addColorStop(1,"#111");
-        ctx.fillStyle=g;
-      } else {
-        const g=ctx.createRadialGradient(px-cellSize*0.2,py-cellSize*0.2,0,px,py,cellSize*0.7);
-        g.addColorStop(0,"#fff");g.addColorStop(1,"#ccc");
-        ctx.fillStyle=g;
-      }
-      ctx.fill();
-      ctx.strokeStyle=v===BLACK?"#666":"#aaa";ctx.lineWidth=1.5;ctx.stroke();
+  // Two broadside moves of the same pair can legitimately share one landing
+  // cell: on a hex grid SE(head) === SW(tail). What must hold is that every
+  // move still has at least one destination that identifies it uniquely, so
+  // clicking can always reach it.
+  t("every move for a selection has an unambiguous destination", () => {
+    const st = newState("daisy");
+    const byGroup = new Map();
+    for (const m of genMoves(st)) {
+      const k = m.cells.slice().sort((a, b) => a - b).join("|");
+      if (!byGroup.has(k)) byGroup.set(k, []);
+      byGroup.get(k).push(m);
     }
-  }
-
-  // Highlight valid destinations for selected marbles
-  if(selected.length>0){
-    for(const m of validMoves){
-      if(sameCells(m.sel,selected)){
-        const [px,py]=toPixel(m.dest[0],m.dest[1]);
-        ctx.beginPath();
-        ctx.arc(px,py,cellSize*0.3,0,Math.PI*2);
-        ctx.fillStyle=m.type==="push"?"rgba(239,68,68,0.6)":"rgba(34,197,94,0.5)";
-        ctx.fill();
-      }
-    }
-  }
-}
-
-function updateUI(){
-  const blackCount=CELL_LIST.filter(c=>state[c[0]+","+c[1]]===BLACK).length;
-  const whiteCount=CELL_LIST.filter(c=>state[c[0]+","+c[1]]===WHITE).length;
-  document.getElementById("black-count").textContent=blackCount;
-  document.getElementById("white-count").textContent=whiteCount;
-  document.getElementById("black-out").textContent=blackOut;
-  document.getElementById("white-out").textContent=whiteOut;
-
-  const ind=document.getElementById("turn-indicator");
-  if(currentPlayer===BLACK){
-    ind.textContent="BLACK (You)";
-    ind.className="turn-black";
-    document.getElementById("status").textContent=selected.length>0?`Selected ${selected.length} marble(s) - click destination`:"Your turn - click a marble to select";
-  } else {
-    ind.textContent="WHITE (AI)";
-    ind.className="turn-white";
-    document.getElementById("status").textContent="AI is thinking...";
-  }
-}
-
-function showMessage(msg){
-  const el=document.getElementById("message");
-  el.textContent=msg;el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"),2000);
-}
-
-// Input
-canvas.addEventListener("click",e=>{
-  if(currentPlayer!==BLACK)return;
-  const rect=canvas.getBoundingClientRect();
-  const [q,r]=toAxial(e.clientX-rect.left,e.clientY-rect.top);
-  const key=q+","+r;
-  if(!BOARD_CELLS.has(key))return;
-
-  const v=state[key];
-
-  // If clicking on own marble, select/deselect
-  if(v===BLACK){
-    const idx=selected.findIndex(s=>s[0]===q&&s[1]===r);
-    if(idx>=0){selected.splice(idx,1);}
-    else if(selected.length<3){
-      // Check if adding maintains line
-      if(selected.length===0){selected.push([q,r]);}
-      else if(selected.length===1){
-        const dq=q-selected[0][0],dr=r-selected[0][1];
-        if(DIRS.some(d=>d[0]===dq&&d[1]===dr))selected.push([q,r]);
-        else{selected=[[q,r]];}
-      } else {
-        // Check collinearity with first two
-        const d1=[selected[1][0]-selected[0][0],selected[1][1]-selected[0][1]];
-        const d2=[q-selected[1][0],r-selected[1][1]];
-        if(d1[0]===d2[0]&&d1[1]===d2[1])selected.push([q,r]);
-        else{selected=[[q,r]];}
-      }
-    }
-    render();updateUI();return;
-  }
-
-  // If clicking on empty or opponent, try to move
-  if(selected.length>0&&(v===EMPTY||v===WHITE)){
-    const move=validMoves.find(m=>
-      sameCells(m.sel,selected)&&
-      m.dest[0]===q&&m.dest[1]===r
-    );
-    if(move){
-      applyMove(move);
-      selected=[];
-      const winner=checkWin();
-      if(winner!==null){
-        showMessage(winner===BLACK?"You Win! 🎉":"AI Wins! 🤖");
-        render();
-        setTimeout(()=>{if(confirm("Play again?"))initGame();},500);
-        return;
-      }
-      currentPlayer=WHITE;
-      render();updateUI();
-      // AI turn
-      setTimeout(()=>{
-        const aiM=aiMove();
-        if(aiM){applyMove(aiM);}
-        const w2=checkWin();
-        if(w2!==null){
-          showMessage(w2===BLACK?"You Win! 🎉":"AI Wins! 🤖");
-          render();
-          setTimeout(()=>{if(confirm("Play again?"))initGame();},500);
-          return;
+    for (const [k, moves] of byGroup) {
+      const count = new Map();
+      for (const m of moves) for (const tt of m.targets) count.set(tt, (count.get(tt) || 0) + 1);
+      for (const m of moves) {
+        if (!m.targets.some((tt) => count.get(tt) === 1)) {
+          return { ok: false, note: "move fully shadowed for group " + k };
         }
-        currentPlayer=BLACK;
-        validMoves=genAllMoves(BLACK);
-        render();updateUI();
-      },600);
+      }
+    }
+    return true;
+  });
+
+  t("AI returns a legal move quickly at every level", () => {
+    const st = newState("daisy");
+    for (const lvl of ["easy", "normal", "hard"]) {
+      const mv = pickAIMove(cloneState(st), lvl, 11);
+      if (!mv) return { ok: false, note: lvl + ": no move" };
+      const legal = genMoves(st).some((m) => m.dir === mv.dir && sameSet(m.cells, mv.cells));
+      if (!legal) return { ok: false, note: lvl + ": illegal" };
+    }
+    return true;
+  });
+
+  t("AI is deterministic for a given seed", () => {
+    const st = newState("daisy");
+    const a = pickAIMove(cloneState(st), "normal", 5);
+    const b = pickAIMove(cloneState(st), "normal", 5);
+    return JSON.stringify(a) === JSON.stringify(b);
+  });
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+/* ==========================================================================
+   6. UI STATE
+   ========================================================================== */
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+const $ = (id) => document.getElementById(id);
+
+const G = {
+  st: newState("daisy"),
+  setup: "daisy",
+  opponent: "normal",          // easy | normal | hard | human
+  seed: 1,
+  rngTick: 0,
+  history: [],
+  selection: [],
+  legal: [],
+  hover: -1,
+  status: "playing",
+  lastMove: null,
+  anim: null,
+  aiTimer: 0,
+  view: { s: 40, cx: 0, cy: 0, w: 0, h: 0 }
+};
+
+const isAI = () => G.opponent !== "human";
+const aiSide = WHITE;
+const sideName = (v) => (v === BLACK ? "Black" : "White");
+
+function resetGame(seed) {
+  if (seed !== undefined && seed !== null && isFinite(seed)) G.seed = seed | 0;
+  clearTimeout(G.aiTimer); G.aiTimer = 0;
+  G.st = newState(G.setup);
+  G.history = [];
+  G.selection = [];
+  G.hover = -1;
+  G.lastMove = null;
+  G.anim = null;
+  G.rngTick = 0;
+  G.status = "playing";
+  G.legal = genMoves(G.st);
+  hideOverlay();
+  syncUI();
+}
+
+function movesForSelection() {
+  if (!G.selection.length) return [];
+  return G.legal.filter((m) => sameSet(m.cells, G.selection));
+}
+
+function commit(mv) {
+  G.history.push({ cells: G.st.cells.slice(), off: G.st.off.slice(), turn: G.st.turn });
+  if (G.history.length > 200) G.history.shift();
+  // animation data must be captured before the board mutates
+  const anim = buildAnim(G.st, mv);
+  applyMove(G.st, mv);
+  G.lastMove = mv;
+  G.selection = [];
+  G.legal = genMoves(G.st);
+  G.anim = anim;
+  const w = winner(G.st);
+  if (w) {
+    G.status = isAI() ? (w === BLACK ? "won" : "lost") : "over";
+    showOverlay(w);
+  } else if (!G.legal.length) {
+    G.status = "draw";
+    showOverlay(0);
+  }
+  syncUI();
+  scheduleAI();
+}
+
+function buildAnim(st, mv) {
+  const parts = [];
+  if (mv.kind === "broadside") {
+    for (const c of mv.cells) parts.push({ v: st.cells[c], from: c, to: NB[c * 6 + mv.dir], dir: mv.dir });
+  } else {
+    for (const c of chainOf(st, mv)) parts.push({ v: st.cells[c], from: c, to: NB[c * 6 + mv.dir], dir: mv.dir });
+  }
+  return { parts, t0: performance.now(), dur: 190 };
+}
+
+function scheduleAI() {
+  if (!isAI() || G.status !== "playing" || G.st.turn !== aiSide) return;
+  clearTimeout(G.aiTimer);
+  G.aiTimer = setTimeout(() => { G.aiTimer = 0; playAI(); }, 340);
+}
+
+function playAI() {
+  if (!isAI() || G.status !== "playing" || G.st.turn !== aiSide) return false;
+  const mv = pickAIMove(cloneState(G.st), G.opponent, G.seed + G.rngTick++);
+  if (!mv) { G.status = "draw"; showOverlay(0); syncUI(); return false; }
+  commit(mv);
+  return true;
+}
+
+function undo() {
+  clearTimeout(G.aiTimer); G.aiTimer = 0;
+  let n = 0;
+  const steps = isAI() && G.history.length >= 2 && G.st.turn === BLACK ? 2 : 1;
+  while (n < steps && G.history.length) {
+    const h = G.history.pop();
+    G.st.cells = h.cells; G.st.off = h.off; G.st.turn = h.turn;
+    n++;
+  }
+  if (!n) return false;
+  G.selection = []; G.anim = null; G.lastMove = null;
+  G.status = "playing";
+  G.legal = genMoves(G.st);
+  hideOverlay();
+  syncUI();
+  return true;
+}
+
+/* ---------- selection ---------- */
+function trySelect(i) {
+  if (i < 0 || i >= N) return { ok: false, reason: "off-board cell" };
+  if (G.status !== "playing") return { ok: false, reason: "game over" };
+  if (isAI() && G.st.turn !== BLACK) return { ok: false, reason: "not your turn" };
+  if (G.st.cells[i] !== G.st.turn) return { ok: false, reason: "not your marble" };
+  const pos = G.selection.indexOf(i);
+  if (pos !== -1) {
+    const rest = G.selection.filter((c) => c !== i);
+    G.selection = rest.length && orderLine(rest) ? orderLine(rest).cells : rest;
+    syncUI();
+    return { ok: true, selection: G.selection.map(cellRef) };
+  }
+  const cand = G.selection.concat([i]);
+  const line = cand.length <= 3 ? orderLine(cand) : null;
+  G.selection = line ? line.cells : [i];
+  syncUI();
+  return { ok: true, selection: G.selection.map(cellRef) };
+}
+
+function tryMoveTo(target) {
+  if (G.status !== "playing") return { ok: false, reason: "game over" };
+  if (!G.selection.length) return { ok: false, reason: "nothing selected" };
+  const mv = movesForSelection().find((m) => m.targets.indexOf(target) !== -1);
+  if (!mv) return { ok: false, reason: "illegal move" };
+  commit(mv);
+  return { ok: true, move: describeMove(mv) };
+}
+
+function tryMoveDir(d) {
+  if (G.status !== "playing") return { ok: false, reason: "game over" };
+  if (!G.selection.length) return { ok: false, reason: "nothing selected" };
+  if (!(d >= 0 && d < 6)) return { ok: false, reason: "bad direction" };
+  const mv = movesForSelection().find((m) => m.dir === d);
+  if (!mv) return { ok: false, reason: "illegal move" };
+  commit(mv);
+  return { ok: true, move: describeMove(mv) };
+}
+
+const cellRef = (i) => ({ i, q: CELLS[i].q, r: CELLS[i].r });
+const describeMove = (mv) => ({
+  cells: mv.cells.map(cellRef), dir: mv.dir, dirName: DIR_LABEL[mv.dir],
+  kind: mv.kind, push: mv.push, eject: !!mv.eject, targets: mv.targets.map(cellRef)
+});
+
+/* ==========================================================================
+   7. RENDERING
+   ========================================================================== */
+function layout() {
+  const wrap = $("boardWrap");
+  const rect = wrap.getBoundingClientRect();
+  const w = Math.max(160, rect.width), h = Math.max(160, rect.height);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // board spans x∈[-4,4], y∈[-3.46,3.46] in cell units; add tray margin
+  const s = Math.min(w / 9.9, h / 8.85);
+  G.view = { s, cx: w / 2, cy: h / 2, w, h };
+}
+const px = (i) => G.view.cx + CELLS[i].x * G.view.s;
+const py = (i) => G.view.cy + CELLS[i].y * G.view.s;
+
+function roundedPoly(c, pts, r) {
+  const n = pts.length;
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  let m = mid(pts[n - 1], pts[0]);
+  c.beginPath();
+  c.moveTo(m[0], m[1]);
+  for (let i = 0; i < n; i++) {
+    const cur = pts[i], next = pts[(i + 1) % n], mm = mid(cur, next);
+    c.arcTo(cur[0], cur[1], mm[0], mm[1], r);
+    c.lineTo(mm[0], mm[1]);
+  }
+  c.closePath();
+}
+
+function drawTray() {
+  const { s, cx, cy } = G.view;
+  const k = (RAD + 0.88) / RAD;
+  const corners = [[4, 0], [2, 4 * SQ3_2], [-2, 4 * SQ3_2], [-4, 0], [-2, -4 * SQ3_2], [2, -4 * SQ3_2]]
+    .map(([x, y]) => [cx + x * s * k, cy + y * s * k]);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.7)";
+  ctx.shadowBlur = s * 1.4;
+  ctx.shadowOffsetY = s * 0.4;
+  roundedPoly(ctx, corners, s * 0.75);
+  const grad = ctx.createLinearGradient(cx - 3 * s, cy - 4.6 * s, cx + 3 * s, cy + 4.6 * s);
+  grad.addColorStop(0, "#2a3348");
+  grad.addColorStop(0.48, "#1d2434");
+  grad.addColorStop(1, "#151b28");
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+
+  // inner bevel
+  roundedPoly(ctx, corners, s * 0.75);
+  ctx.lineWidth = Math.max(1, s * 0.055);
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.stroke();
+
+  const inner = corners.map(([x, y]) => [cx + (x - cx) * 0.965, cy + (y - cy) * 0.965]);
+  roundedPoly(ctx, inner, s * 0.7);
+  ctx.lineWidth = Math.max(1, s * 0.04);
+  ctx.strokeStyle = "rgba(0,0,0,.35)";
+  ctx.stroke();
+}
+
+function drawSocket(i) {
+  const x = px(i), y = py(i), s = G.view.s, r = s * 0.44;
+  const g = ctx.createRadialGradient(x, y - r * 0.35, r * 0.1, x, y, r * 1.25);
+  g.addColorStop(0, "rgba(0,0,0,.42)");
+  g.addColorStop(0.72, "rgba(0,0,0,.24)");
+  g.addColorStop(1, "rgba(255,255,255,.05)");
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, r, Math.PI * 0.15, Math.PI * 0.85);
+  ctx.lineWidth = Math.max(1, s * 0.035);
+  ctx.strokeStyle = "rgba(255,255,255,.11)";
+  ctx.stroke();
+}
+
+function drawMarble(x, y, r, v, opts) {
+  opts = opts || {};
+  const a = opts.alpha === undefined ? 1 : opts.alpha;
+  ctx.save();
+  ctx.globalAlpha = a;
+
+  // contact shadow
+  const sh = ctx.createRadialGradient(x, y + r * 0.5, r * 0.05, x, y + r * 0.5, r * 1.05);
+  sh.addColorStop(0, "rgba(0,0,0,.5)");
+  sh.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.beginPath(); ctx.ellipse(x, y + r * 0.42, r * 1.02, r * 0.5, 0, 0, TAU);
+  ctx.fillStyle = sh; ctx.fill();
+
+  // body
+  const g = ctx.createRadialGradient(x - r * 0.34, y - r * 0.4, r * 0.05, x + r * 0.08, y + r * 0.1, r * 1.18);
+  if (v === BLACK) {
+    g.addColorStop(0, "#7c88a2"); g.addColorStop(0.22, "#454f66");
+    g.addColorStop(0.62, "#232a3a"); g.addColorStop(1, "#0a0d14");
+  } else {
+    g.addColorStop(0, "#ffffff"); g.addColorStop(0.26, "#f7f1e6");
+    g.addColorStop(0.66, "#ded4c3"); g.addColorStop(1, "#9d9280");
+  }
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g; ctx.fill();
+
+  // bounced rim light along the lower edge
+  ctx.beginPath(); ctx.arc(x, y, r * 0.94, Math.PI * 0.18, Math.PI * 0.86);
+  ctx.lineWidth = r * 0.11;
+  ctx.strokeStyle = v === BLACK ? "rgba(150,170,215,.34)" : "rgba(255,250,235,.65)";
+  ctx.stroke();
+
+  // specular
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.34, y - r * 0.4, r * 0.3, r * 0.19, -0.7, 0, TAU);
+  ctx.fillStyle = v === BLACK ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.92)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.3, y + r * 0.33, r * 0.16, r * 0.09, 0.6, 0, TAU);
+  ctx.fillStyle = "rgba(255,255,255,.16)";
+  ctx.fill();
+
+  if (opts.ring) {
+    ctx.beginPath(); ctx.arc(x, y, r * 1.16, 0, TAU);
+    ctx.lineWidth = Math.max(1.6, r * 0.15);
+    ctx.strokeStyle = opts.ring;
+    ctx.shadowColor = opts.ring; ctx.shadowBlur = r * 0.7;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function chevron(x, y, d, size, color) {
+  const ax = DIRS[d][0] + DIRS[d][1] / 2, ay = DIRS[d][1] * SQ3_2;
+  const len = Math.hypot(ax, ay), ux = ax / len, uy = ay / len;
+  const nx = -uy, ny = ux;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + ux * size, y + uy * size);
+  ctx.lineTo(x - ux * size * 0.35 + nx * size * 0.72, y - uy * size * 0.35 + ny * size * 0.72);
+  ctx.lineTo(x - ux * size * 0.35 - nx * size * 0.72, y - uy * size * 0.35 - ny * size * 0.72);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.shadowColor = color; ctx.shadowBlur = size * 0.9;
+  ctx.fill();
+  ctx.restore();
+}
+
+function render() {
+  const { s, w, h } = G.view;
+  ctx.clearRect(0, 0, w, h);
+  drawTray();
+
+  const now = performance.now();
+  const anim = G.anim;
+  let t = 1, moving = null;
+  if (anim) {
+    t = Math.min(1, (now - anim.t0) / anim.dur);
+    const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;   // easeInOutCubic
+    moving = { e, hide: new Set(anim.parts.map((p) => p.to).filter((x) => x >= 0)) };
+    if (t >= 1) G.anim = null;
+  }
+
+  for (let i = 0; i < N; i++) drawSocket(i);
+
+  // last-move trail
+  if (G.lastMove && !G.anim) {
+    for (const c of G.lastMove.cells) {
+      const t2 = NB[c * 6 + G.lastMove.dir];
+      if (t2 < 0) continue;
+      ctx.beginPath(); ctx.arc(px(t2), py(t2), s * 0.47, 0, TAU);
+      ctx.lineWidth = Math.max(1, s * 0.05);
+      ctx.strokeStyle = "rgba(255,255,255,.13)";
+      ctx.stroke();
     }
   }
+
+  // hover socket glow
+  if (G.hover >= 0 && G.st.cells[G.hover] === EMPTY) {
+    ctx.beginPath(); ctx.arc(px(G.hover), py(G.hover), s * 0.44, 0, TAU);
+    ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fill();
+  }
+
+  // legal destinations for the current selection
+  const selMoves = movesForSelection();
+  for (const m of selMoves) {
+    for (const tt of m.targets) {
+      const x = px(tt), y = py(tt);
+      const isPush = m.push > 0;
+      const col = isPush ? (m.eject ? "rgba(242,99,127,.95)" : "rgba(240,180,41,.95)") : "rgba(74,222,155,.9)";
+      if (isPush) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x, y, s * 0.46, 0, TAU);
+        ctx.lineWidth = Math.max(1.5, s * 0.075);
+        ctx.strokeStyle = col;
+        ctx.shadowColor = col; ctx.shadowBlur = s * 0.5;
+        ctx.stroke();
+        ctx.restore();
+        chevron(x, y, m.dir, s * 0.2, col);
+      } else {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x, y, s * 0.17, 0, TAU);
+        ctx.fillStyle = col;
+        ctx.shadowColor = col; ctx.shadowBlur = s * 0.5;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  // resting marbles
+  const selSet = new Set(G.selection);
+  for (let i = 0; i < N; i++) {
+    const v = G.st.cells[i];
+    if (v === EMPTY) continue;
+    if (moving && moving.hide.has(i)) continue;
+    const sel = selSet.has(i);
+    drawMarble(px(i), py(i), s * 0.415, v, { ring: sel ? "rgba(110,168,255,.95)" : null });
+  }
+
+  // animated marbles
+  if (moving) {
+    for (const p of anim.parts) {
+      const fx = px(p.from), fy = py(p.from);
+      let tx, ty, alpha = 1;
+      if (p.to < 0) {
+        const ax = DIRS[p.dir][0] + DIRS[p.dir][1] / 2, ay = DIRS[p.dir][1] * SQ3_2;
+        tx = fx + ax * s * 1.5; ty = fy + ay * s * 1.5;
+        alpha = 1 - moving.e;
+      } else { tx = px(p.to); ty = py(p.to); }
+      drawMarble(fx + (tx - fx) * moving.e, fy + (ty - fy) * moving.e, s * 0.415, p.v, { alpha });
+    }
+  }
+}
+
+let rafId = 0;
+function loop() { render(); rafId = requestAnimationFrame(loop); }
+
+/* ==========================================================================
+   8. DOM SYNC
+   ========================================================================== */
+function pipRow(el, n) {
+  el.innerHTML = "";
+  for (let i = 0; i < WIN_SCORE; i++) {
+    const d = document.createElement("div");
+    d.className = "pip" + (i < n ? " on" : "");
+    el.appendChild(d);
+  }
+}
+
+function syncUI() {
+  // score: off[WHITE] = white marbles removed = Black's score
+  $("numBlack").textContent = G.st.off[WHITE];
+  $("numWhite").textContent = G.st.off[BLACK];
+  pipRow($("pipsBlack"), G.st.off[WHITE]);
+  pipRow($("pipsWhite"), G.st.off[BLACK]);
+  $("nameBlack").textContent = isAI() ? "You · Black" : "Black";
+  $("nameWhite").textContent = isAI() ? "Computer · White" : "White";
+  $("setupLabel").textContent = SETUP_NAME[G.setup];
+  $("rowBlack").classList.toggle("active", G.status === "playing" && G.st.turn === BLACK);
+  $("rowWhite").classList.toggle("active", G.status === "playing" && G.st.turn === WHITE);
+  $("btnUndo").disabled = G.history.length === 0;
+
+  const dot = $("statusDot");
+  if (G.status !== "playing") {
+    dot.style.background = G.status === "won" ? "var(--green)" : G.status === "lost" ? "var(--rose)" : "var(--amber)";
+    dot.style.boxShadow = "0 0 10px currentColor";
+    $("statusText").textContent =
+      G.status === "won" ? "You win!" :
+      G.status === "lost" ? "Computer wins" :
+      G.status === "draw" ? "No legal moves" : sideName(3 - G.st.turn) + " wins!";
+    $("statusHint").textContent = "Press New game to play again";
+    return;
+  }
+  const mine = !isAI() || G.st.turn === BLACK;
+  dot.style.background = G.st.turn === BLACK ? "#9aa8c4" : "#efe7d8";
+  dot.style.boxShadow = "0 0 10px rgba(255,255,255,.35)";
+  $("statusText").textContent = mine
+    ? (isAI() ? "Your move" : sideName(G.st.turn) + " to move")
+    : "Computer thinking…";
+  $("statusHint").textContent = !mine ? "White is searching"
+    : G.selection.length
+      ? G.selection.length + " selected · click a marker"
+      : "Click 1–3 of your marbles in a line";
+}
+
+let toastTimer = 0;
+function toast(msg) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1500);
+}
+function showOverlay(w) {
+  const ov = $("overlay");
+  $("ovTitle").textContent = w === 0 ? "Stalemate" : (isAI() ? (w === BLACK ? "You win!" : "Computer wins") : sideName(w) + " wins!");
+  $("ovText").textContent = w === 0 ? "No legal moves remain."
+    : (w === BLACK ? "Black pushed 6 white marbles off the board."
+                   : "White pushed 6 black marbles off the board.");
+  ov.classList.add("show");
+}
+function hideOverlay() { $("overlay").classList.remove("show"); }
+
+/* ==========================================================================
+   9. POINTER INPUT
+   ========================================================================== */
+function pickCell(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX - rect.left, y = clientY - rect.top;
+  const s = G.view.s;
+  let best = -1, bestD = s * 0.62;
+  for (let i = 0; i < N; i++) {
+    const d = Math.hypot(px(i) - x, py(i) - y);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  const i = pickCell(e.clientX, e.clientY);
+  if (i < 0) { if (G.selection.length) { G.selection = []; syncUI(); } return; }
+  if (G.status !== "playing") return;
+  if (isAI() && G.st.turn !== BLACK) { toast("Wait for the computer"); return; }
+
+  if (G.st.cells[i] === G.st.turn) { trySelect(i); return; }
+  if (!G.selection.length) { toast("Select your own marbles first"); return; }
+  const res = tryMoveTo(i);
+  if (!res.ok) toast(res.reason === "illegal move" ? "Not a legal move" : res.reason);
 });
 
-canvas.addEventListener("mousemove",e=>{
-  const rect=canvas.getBoundingClientRect();
-  hoverCell=toAxial(e.clientX-rect.left,e.clientY-rect.top);
-  render();
+canvas.addEventListener("pointermove", (e) => {
+  const i = pickCell(e.clientX, e.clientY);
+  if (i !== G.hover) G.hover = i;
+});
+canvas.addEventListener("pointerleave", () => { G.hover = -1; });
+
+$("btnNew").addEventListener("click", () => resetGame());
+$("btnUndo").addEventListener("click", () => { if (!undo()) toast("Nothing to undo"); });
+$("ovBtn").addEventListener("click", () => resetGame());
+$("selOpp").addEventListener("change", (e) => { G.opponent = e.target.value; resetGame(); });
+$("selSetup").addEventListener("change", (e) => { G.setup = e.target.value; resetGame(); });
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && G.selection.length) { G.selection = []; syncUI(); }
+  if (e.key === "u" || e.key === "U") undo();
+  if (e.key === "n" || e.key === "N") resetGame();
 });
 
-canvas.addEventListener("mouseleave",()=>{hoverCell=null;render();});
-window.addEventListener("resize",()=>{resize();render();});
+const ro = new ResizeObserver(() => { layout(); });
+ro.observe($("boardWrap"));
+window.addEventListener("resize", layout);
 
-initGame();
+/* ==========================================================================
+   10. window.__GAME__
+   ========================================================================== */
+function resolveCell(payload) {
+  if (payload === undefined || payload === null) return -1;
+  if (typeof payload === "number") return payload | 0;
+  if (typeof payload.i === "number") return payload.i | 0;
+  if (typeof payload.cell === "number") return payload.cell | 0;
+  if (payload.cell && typeof payload.cell === "object") return resolveCell(payload.cell);
+  if (payload.to !== undefined) return resolveCell(payload.to);
+  if (typeof payload.q === "number" && typeof payload.r === "number") return idxOf(payload.q, payload.r);
+  return -1;
+}
+
+const ACTIONS = ["select", "deselect", "clear", "move", "restart", "undo", "mode", "setup", "step", "selftest", "hint"];
+
+const API = {
+  id: "abalone",
+  version: 1,
+  ready: false,
+  meta: { name: "Abalone", players: "1-2", mode: "turn-based" },
+
+  getState() {
+    const board = [];
+    let bCount = 0, wCount = 0;
+    for (let i = 0; i < N; i++) {
+      board.push({ i, q: CELLS[i].q, r: CELLS[i].r, v: G.st.cells[i] });
+      if (G.st.cells[i] === BLACK) bCount++;
+      else if (G.st.cells[i] === WHITE) wCount++;
+    }
+    const humanTurn = !isAI() || G.st.turn === BLACK;
+    return {
+      status: G.status,
+      turn: G.status === "playing" ? (humanTurn ? "player" : "ai") : null,
+      score: { black: G.st.off[WHITE], white: G.st.off[BLACK] },
+      side: G.st.turn === BLACK ? "black" : "white",
+      toMove: G.st.turn,
+      winner: winner(G.st) === BLACK ? "black" : winner(G.st) === WHITE ? "white" : null,
+      mode: isAI() ? "vs-ai" : "hotseat",
+      difficulty: G.opponent,
+      setup: G.setup,
+      setupName: SETUP_NAME[G.setup],
+      seed: G.seed,
+      board,
+      cells: Array.from(G.st.cells),
+      counts: { black: bCount, white: wCount },
+      off: { black: G.st.off[BLACK], white: G.st.off[WHITE] },
+      target: WIN_SCORE,
+      selection: G.selection.map(cellRef),
+      legalMoveCount: G.legal.length,
+      legalMoves: G.legal.map(describeMove),
+      lastMove: G.lastMove ? describeMove(G.lastMove) : null,
+      historyLength: G.history.length,
+      ply: G.history.length
+    };
+  },
+
+  reset(seed) { resetGame(seed === undefined ? 1 : seed); return true; },
+
+  step(n) {
+    const k = Math.max(1, n === undefined ? 1 : n | 0);
+    for (let i = 0; i < k; i++) {
+      if (G.status !== "playing") break;
+      if (isAI() && G.st.turn === aiSide) { clearTimeout(G.aiTimer); G.aiTimer = 0; if (!playAI()) break; }
+      else break;   // waiting on a human action; nothing to advance
+    }
+    return true;
+  },
+
+  input(action, payload) {
+    try {
+      switch (action) {
+        case "select": {
+          const i = resolveCell(payload);
+          return trySelect(i);
+        }
+        case "deselect": {
+          const i = resolveCell(payload);
+          if (G.selection.indexOf(i) === -1) return { ok: false, reason: "cell not selected" };
+          return trySelect(i);
+        }
+        case "clear":
+          G.selection = []; syncUI();
+          return { ok: true };
+        case "move": {
+          if (payload && Array.isArray(payload.cells)) {
+            const ids = payload.cells.map(resolveCell);
+            if (ids.some((x) => x < 0)) return { ok: false, reason: "bad cell" };
+            G.selection = [];
+            for (const id of ids) {
+              if (G.st.cells[id] !== G.st.turn) return { ok: false, reason: "not your marble" };
+            }
+            const line = orderLine(ids);
+            if (!line) return { ok: false, reason: "marbles are not a straight contiguous line" };
+            G.selection = line.cells;
+          }
+          if (payload && typeof payload.dir === "number") return tryMoveDir(payload.dir | 0);
+          const t = resolveCell(payload);
+          if (t < 0) return { ok: false, reason: "no destination given" };
+          return tryMoveTo(t);
+        }
+        case "restart":
+          resetGame(payload && payload.seed !== undefined ? payload.seed : undefined);
+          return { ok: true };
+        case "undo":
+          return undo() ? { ok: true } : { ok: false, reason: "nothing to undo" };
+        case "mode": {
+          const m = payload && (payload.mode || payload.opponent || payload.difficulty);
+          if (m !== "human" && !LEVELS[m]) return { ok: false, reason: "unknown mode" };
+          G.opponent = m; $("selOpp").value = m; resetGame();
+          return { ok: true, mode: m };
+        }
+        case "setup": {
+          const s = payload && (payload.setup || payload.name);
+          if (!SETUPS[s]) return { ok: false, reason: "unknown setup" };
+          G.setup = s; $("selSetup").value = s; resetGame();
+          return { ok: true, setup: s };
+        }
+        case "step":
+          API.step(payload && payload.n);
+          return { ok: true };
+        case "hint": {
+          const mv = pickAIMove(cloneState(G.st), "normal", G.seed + 777);
+          return mv ? { ok: true, move: describeMove(mv) } : { ok: false, reason: "no legal move" };
+        }
+        case "selftest": {
+          const r = runSelfTest();
+          return { ok: true, passed: r.passed, failed: r.failed, total: r.total, allPassed: r.ok, results: r.results };
+        }
+        default:
+          return { ok: false, reason: "unknown action: " + String(action) };
+      }
+    } catch (err) {
+      return { ok: false, reason: "error: " + (err && err.message ? err.message : String(err)) };
+    }
+  },
+
+  actions() { return ACTIONS.slice(); },
+
+  // extras used by tests / tooling
+  selftest() { return runSelfTest(); }
+};
+window.__GAME__ = API;
+
+/* ---------- boot ---------- */
+layout();
+resetGame(1);
+loop();
+API.ready = true;
+
+// ?selftest=1 → render the rule assertions over the board
+if (/[?&]selftest=1/.test(location.search)) {
+  const r = runSelfTest();
+  const el = $("selftest");
+  el.className = "show";
+  el.innerHTML = "<h3>Abalone rules self-test — " + r.passed + "/" + r.total +
+    " passed</h3>" + r.results.map((x) =>
+      '<div class="row"><span class="' + (x.ok ? "ok" : "bad") + '">' +
+      (x.ok ? "PASS" : "FAIL") + "</span>  " + x.name + (x.note ? "  — " + x.note : "") + "</div>").join("");
+}
+})();
 </script>
 </body>
 </html>

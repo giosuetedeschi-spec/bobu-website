@@ -1,32 +1,70 @@
-/**
-* Snake - Web Version
-* Main game page
-*/
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Snake - Classic arcade game">
-    <title>Snake - Classic Arcade Game</title>
+    <meta name="description" content="Snake — classic arcade game with bonus food and obstacle mode">
+    <title>Snake</title>
     <link rel="stylesheet" href="css/snake-styles.css">
 </head>
 
 <body>
-    <!-- Game Container -->
-    <div id="game-container">
-        <!-- Canvas for game rendering -->
-        <canvas id="game-canvas"></canvas>
+    <div id="app">
+        <header id="hud">
+            <div class="brand">
+                <span class="mark"></span>
+                <h1>Snake</h1>
+            </div>
 
-        <!-- UI Overlay -->
-        <div id="ui-overlay" class="hidden">
-            <div id="score-display">Score: <span id="score">0</span></div>
-        </div>
+            <div class="readouts">
+                <div class="stat">
+                    <span class="label">Score</span>
+                    <span class="value" id="score">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Best</span>
+                    <span class="value" id="best">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Length</span>
+                    <span class="value" id="length">4</span>
+                </div>
+            </div>
+
+            <div class="toggles">
+                <button class="toggle" id="toggle-wrap" aria-pressed="false" title="Pass through walls instead of dying">Wrap</button>
+                <button class="toggle" id="toggle-obstacles" aria-pressed="false" title="Scatter walls across the board">Walls</button>
+                <button class="btn" id="btn-restart" title="Restart (R)">Restart</button>
+            </div>
+        </header>
+
+        <main id="stage">
+            <canvas id="game-canvas"></canvas>
+
+            <div class="overlay" id="overlay" data-state="ready">
+                <div class="panel">
+                    <h2 id="overlay-title">Snake</h2>
+                    <p id="overlay-text">Eat to grow. Don't bite yourself.</p>
+                    <div class="keys">
+                        <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
+                        <span><kbd>Space</kbd> pause &middot; <kbd>R</kbd> restart</span>
+                        <span class="touch-only">Swipe to steer</span>
+                    </div>
+                    <button class="btn primary" id="overlay-action">Play</button>
+                </div>
+            </div>
+        </main>
+
+        <footer id="legend">
+            <span><i class="swatch food"></i> Food &middot; +10</span>
+            <span><i class="swatch bonus"></i> Bonus &middot; +50, expires</span>
+            <span><i class="swatch wall"></i> Wall &middot; fatal</span>
+            <span class="spacer"></span>
+            <span id="speed-readout">Speed —</span>
+        </footer>
     </div>
 
-
-    <!-- Scripts -->
     <script type="module" src="js/main.js"></script>
 </body>
 

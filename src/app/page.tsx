@@ -92,6 +92,9 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
       { id: "pong", label: "Pong", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/pong/index.html", folder: "Arcade", status: "2 Players" },
       { id: "flappy", label: "Flappy Bird", icon: "navigation", action: "open", contentType: "game", payload: "/games/flappy-bird/index.html", folder: "Arcade", status: "New!" },
       { id: "flip7", label: "Flip 7", icon: "layers", action: "open", contentType: "game", payload: "/projects/js-demos/flip-7/index.html", folder: "Arcade", status: "New!" },
+      { id: "breakout", label: "Breakout", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/breakout/index.html", folder: "Arcade", status: "New!" },
+      { id: "mirror-drift", label: "Mirror Drift", icon: "navigation", action: "open", contentType: "game", payload: "/games/mirror-drift/index.html", folder: "Arcade", status: "New!" },
+      { id: "twins", label: "Twins", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/twins/index.html", folder: "Arcade", status: "New!" },
     ],
   },
   {
@@ -320,8 +323,8 @@ function TerminalWindow() {
   };
 
   return (
-    <div className={styles.terminalWin}>
-      <div className={styles.terminalBody}>
+    <div className={styles.terminalWin} data-testid="terminal">
+      <div className={styles.terminalBody} data-testid="terminal-body">
         {lines.map((line, i) => (
           <div
             key={i}
@@ -336,6 +339,7 @@ function TerminalWindow() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            data-testid="terminal-input"
             className={styles.terminalInput}
             autoFocus
             spellCheck={false}
@@ -363,7 +367,7 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
           ))}
           <div className={styles.vDivider} />
           {GAME_FOLDERS.map(folder => (
-            <button key={folder.name} onClick={() => setCurrentPath(folder.name)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
+            <button key={folder.name} data-testid={`explorer-folder-${folder.name}`} onClick={() => setCurrentPath(folder.name)} className={`${styles.iconBtn} ${styles.iconBtnMinW64}`}>
               <span className={styles.iconGlyphYellow}>{ICONS[folder.icon]}</span>
               <span className={styles.miniLabel}>{folder.name}</span>
             </button>
@@ -377,12 +381,12 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
       return (
         <div>
           <div className={styles.explorerHeader}>
-            <button onClick={() => setCurrentPath("/")} className={styles.backBtn}>← Back</button>
+            <button data-testid="explorer-back" onClick={() => setCurrentPath("/")} className={styles.backBtn}>← Back</button>
             <span className={styles.explorerTitle}>{folder.name}</span>
           </div>
           <div className={styles.explorerGrid}>
             {folder.games.map(game => (
-              <button key={game.id} onClick={() => onOpenApp(game)} className={styles.gameCard}>
+              <button key={game.id} data-testid={`explorer-game-${game.id}`} onClick={() => onOpenApp(game)} className={styles.gameCard}>
                 <span>{ICONS[game.icon]}</span>
                 <span className={styles.gameCardLabel}>{game.label}</span>
               </button>
@@ -396,7 +400,7 @@ function FileExplorer({ window: win, onOpenApp }: { window: WindowState; onOpenA
   };
 
   return (
-    <div className={styles.explorerRoot}>
+    <div className={styles.explorerRoot} data-testid="explorer">
       <div className={styles.explorerTitlebar}>
         {ICONS["hard-drive"]}
         <span className={styles.explorerPath}>bobu@bobuos: ~{currentPath}</span>
@@ -557,7 +561,7 @@ function OSWindow({
   const renderContent = () => {
     switch (win.content) {
       case "game":
-        return <iframe src={`${basePath}${win.payload}`} className={styles.windowIframe} title={win.title} />;
+        return <iframe data-testid="window-iframe" src={`${basePath}${win.payload}`} className={styles.windowIframe} title={win.title} />;
       case "terminal":
         return <TerminalWindow />;
       case "files":
@@ -573,18 +577,25 @@ function OSWindow({
 
   return (
     <div
+      data-testid="os-window"
+      data-window-id={win.id}
+      data-window-title={win.title}
+      data-window-content={win.content}
+      data-maximized={win.maximized ? "true" : "false"}
+      data-x={win.x}
+      data-y={win.y}
       className={`${styles.osWindow} ${win.maximized ? styles.osWindowMaximized : ""}`}
       style={posStyle}
       onMouseDown={onFocus}
     >
       {/* Title bar */}
-      <div onMouseDown={handleDragStart} className={styles.windowTitlebar}>
+      <div data-testid="window-titlebar" onMouseDown={handleDragStart} className={styles.windowTitlebar}>
         <span className={styles.windowTitlebarIcon}>{ICONS[win.icon] || ICONS["folder"]}</span>
         <span className={styles.windowTitlebarTitle}>{win.title}</span>
         <div className={styles.windowTitlebarBtns}>
-          <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} className={styles.windowBtn} title="Minimize">─</button>
-          <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} className={styles.windowBtn} title="Maximize">□</button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className={styles.windowBtn} title="Close">✕</button>
+          <button data-testid="window-minimize" onClick={(e) => { e.stopPropagation(); onMinimize(); }} className={styles.windowBtn} title="Minimize">─</button>
+          <button data-testid="window-maximize" onClick={(e) => { e.stopPropagation(); onMaximize(); }} className={styles.windowBtn} title="Maximize">□</button>
+          <button data-testid="window-close" onClick={(e) => { e.stopPropagation(); onClose(); }} className={styles.windowBtn} title="Close">✕</button>
         </div>
       </div>
       {/* Content */}
@@ -612,12 +623,12 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
   return (
     <>
       <div className={styles.startOverlay} onClick={onClose} />
-      <div className={styles.startPanel}>
+      <div className={styles.startPanel} data-testid="start-panel">
         {/* Search */}
         <div className={styles.startSearchWrap}>
           <div className={styles.startSearchBox}>
             {ICONS["search"]}
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search apps..." className={styles.startSearchInput} autoFocus />
+            <input data-testid="start-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search apps..." className={styles.startSearchInput} autoFocus />
           </div>
         </div>
 
@@ -625,7 +636,7 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
         <div className={styles.startQuickWrap}>
           <div className={styles.startQuickRow}>
             {APPS.map(app => (
-              <button key={app.id} onClick={() => { onOpenApp(app); onClose(); }} className={styles.startQuickBtn}>
+              <button key={app.id} data-testid={`start-app-${app.id}`} onClick={() => { onOpenApp(app); onClose(); }} className={styles.startQuickBtn}>
                 <span className={styles.iconGlyphBlue}>{ICONS[app.icon]}</span>
                 <span className={styles.miniLabel}>{app.label}</span>
               </button>
@@ -637,7 +648,7 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
         <div className={styles.startListWrap}>
           {filteredGames ? (
             filteredGames.map(game => (
-              <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
+              <button key={game.id} data-testid={`start-item-${game.id}`} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
                 <span>{ICONS[game.icon]}</span>
                 <div>
                   <div className={styles.startItemTitle}>{game.label}</div>
@@ -650,7 +661,7 @@ function StartMenu({ open, onClose, onOpenApp }: { open: boolean; onClose: () =>
               <div key={folder.name}>
                 <div className={styles.startFolderHeading}>{folder.name}</div>
                 {folder.games.map(game => (
-                  <button key={game.id} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
+                  <button key={game.id} data-testid={`start-item-${game.id}`} onClick={() => { onOpenApp(game); onClose(); }} className={styles.startListItem}>
                     <span>{ICONS[game.icon]}</span>
                     <div>
                       <div className={styles.startItemTitle}>{game.label}</div>
@@ -672,13 +683,18 @@ export default function Home() {
   const [windows, setWindows] = useState<WindowState[]>([]);
   const [nextZ, setNextZ] = useState(10);
   const [startOpen, setStartOpen] = useState(false);
-  const [time, setTime] = useState(new Date());
+  // Starts null on purpose: the clock is the one piece of markup that cannot
+  // agree between the server render and the client, so it stays empty until
+  // after mount rather than tripping a hydration mismatch on every visit.
+  const [time, setTime] = useState<Date | null>(null);
   const [wallpaper, setWallpaper] = useState("lofi");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const winIdRef = useRef(0);
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTime(new Date());
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -790,6 +806,9 @@ export default function Home() {
 
   return (
     <div
+      data-testid="bobuos-desktop"
+      data-wallpaper={wallpaper}
+      data-window-count={windows.length}
       className={`${styles.desktopRoot} ${wallClass}`}
       onContextMenu={(e) => {
         if (e.target === e.currentTarget) {
@@ -799,10 +818,11 @@ export default function Home() {
       }}
     >
       {/* Desktop icons */}
-      <div className={styles.desktopIcons}>
+      <div className={styles.desktopIcons} data-testid="desktop-icons">
         {APPS.map(app => (
           <button
             key={app.id}
+            data-testid={`desktop-icon-${app.id}`}
             onDoubleClick={() => openApp(app)}
             className={styles.desktopIconBtn}
             title={app.label}
@@ -815,6 +835,7 @@ export default function Home() {
         {GAME_FOLDERS.map(folder => (
           <button
             key={folder.name}
+            data-testid={`desktop-folder-${folder.name}`}
             onDoubleClick={() => openApp({ id: folder.name, label: folder.name, icon: folder.icon, action: "open", contentType: "files", payload: folder.name })}
             className={styles.desktopIconBtn}
             title={folder.name}
@@ -841,9 +862,12 @@ export default function Home() {
       ))}
 
       {/* Taskbar */}
-      <div className={styles.taskbar}>
+      <div className={styles.taskbar} data-testid="taskbar">
         {/* Start button */}
         <button
+          data-testid="start-button"
+          aria-label="Start menu"
+          aria-expanded={startOpen}
           onClick={() => setStartOpen(!startOpen)}
           className={`${styles.startBtn} ${startOpen ? styles.startBtnActive : ""}`}
         >
@@ -856,6 +880,8 @@ export default function Home() {
         {windows.map(win => (
           <button
             key={win.id}
+            data-testid={`taskbar-app-${win.id}`}
+            data-minimized={win.minimized ? "true" : "false"}
             onClick={() => {
               if (win.minimized) {
                 setWindows(prev => prev.map(w => w.id === win.id ? { ...w, minimized: false, zIndex: nextZ } : w));
@@ -875,8 +901,8 @@ export default function Home() {
 
         {/* System tray */}
         <div className={styles.systemTray}>
-          <span>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-          <span>{time.toLocaleDateString([], { day: "2-digit", month: "short" })}</span>
+          <span suppressHydrationWarning>{time ? time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</span>
+          <span suppressHydrationWarning>{time ? time.toLocaleDateString([], { day: "2-digit", month: "short" }) : ""}</span>
         </div>
       </div>
 
@@ -892,10 +918,10 @@ export default function Home() {
             onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }}
           />
           {/* Runtime cursor position — same rationale as the OSWindow inline style */}
-          <div className={styles.ctxMenu} style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 220) }}>
+          <div data-testid="context-menu" className={styles.ctxMenu} style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 220) }}>
             <div className={styles.ctxMenuHeading}>Wallpaper</div>
             {WALLPAPERS.map(w => (
-              <button key={w.id} className={styles.ctxMenuItem} onClick={() => changeWallpaper(w.id)}>
+              <button key={w.id} data-testid={`wallpaper-${w.id}`} className={styles.ctxMenuItem} onClick={() => changeWallpaper(w.id)}>
                 {wallpaper === w.id ? "●" : "○"} {w.label}
               </button>
             ))}

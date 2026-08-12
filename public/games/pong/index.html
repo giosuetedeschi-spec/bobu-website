@@ -1,227 +1,1274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pong</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0a0a0a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-            color: #fff;
-            overflow: hidden;
-        }
-        #game-container {
-            position: relative;
-            border: 2px solid #333;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            background: #111;
-        }
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            font-size: 24px;
-            color: #555;
-            pointer-events: none;
-        }
-        #message {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #444;
-            font-size: 14px;
-        }
-        #start-msg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #666;
-            font-size: 16px;
-            text-align: center;
-            pointer-events: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Pong — neon arena. Local 2-player or vs a beatable AI.">
+<title>Pong — Neon Arena</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg0:#05070f; --bg1:#0b1024; --bg2:#111a3d;
+    --p1:#3ce7ff; --p1d:#0a8fb3;
+    --p2:#ff4d9d; --p2d:#a51e5c;
+    --ink:#e9eeff; --dim:#8b96c4; --line:rgba(140,165,255,.16);
+  }
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 12% -10%, rgba(60,231,255,.14), transparent 60%),
+      radial-gradient(1100px 700px at 92% 110%, rgba(255,77,157,.14), transparent 60%),
+      linear-gradient(160deg,var(--bg0),var(--bg1) 55%,#070a18);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+    -webkit-font-smoothing:antialiased; touch-action:none; user-select:none;
+  }
+  header{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px;
+    padding:8px 14px; min-height:48px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(12,18,42,.75),rgba(12,18,42,.25));
+    backdrop-filter:blur(6px);
+  }
+  .brand{
+    font-size:13px; font-weight:800; letter-spacing:.34em; text-transform:uppercase;
+    background:linear-gradient(90deg,var(--p1),#b9a6ff 55%,var(--p2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    padding-right:2px;
+  }
+  .spacer{flex:1 1 auto}
+  .seg{display:flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid var(--line)}
+  button{
+    font:inherit; font-size:11.5px; font-weight:650; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dim); background:transparent; border:0; border-radius:999px;
+    padding:6px 11px; cursor:pointer; transition:.16s ease; white-space:nowrap;
+  }
+  button:hover{color:var(--ink); background:rgba(255,255,255,.07)}
+  button.on{color:#04121a; background:linear-gradient(90deg,var(--p1),#8fe6ff); box-shadow:0 0 14px rgba(60,231,255,.45)}
+  .tool{border:1px solid var(--line); background:rgba(255,255,255,.04)}
+  .tool.hot{color:#fff; border-color:rgba(255,77,157,.5); background:rgba(255,77,157,.14)}
+  #stage{flex:1 1 auto; position:relative; display:grid; place-items:center; padding:10px; min-height:0}
+  canvas{
+    display:block; border-radius:16px;
+    box-shadow:0 0 0 1px rgba(150,180,255,.14), 0 26px 70px -22px rgba(0,0,0,.9),
+               0 0 90px -30px rgba(60,231,255,.5), 0 0 90px -30px rgba(255,77,157,.45);
+  }
+  footer{
+    flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:8px 18px;
+    flex-wrap:wrap; padding:7px 12px 9px; font-size:11px; color:var(--dim);
+    letter-spacing:.06em; border-top:1px solid var(--line);
+  }
+  footer b{color:var(--ink); font-weight:600}
+  kbd{
+    display:inline-block; min-width:20px; text-align:center;
+    padding:2px 5px; margin:0 1px; border-radius:5px; font-size:10px; font-weight:700;
+    color:var(--ink); background:rgba(255,255,255,.08); border:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(0,0,0,.5) inset;
+  }
+  .k1 kbd{color:var(--p1); border-color:rgba(60,231,255,.35)}
+  .k2 kbd{color:var(--p2); border-color:rgba(255,77,157,.35)}
+  @media (max-height:560px){ header{min-height:40px;padding:5px 10px} footer{font-size:10px;padding:4px 8px} }
+  @media (max-width:640px){ .hideSm{display:none} }
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="pong" width="800" height="500"></canvas>
-        <div id="ui">
-            <span id="score-p1">0</span>
-            <span id="score-p2">0</span>
-        </div>
-        <div id="message">P1: W/S · P2: ↑/↓ | First to 5 wins</div>
-        <div id="start-msg">Press SPACE to start</div>
-    </div>
+<header>
+  <span class="brand">Pong</span>
+  <div class="seg" id="modeSeg">
+    <button data-mode="1p" class="on">1P vs AI</button>
+    <button data-mode="2p">2 Players</button>
+  </div>
+  <div class="seg hideSm" id="diffSeg">
+    <button data-diff="easy">Easy</button>
+    <button data-diff="normal" class="on">Normal</button>
+    <button data-diff="hard">Hard</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="tool" id="btnPause">Pause</button>
+  <button class="tool" id="btnRestart">Restart</button>
+  <button class="tool" id="btnSound">Sound: off</button>
+</header>
+<main id="stage"><canvas id="c"></canvas></main>
+<footer>
+  <span class="k1"><b>P1</b> <kbd>W</kbd><kbd>S</kbd></span>
+  <span class="k2"><b>P2</b> <kbd>&uarr;</kbd><kbd>&darr;</kbd></span>
+  <span><kbd>Space</kbd> serve / start</span>
+  <span><kbd>P</kbd> pause</span>
+  <span><kbd>R</kbd> restart</span>
+  <span class="hideSm">Drag your half on touch</span>
+  <span><b>First to 11</b>, win by 2</span>
+</footer>
 
-    <script>
-        const canvas = document.getElementById('pong');
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width, H = canvas.height;
+<script>
+"use strict";
+(function(){
 
-        // Game state
-        let gameRunning = false;
-        let gameOver = false;
-        let winner = '';
+/* ─────────────────────────────  constants  ───────────────────────────── */
 
-        // Paddles
-        const paddleW = 12, paddleH = 80, paddleSpeed = 6;
-        let p1 = { x: 20, y: H/2 - paddleH/2, score: 0 };
-        let p2 = { x: W - 20 - paddleW, y: H/2 - paddleH/2, score: 0 };
+const LW = 1000, LH = 620;              // logical arena size
+const DT = 1/60;                        // fixed logical timestep
+const PW = 14, PH = 96, PADX = 34;      // paddle geometry
+const R  = 9;                           // ball radius
+const P_SPEED   = 520;                  // human paddle speed (px/s)
+const BALL_MIN  = 430;                  // serve speed
+const BALL_MAX  = 1150;                 // hard speed cap
+const BALL_GAIN = 1.045;                // speed multiplier per paddle hit
+const MAX_ANGLE = Math.PI/3;            // 60° max deflection
+const WIN_SCORE = 11, WIN_BY = 2;
+const SERVE_TICKS = 78;                 // ~1.3s countdown after a point
+const MAX_SUBSTEP = 5;                  // px per collision sub-step (paddle is 14px wide)
 
-        // Ball
-        const ballSize = 10;
-        let ball = { x: W/2, y: H/2, vx: 5, vy: 3, speed: 5 };
+// `err` alone can never make the AI miss: the offset stays inside half a
+// paddle, so it still meets the ball. What actually decides whether a rally
+// can be won is whether the AI *predicts the bounce*. `slip` is the chance it
+// commits to the ball's current line instead of the true impact point, which
+// is what leaves an opening -- rarely on hard, often on easy.
+const DIFF = {
+  easy:   { lag:20, speed:300, err:0.55, predict:false, react:0.55, slip:0.75 },
+  normal: { lag:11, speed:405, err:0.36, predict:true,  react:0.80, slip:0.34 },
+  hard:   { lag:6,  speed:485, err:0.17, predict:true,  react:1.00, slip:0.26 },
+};
 
-        // Input
-        const keys = {};
+const C = {
+  p1:'#3ce7ff', p1d:'#0d7ea1', p1g:'rgba(60,231,255,',
+  p2:'#ff4d9d', p2d:'#a51e5c', p2g:'rgba(255,77,157,',
+  ball:'#ffffff', ink:'#e9eeff', dim:'#8b96c4',
+};
+const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
 
-        document.addEventListener('keydown', e => {
-            keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ' && !gameRunning) {
-                gameRunning = true;
-                gameOver = false;
-                document.getElementById('start-msg').style.display = 'none';
-            }
-            if (e.key === ' ' && gameOver) {
-                resetGame();
-            }
-        });
-        document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+/* ─────────────────────────────  helpers  ─────────────────────────────── */
 
-        function resetBall() {
-            ball.x = W/2;
-            ball.y = H/2;
-            ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
-            ball.vy = (Math.random() - 0.5) * 4;
+const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ─────────────────────────────  game state  ──────────────────────────── */
+
+const G = {
+  seed: 1,
+  rng: mulberry32(1),
+  phase: 'idle',        // idle(attract) | serve | rally | paused | over
+  prevPhase: 'rally',
+  mode: '1p',
+  diff: 'normal',
+  winner: null,
+  tick: 0,
+  serveTimer: 0,
+  serveTo: 'p1',
+  rally: 0,
+  lastHit: null,
+  score: { p1:0, p2:0 },
+  ball: { x:LW/2, y:LH/2, vx:0, vy:0, speed:BALL_MIN },
+  p1: { x:PADX, y:LH/2-PH/2, vel:0, touch:null, flash:0 },
+  p2: { x:LW-PADX-PW, y:LH/2-PH/2, vel:0, touch:null, flash:0 },
+  ai: { err:0, timer:0, hist:[], hi:0 },
+  held: { p1up:false, p1down:false, p2up:false, p2down:false },
+};
+
+const FX = { trail:[], parts:[], shake:0, flashScore:0, ripples:[] };
+const HIST_N = 96;
+
+function resetAI(){
+  G.ai.hist = new Array(HIST_N);
+  for (let i=0;i<HIST_N;i++) G.ai.hist[i] = { x:LW/2, y:LH/2, vx:0, vy:0 };
+  G.ai.hi = 0;
+  G.ai.err = 0;
+  G.ai.timer = 0;
+}
+
+function centerBall(){
+  G.ball.x = LW/2; G.ball.y = LH/2;
+  G.ball.vx = 0; G.ball.vy = 0; G.ball.speed = BALL_MIN;
+}
+
+/** Full deterministic restart. `demo` starts the attract loop instead of a match. */
+function resetGame(seed, opts){
+  opts = opts || {};
+  if (seed !== undefined && seed !== null) G.seed = (seed >>> 0) || 1;
+  G.rng = mulberry32(G.seed);
+  G.score.p1 = 0; G.score.p2 = 0;
+  G.winner = null; G.tick = 0; G.rally = 0; G.lastHit = null;
+  G.p1.y = LH/2-PH/2; G.p2.y = LH/2-PH/2;
+  G.p1.vel = 0; G.p2.vel = 0; G.p1.flash = 0; G.p2.flash = 0;
+  G.p1.touch = null; G.p2.touch = null;
+  G.held.p1up = G.held.p1down = G.held.p2up = G.held.p2down = false;
+  resetAI();
+  centerBall();
+  FX.trail.length = 0; FX.parts.length = 0; FX.ripples.length = 0;
+  FX.shake = 0; FX.flashScore = 0;
+  if (opts.demo){
+    G.phase = 'idle';
+    G.serveTo = G.rng() < 0.5 ? 'p1' : 'p2';
+    serveNow();
+  } else {
+    G.phase = 'rally';
+    G.serveTo = G.rng() < 0.5 ? 'p1' : 'p2';
+    serveNow();
+  }
+  syncChrome();
+}
+
+function serveNow(){
+  const dir = G.serveTo === 'p1' ? -1 : 1;      // serve toward the receiving side
+  const sp = BALL_MIN;
+  const spread = (G.rng()*2 - 1) * 0.34;         // ±0.34 rad
+  G.ball.speed = sp;
+  G.ball.vy = Math.sin(spread) * sp;
+  G.ball.vx = dir * Math.sqrt(Math.max(0, sp*sp - G.ball.vy*G.ball.vy));
+  G.ball.x = LW/2; G.ball.y = LH/2;
+  G.rally = 0;
+  FX.trail.length = 0;
+  if (G.phase === 'serve') G.phase = 'rally';
+  ping(300, .05, 'sine');
+}
+
+/* ─────────────────────────────  effects  ─────────────────────────────── */
+
+function burst(x, y, n, color, spread, power){
+  if (FX.parts.length > 320) return;
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2;
+    const s = (0.35 + Math.random()*0.65) * power;
+    FX.parts.push({
+      x, y,
+      vx: Math.cos(a)*s*spread, vy: Math.sin(a)*s,
+      life: 1, decay: 0.018 + Math.random()*0.03,
+      size: 1.2 + Math.random()*2.6, color,
+    });
+  }
+}
+function ripple(x,y,color){ if (FX.ripples.length < 24) FX.ripples.push({x,y,r:4,life:1,color}); }
+
+function updateFX(){
+  for (let i=FX.parts.length-1;i>=0;i--){
+    const p = FX.parts[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985;
+    p.life -= p.decay;
+    if (p.life <= 0) FX.parts.splice(i,1);
+  }
+  for (let i=FX.ripples.length-1;i>=0;i--){
+    const r = FX.ripples[i];
+    r.r += 3.4; r.life -= 0.035;
+    if (r.life <= 0) FX.ripples.splice(i,1);
+  }
+  if (FX.shake > 0) FX.shake *= 0.88;
+  if (FX.flashScore > 0) FX.flashScore -= 0.04;
+  if (G.p1.flash > 0) G.p1.flash -= 0.06;
+  if (G.p2.flash > 0) G.p2.flash -= 0.06;
+}
+
+/* ─────────────────────────────  audio (muted by default)  ────────────── */
+
+let AC = null, muted = true;
+function ping(freq, dur, type, gain){
+  if (muted) return;
+  try{
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(AC.destination);
+    const t = AC.currentTime;
+    g.gain.exponentialRampToValueAtTime(gain || 0.09, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.08));
+    o.start(t); o.stop(t + (dur || 0.08) + 0.02);
+  }catch(e){/* audio is optional */}
+}
+
+/* ─────────────────────────────  simulation  ──────────────────────────── */
+
+function movePaddle(p, up, down, dt){
+  const prev = p.y;
+  if (p.touch !== null){
+    const target = clamp(p.touch - PH/2, 0, LH-PH);
+    const d = target - p.y;
+    const max = P_SPEED * 1.7 * dt;
+    p.y += clamp(d, -max, max);
+  } else {
+    let v = 0;
+    if (up) v -= P_SPEED;
+    if (down) v += P_SPEED;
+    p.y = clamp(p.y + v*dt, 0, LH-PH);
+  }
+  p.y = clamp(p.y, 0, LH-PH);
+  p.vel = (p.y - prev) / dt;
+}
+
+/** Predict where the ball crosses `targetX`, reflecting off the top/bottom walls. */
+function predictImpact(b, targetX){
+  let y = b.y, vy = b.vy, vx = b.vx;
+  if (Math.abs(vx) < 1e-6) return y;
+  let t = (targetX - b.x) / vx;
+  if (t < 0) return y;
+  // unfold reflections
+  const lo = R, hi = LH - R, span = hi - lo;
+  let py = y + vy * t;
+  let m = (py - lo) % (2*span);
+  if (m < 0) m += 2*span;
+  return lo + (m > span ? 2*span - m : m);
+}
+
+function aiPaddle(p, dt, isRight){
+  const d = DIFF[G.diff] || DIFF.normal;
+  G.ai.timer--;
+  if (G.ai.timer <= 0){
+    G.ai.timer = 34 + Math.floor(G.rng()*30);
+    G.ai.err = (G.rng()*2 - 1) * d.err * PH;
+    G.ai.slip = G.rng() < d.slip;   // this read, does it see the bounce coming?
+  }
+  // read a delayed snapshot of the ball -> reaction lag
+  const idx = ((G.ai.hi - d.lag) % HIST_N + HIST_N) % HIST_N;
+  const snap = G.ai.hist[idx] || G.ball;
+  const towards = isRight ? snap.vx > 0 : snap.vx < 0;
+  let target;
+  if (towards && G.phase === 'rally'){
+    const face = isRight ? p.x : p.x + PW;
+    target = (d.predict && !G.ai.slip) ? predictImpact(snap, face) : snap.y;
+    target += G.ai.err;
+    // do not commit fully when the ball is still far away
+    const dist = Math.abs(snap.x - face) / LW;
+    target = target * (1 - dist*0.35*(1-d.react)) + (LH/2) * (dist*0.35*(1-d.react));
+  } else {
+    target = LH/2 + G.ai.err * 0.25;
+  }
+  const prev = p.y;
+  const center = p.y + PH/2;
+  const diff = target - center;
+  const max = d.speed * dt;
+  if (Math.abs(diff) > 5) p.y = clamp(p.y + clamp(diff, -max, max), 0, LH-PH);
+  p.vel = (p.y - prev) / dt;
+}
+
+function bounceOff(p, dir, hy, isP1){
+  const rel = clamp((hy - (p.y + PH/2)) / (PH/2), -1, 1);
+  const ang = rel * MAX_ANGLE;
+  G.ball.speed = Math.min(G.ball.speed * BALL_GAIN, BALL_MAX);
+  const sp = G.ball.speed;
+  let vy = Math.sin(ang) * sp;
+  vy = clamp(vy + clamp(p.vel, -700, 700) * 0.10, -0.9*sp, 0.9*sp);
+  G.ball.vx = dir * Math.sqrt(Math.max(0, sp*sp - vy*vy));
+  G.ball.vy = vy;
+  G.rally++;
+  G.lastHit = isP1 ? 'p1' : 'p2';
+  p.flash = 1;
+  const col = isP1 ? C.p1 : C.p2;
+  burst(isP1 ? p.x+PW : p.x, hy, 12, col, 1.4, 3.2);
+  ripple(isP1 ? p.x+PW : p.x, hy, col);
+  FX.shake = Math.min(7, 2 + sp/300);
+  ping(220 + (sp-BALL_MIN)*0.35 + Math.abs(rel)*120, .055, 'square');
+}
+
+/** One collision sub-step. Returns false when the rally ended (point scored). */
+function subStep(h){
+  const b = G.ball;
+  const px = b.x, py = b.y;
+  let nx = px + b.vx*h, ny = py + b.vy*h;
+
+  // top / bottom walls
+  if (ny - R < 0){
+    ny = 2*R - ny; b.vy = Math.abs(b.vy);
+    burst(nx, R, 5, '#cdd7ff', 1.6, 2.0); ping(520, .04, 'triangle');
+  } else if (ny + R > LH){
+    ny = 2*(LH-R) - ny; b.vy = -Math.abs(b.vy);
+    burst(nx, LH-R, 5, '#cdd7ff', 1.6, 2.0); ping(520, .04, 'triangle');
+  }
+
+  // left paddle — swept plane crossing + overlap fallback (no tunnelling)
+  if (b.vx < 0){
+    const p = G.p1, face = p.x + PW;
+    let hit = false, hy = 0;
+    if (px - R >= face && nx - R <= face){
+      const den = (px - R) - (nx - R);
+      const t = den > 1e-9 ? (px - R - face) / den : 0;
+      hy = py + (ny - py) * clamp(t, 0, 1);
+      if (hy >= p.y - R && hy <= p.y + PH + R) hit = true;
+    } else if (nx - R <= face && nx + R >= p.x && ny + R >= p.y && ny - R <= p.y + PH){
+      hy = ny; hit = true;
+    }
+    if (hit){
+      nx = face + R;
+      b.x = nx; b.y = ny;
+      bounceOff(p, 1, hy, true);
+      return true;
+    }
+  }
+
+  // right paddle
+  if (b.vx > 0){
+    const p = G.p2, face = p.x;
+    let hit = false, hy = 0;
+    if (px + R <= face && nx + R >= face){
+      const den = (nx + R) - (px + R);
+      const t = den > 1e-9 ? (face - (px + R)) / den : 0;
+      hy = py + (ny - py) * clamp(t, 0, 1);
+      if (hy >= p.y - R && hy <= p.y + PH + R) hit = true;
+    } else if (nx + R >= face && nx - R <= p.x + PW && ny + R >= p.y && ny - R <= p.y + PH){
+      hy = ny; hit = true;
+    }
+    if (hit){
+      nx = face - R;
+      b.x = nx; b.y = ny;
+      bounceOff(p, -1, hy, false);
+      return true;
+    }
+  }
+
+  b.x = nx; b.y = ny;
+
+  if (nx + R < -6){ scorePoint('p2'); return false; }
+  if (nx - R > LW + 6){ scorePoint('p1'); return false; }
+  return true;
+}
+
+function moveBall(dt){
+  const b = G.ball;
+  const sp = Math.hypot(b.vx, b.vy);
+  const n = Math.min(48, Math.max(1, Math.ceil(sp*dt / MAX_SUBSTEP)));
+  const h = dt / n;
+  for (let i=0;i<n;i++) if (!subStep(h)) return;
+}
+
+function scorePoint(who){
+  const other = who === 'p1' ? 'p2' : 'p1';
+  const col = who === 'p1' ? C.p1 : C.p2;
+  const edgeX = who === 'p1' ? LW-4 : 4;
+  burst(edgeX, clamp(G.ball.y,10,LH-10), 34, col, 1.1, 5.5);
+  ripple(edgeX, clamp(G.ball.y,10,LH-10), col);
+  FX.shake = 16; FX.flashScore = 1;
+  ping(140, .18, 'sawtooth', .07);
+
+  if (G.phase === 'idle'){            // attract demo: never accumulate score
+    G.serveTo = other;
+    centerBall();
+    serveNow();
+    return;
+  }
+
+  G.score[who]++;
+  if (G.score[who] >= WIN_SCORE && G.score[who] - G.score[other] >= WIN_BY){
+    G.phase = 'over'; G.winner = who;
+    centerBall();
+    ping(660, .35, 'sine', .09);
+    syncChrome();
+    return;
+  }
+  G.serveTo = other;                  // serve toward whoever conceded
+  G.phase = 'serve';
+  G.serveTimer = SERVE_TICKS;
+  centerBall();
+}
+
+/** Advance exactly one logical tick. */
+function tick(){
+  G.tick++;
+  updateFX();
+
+  if (G.phase === 'over' || G.phase === 'paused') return;
+
+  const demo = G.phase === 'idle';
+  const twoHumans = G.mode === '2p' && !demo;
+
+  // paddles
+  if (demo){
+    aiPaddle(G.p1, DT, false);
+    aiPaddleB(G.p2, DT);
+  } else {
+    // in 1P both key sets drive P1 (comfort)
+    const up1 = G.held.p1up || (G.mode === '1p' && G.held.p2up);
+    const dn1 = G.held.p1down || (G.mode === '1p' && G.held.p2down);
+    movePaddle(G.p1, up1, dn1, DT);
+    if (twoHumans) movePaddle(G.p2, G.held.p2up, G.held.p2down, DT);
+    else aiPaddle(G.p2, DT, true);
+  }
+
+  // ball history for the AI's reaction delay
+  G.ai.hi = (G.ai.hi + 1) % HIST_N;
+  G.ai.hist[G.ai.hi] = { x:G.ball.x, y:G.ball.y, vx:G.ball.vx, vy:G.ball.vy };
+
+  if (G.phase === 'serve'){
+    G.serveTimer--;
+    if (G.serveTimer <= 0){ G.phase = 'rally'; serveNow(); }
+    return;
+  }
+
+  if (FX.trail.length > 22) FX.trail.shift();
+  FX.trail.push({ x:G.ball.x, y:G.ball.y });
+  moveBall(DT);
+}
+
+// second AI brain for the attract demo (independent error state)
+const aiB = { err:0, timer:0 };
+function aiPaddleB(p, dt){
+  const d = DIFF.normal;
+  aiB.timer--;
+  if (aiB.timer <= 0){ aiB.timer = 30 + Math.floor(G.rng()*30); aiB.err = (G.rng()*2-1) * 0.42 * PH; }
+  const prev = p.y;
+  let target = LH/2;
+  if (G.ball.vx > 0) target = predictImpact(G.ball, p.x) + aiB.err;
+  const diff = target - (p.y + PH/2);
+  const max = 380 * dt;
+  if (Math.abs(diff) > 5) p.y = clamp(p.y + clamp(diff, -max, max), 0, LH-PH);
+  p.vel = (p.y - prev)/dt;
+}
+
+/* ─────────────────────────────  rendering  ───────────────────────────── */
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d', { alpha:false });
+const stage = document.getElementById('stage');
+let viewScale = 1;
+
+function fit(){
+  const rect = stage.getBoundingClientRect();
+  const availW = Math.max(120, rect.width  - 4);
+  const availH = Math.max(90,  rect.height - 4);
+  const s = Math.min(availW / LW, availH / LH);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = Math.max(1, Math.floor(LW * s));
+  const cssH = Math.max(1, Math.floor(LH * s));
+  cv.style.width = cssW + 'px';
+  cv.style.height = cssH + 'px';
+  cv.width  = Math.max(1, Math.round(cssW * dpr));
+  cv.height = Math.max(1, Math.round(cssH * dpr));
+  viewScale = (cssW / LW) * dpr;
+  render();
+}
+
+function roundRect(x,y,w,h,r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, rr);
+  ctx.arcTo(x+w, y+h, x,   y+h, rr);
+  ctx.arcTo(x,   y+h, x,   y,   rr);
+  ctx.arcTo(x,   y,   x+w, y,   rr);
+  ctx.closePath();
+}
+
+let bgCache = null;
+function buildBg(){
+  const o = document.createElement('canvas');
+  o.width = LW; o.height = LH;
+  const g = o.getContext('2d');
+  const base = g.createLinearGradient(0,0,LW,LH);
+  base.addColorStop(0,'#080c1c'); base.addColorStop(.5,'#0b1130'); base.addColorStop(1,'#070a1a');
+  g.fillStyle = base; g.fillRect(0,0,LW,LH);
+
+  // team glow pools
+  let gl = g.createRadialGradient(0,LH/2,10, 0,LH/2, LW*0.62);
+  gl.addColorStop(0,'rgba(60,231,255,.20)'); gl.addColorStop(1,'rgba(60,231,255,0)');
+  g.fillStyle = gl; g.fillRect(0,0,LW,LH);
+  gl = g.createRadialGradient(LW,LH/2,10, LW,LH/2, LW*0.62);
+  gl.addColorStop(0,'rgba(255,77,157,.20)'); gl.addColorStop(1,'rgba(255,77,157,0)');
+  g.fillStyle = gl; g.fillRect(0,0,LW,LH);
+
+  // grid
+  g.strokeStyle = 'rgba(150,180,255,.055)'; g.lineWidth = 1;
+  for (let x=50; x<LW; x+=50){ g.beginPath(); g.moveTo(x+.5,0); g.lineTo(x+.5,LH); g.stroke(); }
+  for (let y=50; y<LH; y+=50){ g.beginPath(); g.moveTo(0,y+.5); g.lineTo(LW,y+.5); g.stroke(); }
+
+  // starfield (deterministic)
+  const r = mulberry32(7);
+  for (let i=0;i<130;i++){
+    const x = r()*LW, y = r()*LH, s = r()*1.5+0.4;
+    g.fillStyle = 'rgba(200,220,255,'+(0.05 + r()*0.22).toFixed(3)+')';
+    g.beginPath(); g.arc(x,y,s,0,7); g.fill();
+  }
+  // vignette
+  const v = g.createRadialGradient(LW/2,LH/2,LH*0.28, LW/2,LH/2,LW*0.72);
+  v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,.55)');
+  g.fillStyle = v; g.fillRect(0,0,LW,LH);
+  bgCache = o;
+}
+
+function drawField(now){
+  // centre line
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(170,200,255,.20)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.setLineDash([12, 18]);
+  ctx.lineDashOffset = -(now*0.02) % 30;
+  ctx.beginPath(); ctx.moveTo(LW/2, 14); ctx.lineTo(LW/2, LH-14); ctx.stroke();
+  ctx.setLineDash([]);
+  // centre circle
+  ctx.strokeStyle = 'rgba(170,200,255,.13)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(LW/2, LH/2, 78, 0, 7); ctx.stroke();
+  ctx.beginPath(); ctx.arc(LW/2, LH/2, 6, 0, 7); ctx.stroke();
+  ctx.restore();
+
+  // arena frame
+  ctx.strokeStyle = 'rgba(150,180,255,.18)'; ctx.lineWidth = 2;
+  roundRect(4,4,LW-8,LH-8,14); ctx.stroke();
+
+  // goal edges
+  const g1 = ctx.createLinearGradient(0,0,26,0);
+  g1.addColorStop(0,'rgba(60,231,255,.30)'); g1.addColorStop(1,'rgba(60,231,255,0)');
+  ctx.fillStyle = g1; ctx.fillRect(4,4,26,LH-8);
+  const g2 = ctx.createLinearGradient(LW,0,LW-26,0);
+  g2.addColorStop(0,'rgba(255,77,157,.30)'); g2.addColorStop(1,'rgba(255,77,157,0)');
+  ctx.fillStyle = g2; ctx.fillRect(LW-30,4,26,LH-8);
+}
+
+function drawPaddle(p, col, glow, isP1){
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.shadowColor = col; ctx.shadowBlur = 26 + p.flash*30;
+  const grad = ctx.createLinearGradient(p.x, p.y, p.x+PW, p.y+PH);
+  grad.addColorStop(0, col); grad.addColorStop(.5, '#ffffff'); grad.addColorStop(1, col);
+  ctx.fillStyle = grad;
+  roundRect(p.x, p.y, PW, PH, 7); ctx.fill();
+  ctx.shadowBlur = 0;
+  // inner core
+  ctx.fillStyle = 'rgba(255,255,255,'+(0.55 + p.flash*0.4)+')';
+  roundRect(p.x+PW*0.32, p.y+7, PW*0.36, PH-14, 3); ctx.fill();
+  // rail behind the paddle
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = glow + '0.10)';
+  const rx = isP1 ? p.x + PW/2 - 1.5 : p.x + PW/2 - 1.5;
+  ctx.fillRect(rx, 10, 3, LH-20);
+  ctx.restore();
+}
+
+function drawBall(now){
+  const b = G.ball;
+  const col = G.lastHit === 'p1' ? C.p1 : G.lastHit === 'p2' ? C.p2 : '#c9d6ff';
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  // trail
+  const n = FX.trail.length;
+  for (let i=0;i<n;i++){
+    const t = FX.trail[i], a = (i/n);
+    ctx.fillStyle = col;
+    ctx.globalAlpha = a*a*0.42;
+    ctx.beginPath(); ctx.arc(t.x, t.y, R*(0.25 + a*0.85), 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // glow
+  const g = ctx.createRadialGradient(b.x,b.y,0, b.x,b.y, R*5.5);
+  g.addColorStop(0, 'rgba(255,255,255,.55)');
+  g.addColorStop(.35, col.replace('#','rgba(').length ? hexA(col,.30) : 'rgba(255,255,255,.3)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(b.x,b.y,R*5.5,0,7); ctx.fill();
+  // core
+  ctx.shadowColor = col; ctx.shadowBlur = 22;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(b.x,b.y,R,0,7); ctx.fill();
+  ctx.restore();
+}
+
+function hexA(hex, a){
+  const h = hex.replace('#','');
+  const v = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h, 16);
+  return 'rgba('+((v>>16)&255)+','+((v>>8)&255)+','+(v&255)+','+a+')';
+}
+
+function drawFX(){
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of FX.parts){
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size*p.life, 0, 7); ctx.fill();
+  }
+  for (const r of FX.ripples){
+    ctx.globalAlpha = Math.max(0, r.life)*0.5;
+    ctx.strokeStyle = r.color; ctx.lineWidth = 2.5*r.life;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawHUD(now){
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+
+  const p1n = 'P1';
+  const p2n = G.mode === '1p' ? 'CPU' : 'P2';
+
+  // labels
+  ctx.font = '700 13px ' + FONT;
+  ctx.fillStyle = 'rgba(233,238,255,.45)';
+  ctx.letterSpacing && (ctx.letterSpacing = '3px');
+  ctx.fillText(p1n, LW/2 - 120, 42);
+  ctx.fillText(p2n, LW/2 + 120, 42);
+  ctx.letterSpacing && (ctx.letterSpacing = '0px');
+
+  // scores
+  const pulse = 1 + Math.max(0, FX.flashScore)*0.16;
+  ctx.font = '800 ' + Math.round(66*pulse) + 'px ' + FONT;
+  ctx.shadowColor = C.p1; ctx.shadowBlur = 26;
+  ctx.fillStyle = C.p1; ctx.fillText(String(G.score.p1), LW/2 - 120, 104);
+  ctx.shadowColor = C.p2; ctx.shadowBlur = 26;
+  ctx.fillStyle = C.p2; ctx.fillText(String(G.score.p2), LW/2 + 120, 104);
+  ctx.shadowBlur = 0;
+
+  // target line
+  ctx.font = '600 11px ' + FONT;
+  ctx.fillStyle = 'rgba(233,238,255,.28)';
+  const deuce = (G.score.p1 >= WIN_SCORE-1 && G.score.p2 >= WIN_SCORE-1);
+  ctx.fillText(deuce ? 'DEUCE — WIN BY 2' : 'FIRST TO ' + WIN_SCORE + ' · WIN BY ' + WIN_BY, LW/2, 58);
+
+  // rally + speed meter (bottom centre)
+  const pct = clamp((G.ball.speed - BALL_MIN) / (BALL_MAX - BALL_MIN), 0, 1);
+  const bw = 190, bx = LW/2 - bw/2, by = LH - 30;
+  ctx.fillStyle = 'rgba(255,255,255,.07)';
+  roundRect(bx, by, bw, 6, 3); ctx.fill();
+  const sg = ctx.createLinearGradient(bx,0,bx+bw,0);
+  sg.addColorStop(0, C.p1); sg.addColorStop(1, C.p2);
+  ctx.fillStyle = sg;
+  roundRect(bx, by, Math.max(4, bw*pct), 6, 3); ctx.fill();
+  ctx.font = '600 10px ' + FONT;
+  ctx.fillStyle = 'rgba(233,238,255,.35)';
+  ctx.fillText('BALL SPEED', LW/2, by - 7);
+  ctx.textAlign = 'left';
+  ctx.fillText('RALLY ' + G.rally, bx + bw + 14, by + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText((G.mode === '1p' ? 'AI ' + G.diff.toUpperCase() : 'LOCAL 2P'), bx - 14, by + 6);
+  ctx.restore();
+}
+
+function panel(x,y,w,h){
+  ctx.fillStyle = 'rgba(8,12,28,.86)';
+  roundRect(x,y,w,h,18); ctx.fill();
+  ctx.strokeStyle = 'rgba(150,180,255,.22)'; ctx.lineWidth = 1.5;
+  roundRect(x,y,w,h,18); ctx.stroke();
+}
+
+function drawOverlay(now){
+  ctx.save();
+  ctx.textAlign = 'center';
+
+  if (G.phase === 'idle'){
+    ctx.fillStyle = 'rgba(5,8,20,.62)'; ctx.fillRect(0,0,LW,LH);
+    const w = 560, h = 210, x = LW/2-w/2, y = LH/2-h/2;
+    panel(x,y,w,h);
+    const tg = ctx.createLinearGradient(x, 0, x+w, 0);
+    tg.addColorStop(0, C.p1); tg.addColorStop(.55,'#c3b5ff'); tg.addColorStop(1, C.p2);
+    ctx.font = '800 68px ' + FONT;
+    ctx.shadowColor = 'rgba(120,180,255,.6)'; ctx.shadowBlur = 30;
+    ctx.fillStyle = tg; ctx.fillText('PONG', LW/2, y+84);
+    ctx.shadowBlur = 0;
+    ctx.font = '600 14px ' + FONT;
+    ctx.fillStyle = 'rgba(233,238,255,.62)';
+    ctx.fillText('Neon Arena · first to 11, win by 2', LW/2, y+114);
+    const a = 0.55 + 0.45*Math.sin(now/380);
+    ctx.font = '700 16px ' + FONT;
+    ctx.fillStyle = 'rgba(233,238,255,'+a.toFixed(2)+')';
+    ctx.fillText('Press SPACE or tap to play', LW/2, y+160);
+    ctx.font = '600 12px ' + FONT;
+    ctx.fillStyle = 'rgba(139,150,196,.85)';
+    ctx.fillText('W / S    ·    ↑ / ↓    ·    drag on touch', LW/2, y+186);
+  }
+
+  if (G.phase === 'serve'){
+    const n = Math.ceil(G.serveTimer / (SERVE_TICKS/3));
+    const frac = (G.serveTimer % (SERVE_TICKS/3)) / (SERVE_TICKS/3);
+    const col = G.serveTo === 'p1' ? C.p1 : C.p2;
+    ctx.globalAlpha = 0.9;
+    ctx.font = '800 ' + Math.round(96 + (1-frac)*22) + 'px ' + FONT;
+    ctx.shadowColor = col; ctx.shadowBlur = 30;
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.30 + frac*0.6).toFixed(2) + ')';
+    ctx.fillText(String(Math.max(1,n)), LW/2, LH/2 + 34);
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    ctx.font = '700 13px ' + FONT;
+    ctx.fillStyle = col;
+    ctx.fillText('SERVING TO ' + (G.serveTo === 'p1' ? 'P1' : (G.mode==='1p'?'CPU':'P2')), LW/2, LH/2 + 74);
+  }
+
+  if (G.phase === 'paused'){
+    ctx.fillStyle = 'rgba(5,8,20,.66)'; ctx.fillRect(0,0,LW,LH);
+    ctx.font = '800 46px ' + FONT;
+    ctx.fillStyle = '#e9eeff'; ctx.fillText('PAUSED', LW/2, LH/2);
+    ctx.font = '600 14px ' + FONT;
+    ctx.fillStyle = 'rgba(233,238,255,.6)';
+    ctx.fillText('Press P or SPACE to resume', LW/2, LH/2 + 32);
+  }
+
+  if (G.phase === 'over'){
+    ctx.fillStyle = 'rgba(5,8,20,.74)'; ctx.fillRect(0,0,LW,LH);
+    const w = 520, h = 250, x = LW/2-w/2, y = LH/2-h/2;
+    panel(x,y,w,h);
+    const win = G.winner === 'p1' ? 'P1' : (G.mode==='1p' ? 'CPU' : 'P2');
+    const col = G.winner === 'p1' ? C.p1 : C.p2;
+    ctx.font = '700 13px ' + FONT;
+    ctx.fillStyle = 'rgba(233,238,255,.5)';
+    ctx.fillText('MATCH OVER', LW/2, y+46);
+    ctx.font = '800 52px ' + FONT;
+    ctx.shadowColor = col; ctx.shadowBlur = 28;
+    ctx.fillStyle = col; ctx.fillText(win + ' WINS', LW/2, y+100);
+    ctx.shadowBlur = 0;
+    ctx.font = '800 40px ' + FONT;
+    ctx.fillStyle = C.p1; ctx.fillText(String(G.score.p1), LW/2 - 52, y+156);
+    ctx.fillStyle = 'rgba(233,238,255,.35)'; ctx.fillText('–', LW/2, y+156);
+    ctx.fillStyle = C.p2; ctx.fillText(String(G.score.p2), LW/2 + 52, y+156);
+    // restart button
+    const bw = 220, bh = 44, bx = LW/2-bw/2, by = y+h-72;
+    restartHit = { x:bx, y:by, w:bw, h:bh };
+    const bg = ctx.createLinearGradient(bx,0,bx+bw,0);
+    bg.addColorStop(0, C.p1); bg.addColorStop(1, C.p2);
+    ctx.fillStyle = bg; roundRect(bx,by,bw,bh,22); ctx.fill();
+    ctx.font = '700 14px ' + FONT;
+    ctx.fillStyle = '#06101f';
+    ctx.fillText('PLAY AGAIN  ·  SPACE', LW/2, by+28);
+  } else {
+    restartHit = null;
+  }
+  ctx.restore();
+}
+
+let restartHit = null;
+
+function render(){
+  if (!bgCache) buildBg();
+  const now = performance.now();
+  ctx.setTransform(viewScale,0,0,viewScale,0,0);
+  ctx.save();
+  const sh = FX.shake;
+  if (sh > 0.4) ctx.translate((Math.random()-.5)*sh, (Math.random()-.5)*sh);
+  ctx.drawImage(bgCache, 0, 0);
+  drawField(now);
+  drawPaddle(G.p1, C.p1, C.p1g, true);
+  drawPaddle(G.p2, C.p2, C.p2g, false);
+  drawBall(now);
+  drawFX();
+  ctx.restore();
+  ctx.setTransform(viewScale,0,0,viewScale,0,0);
+  drawHUD(now);
+  drawOverlay(now);
+  ctx.setTransform(1,0,0,1,0,0);
+}
+
+/* ─────────────────────────────  main loop  ───────────────────────────── */
+
+let acc = 0, last = performance.now();
+function frame(t){
+  const dt = Math.min(0.25, (t - last)/1000);
+  last = t;
+  acc += dt;
+  let guard = 0;
+  while (acc >= DT && guard < 8){ tick(); acc -= DT; guard++; }
+  if (guard >= 8) acc = 0;
+  render();
+  requestAnimationFrame(frame);
+}
+
+/* ─────────────────────────────  input  ───────────────────────────────── */
+
+function startFromIdle(){
+  if (G.phase === 'idle'){ resetGame(undefined, {demo:false}); return true; }
+  return false;
+}
+
+function togglePause(){
+  if (G.phase === 'paused'){ G.phase = G.prevPhase || 'rally'; }
+  else if (G.phase === 'rally' || G.phase === 'serve'){ G.prevPhase = G.phase; G.phase = 'paused'; }
+  syncChrome();
+}
+
+function pressSpace(){
+  if (G.phase === 'idle'){ resetGame(undefined,{demo:false}); return; }
+  if (G.phase === 'over'){ resetGame(undefined,{demo:false}); return; }
+  if (G.phase === 'paused'){ togglePause(); return; }
+  if (G.phase === 'serve'){ G.serveTimer = Math.min(G.serveTimer, 6); return; }
+}
+
+const KEYMAP = {
+  'w':'p1up', 'W':'p1up', 's':'p1down', 'S':'p1down',
+  'ArrowUp':'p2up', 'ArrowDown':'p2down',
+};
+
+window.addEventListener('keydown', (e)=>{
+  const k = KEYMAP[e.key];
+  if (k){ G.held[k] = true; G[ k.startsWith('p1') ? 'p1' : 'p2' ].touch = null; e.preventDefault(); return; }
+  if (e.code === 'Space' || e.key === ' '){ e.preventDefault(); pressSpace(); return; }
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape'){ e.preventDefault(); togglePause(); return; }
+  if (e.key === 'r' || e.key === 'R'){ e.preventDefault(); resetGame(undefined,{demo:false}); return; }
+  if (e.key === '1'){ setMode('1p'); return; }
+  if (e.key === '2'){ setMode('2p'); return; }
+}, { passive:false });
+
+window.addEventListener('keyup', (e)=>{
+  const k = KEYMAP[e.key];
+  if (k){ G.held[k] = false; e.preventDefault(); }
+}, { passive:false });
+
+window.addEventListener('blur', ()=>{
+  G.held.p1up = G.held.p1down = G.held.p2up = G.held.p2down = false;
+});
+
+// touch / mouse drag on your own half
+const pointers = new Map();
+function toLogical(e){
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * LW, y: (e.clientY - r.top) / r.height * LH };
+}
+cv.addEventListener('pointerdown', (e)=>{
+  cv.setPointerCapture(e.pointerId);
+  const p = toLogical(e);
+  if (restartHit && p.x >= restartHit.x && p.x <= restartHit.x+restartHit.w &&
+      p.y >= restartHit.y && p.y <= restartHit.y+restartHit.h){
+    resetGame(undefined,{demo:false}); return;
+  }
+  if (G.phase === 'idle' || G.phase === 'over'){ resetGame(undefined,{demo:false}); return; }
+  const who = (G.mode === '1p') ? 'p1' : (p.x < LW/2 ? 'p1' : 'p2');
+  pointers.set(e.pointerId, who);
+  G[who].touch = p.y;
+  e.preventDefault();
+});
+cv.addEventListener('pointermove', (e)=>{
+  const who = pointers.get(e.pointerId);
+  if (!who) return;
+  G[who].touch = toLogical(e).y;
+  e.preventDefault();
+});
+function endPointer(e){
+  const who = pointers.get(e.pointerId);
+  if (who){ G[who].touch = null; pointers.delete(e.pointerId); }
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+cv.addEventListener('contextmenu', e=>e.preventDefault());
+
+/* ─────────────────────────────  chrome  ──────────────────────────────── */
+
+const modeSeg = document.getElementById('modeSeg');
+const diffSeg = document.getElementById('diffSeg');
+const btnPause = document.getElementById('btnPause');
+const btnRestart = document.getElementById('btnRestart');
+const btnSound = document.getElementById('btnSound');
+
+function setMode(m){
+  if (m !== '1p' && m !== '2p') return false;
+  G.mode = m;
+  resetGame(undefined,{demo:false});
+  return true;
+}
+function setDiff(d){
+  if (!DIFF[d]) return false;
+  G.diff = d; syncChrome(); return true;
+}
+function syncChrome(){
+  for (const b of modeSeg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === G.mode);
+  for (const b of diffSeg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.diff === G.diff);
+  diffSeg.style.opacity = G.mode === '1p' ? '1' : '.4';
+  btnPause.textContent = G.phase === 'paused' ? 'Resume' : 'Pause';
+  btnPause.classList.toggle('hot', G.phase === 'paused');
+  btnSound.textContent = 'Sound: ' + (muted ? 'off' : 'on');
+  btnSound.classList.toggle('hot', !muted);
+}
+modeSeg.addEventListener('click', e=>{ const b = e.target.closest('button'); if (b) setMode(b.dataset.mode); });
+diffSeg.addEventListener('click', e=>{ const b = e.target.closest('button'); if (b) setDiff(b.dataset.diff); });
+btnPause.addEventListener('click', ()=>{ if (G.phase==='idle') resetGame(undefined,{demo:false}); else togglePause(); });
+btnRestart.addEventListener('click', ()=> resetGame(undefined,{demo:false}));
+btnSound.addEventListener('click', ()=>{ muted = !muted; syncChrome(); if(!muted) ping(560,.07,'sine'); });
+
+/* ─────────────────────────────  self tests  ──────────────────────────── */
+
+function selftest(){
+  const tests = [];
+  const T = (name, fn)=>{
+    try { const d = fn(); tests.push({ name, ok:true, detail:d || null }); }
+    catch (err){ tests.push({ name, ok:false, detail:String(err && err.message || err) }); }
+  };
+  const assert = (c, m)=>{ if (!c) throw new Error(m); };
+  const savedMode = G.mode, savedDiff = G.diff;
+
+  // ── 1. no tunnelling at maximum speed, across many seeded runs
+  T('no tunnelling at max speed (28 seeds × 2200 ticks)', ()=>{
+    G.mode = '2p';
+    let worst = 0;
+    for (let s=0; s<28; s++){
+      resetGame(9000+s, {demo:false});
+      G.mode = '2p';
+      // pin the ball at the hard cap
+      const b = G.ball;
+      b.speed = BALL_MAX;
+      const m = Math.hypot(b.vx,b.vy) || 1;
+      b.vx = b.vx/m*BALL_MAX; b.vy = b.vy/m*BALL_MAX;
+      for (let t=0; t<2200; t++){
+        // oracle paddles: both perfectly cover the ball
+        G.p1.y = clamp(G.ball.y - PH/2, 0, LH-PH);
+        G.p2.y = clamp(G.ball.y - PH/2, 0, LH-PH);
+        G.p1.vel = 0; G.p2.vel = 0;
+        G.p1.touch = null; G.p2.touch = null;
+        if (G.phase === 'rally'){
+          G.ball.speed = BALL_MAX;
+          const mm = Math.hypot(G.ball.vx,G.ball.vy) || 1;
+          G.ball.vx = G.ball.vx/mm*BALL_MAX; G.ball.vy = G.ball.vy/mm*BALL_MAX;
         }
+        tick();
+        worst = Math.max(worst, G.score.p1 + G.score.p2);
+        assert(G.score.p1 === 0 && G.score.p2 === 0,
+          'ball passed a fully covering paddle (seed '+(9000+s)+', tick '+t+')');
+        assert(G.ball.x > -60 && G.ball.x < LW+60, 'ball escaped the arena');
+      }
+    }
+    return 'no goals conceded by oracle paddles';
+  });
 
-        function resetGame() {
-            p1.score = 0;
-            p2.score = 0;
-            p1.y = H/2 - paddleH/2;
-            p2.y = H/2 - paddleH/2;
-            gameOver = false;
-            winner = '';
-            document.getElementById('start-msg').style.display = 'none';
-            resetBall();
-            gameRunning = true;
-        }
+  // ── 2. a point is scored when the ball passes an edge, and serve goes to the conceder
+  T('point scored when the ball passes an edge', ()=>{
+    G.mode = '2p';
+    resetGame(31, {demo:false});
+    G.mode = '2p';
+    G.p2.y = 0; G.p1.y = 0;
+    G.ball.x = LW - 60; G.ball.y = LH - 60;
+    G.ball.speed = 600; G.ball.vx = 600; G.ball.vy = 0;
+    for (let i=0;i<40 && G.score.p1 === 0;i++) tick();
+    assert(G.score.p1 === 1, 'right edge should give P1 a point, got ' + JSON.stringify(G.score));
+    assert(G.phase === 'serve', 'should enter the serve countdown, got ' + G.phase);
+    assert(G.serveTo === 'p2', 'serve must go to the conceder (p2), got ' + G.serveTo);
 
-        function update() {
-            if (!gameRunning) return;
+    resetGame(32, {demo:false});
+    G.mode = '2p';
+    G.p1.y = 0; G.p2.y = 0;
+    G.ball.x = 60; G.ball.y = LH - 60;
+    G.ball.speed = 600; G.ball.vx = -600; G.ball.vy = 0;
+    for (let i=0;i<40 && G.score.p2 === 0;i++) tick();
+    assert(G.score.p2 === 1, 'left edge should give P2 a point');
+    assert(G.serveTo === 'p1', 'serve must go to the conceder (p1)');
+    return 'both edges score and serve to the conceder';
+  });
 
-            // P1 movement (W/S)
-            if (keys['w'] && p1.y > 0) p1.y -= paddleSpeed;
-            if (keys['s'] && p1.y < H - paddleH) p1.y += paddleSpeed;
+  // ── 3. bounce angle varies monotonically with impact offset
+  T('bounce angle varies with impact offset', ()=>{
+    G.mode = '2p';
+    const offsets = [-0.85,-0.5,-0.2,0,0.2,0.5,0.85];
+    const out = [];
+    for (const off of offsets){
+      resetGame(77, {demo:false});
+      G.mode = '2p';
+      const hitY = LH/2;
+      G.p1.y = clamp(hitY - PH/2 - off*(PH/2), 0, LH-PH);
+      G.p1.vel = 0;
+      const sp = 600;
+      G.ball.x = G.p1.x + PW + R + 40; G.ball.y = hitY;
+      G.ball.speed = sp; G.ball.vx = -sp; G.ball.vy = 0;
+      let hit = false;
+      for (let i=0;i<40;i++){
+        G.p1.y = clamp(hitY - PH/2 - off*(PH/2), 0, LH-PH);
+        G.p1.vel = 0;
+        G.p2.y = clamp(G.ball.y - PH/2, 0, LH-PH);
+        tick();
+        if (G.ball.vx > 0){ hit = true; break; }
+      }
+      assert(hit, 'ball never bounced for offset ' + off);
+      out.push(G.ball.vy / G.ball.speed);
+    }
+    for (let i=1;i<out.length;i++){
+      assert(out[i] > out[i-1] + 1e-4,
+        'vy/speed must increase with offset: ' + out.map(v=>v.toFixed(3)).join(','));
+    }
+    assert(Math.abs(out[3]) < 1e-6, 'centre hit must be flat, got ' + out[3]);
+    assert(Math.abs(out[0]) > 0.6 && Math.abs(out[6]) > 0.6, 'edge hits must be steep');
+    return 'vy/speed = ' + out.map(v=>v.toFixed(2)).join(' ');
+  });
 
-            // P2 movement (Arrow keys)
-            if (keys['arrowup'] && p2.y > 0) p2.y -= paddleSpeed;
-            if (keys['arrowdown'] && p2.y < H - paddleH) p2.y += paddleSpeed;
+  // ── 4. speed grows on paddle hits and is capped
+  T('ball speed grows per hit and is hard-capped', ()=>{
+    G.mode = '2p';
+    resetGame(404, {demo:false});
+    G.mode = '2p';
+    let maxSeen = 0, hits0 = 0;
+    for (let t=0;t<9000;t++){
+      G.p1.y = clamp(G.ball.y - PH/2, 0, LH-PH);
+      G.p2.y = clamp(G.ball.y - PH/2, 0, LH-PH);
+      G.p1.vel = 0; G.p2.vel = 0;
+      tick();
+      const sp = Math.hypot(G.ball.vx, G.ball.vy);
+      if (G.phase === 'rally') maxSeen = Math.max(maxSeen, sp);
+      assert(sp <= BALL_MAX + 1e-6, 'speed exceeded the cap: ' + sp);
+      hits0 = Math.max(hits0, G.rally);
+    }
+    assert(maxSeen >= BALL_MAX - 1e-6, 'speed never reached the cap (max ' + maxSeen.toFixed(1) + ')');
+    assert(hits0 > 20, 'expected a long rally, got ' + hits0);
+    return 'peak ' + maxSeen.toFixed(0) + ' px/s = cap ' + BALL_MAX;
+  });
 
-            // Ball movement
-            ball.x += ball.vx;
-            ball.y += ball.vy;
+  // ── 5. the AI is beatable by a competent player
+  T('AI is beatable (perfect tracker wins on hard)', ()=>{
+    G.mode = '1p'; G.diff = 'hard';
+    resetGame(555, {demo:false});
+    G.mode = '1p'; G.diff = 'hard';
+    let t = 0;
+    while (G.phase !== 'over' && t < 200000){
+      // human oracle limited to the real human paddle speed
+      const want = clamp(G.ball.y - PH/2, 0, LH-PH);
+      const d = want - G.p1.y;
+      G.p1.y = clamp(G.p1.y + clamp(d, -P_SPEED*DT, P_SPEED*DT), 0, LH-PH);
+      G.p1.vel = 0; G.p1.touch = null;
+      tick(); t++;
+    }
+    assert(G.phase === 'over', 'match never finished in 200k ticks');
+    assert(G.winner === 'p1', 'a perfect tracker should beat the AI, winner=' + G.winner +
+      ' score ' + JSON.stringify(G.score));
+    return 'p1 ' + G.score.p1 + ' – ' + G.score.p2 + ' in ' + t + ' ticks';
+  });
 
-            // Top/bottom bounce
-            if (ball.y <= 0 || ball.y >= H - ballSize) {
-                ball.vy *= -1;
-                ball.y = Math.max(0, Math.min(H - ballSize, ball.y));
-            }
+  // ── 6. AI is not perfect (it must be handicapped)
+  T('AI is handicapped (lag + speed + error)', ()=>{
+    for (const k of ['easy','normal','hard']){
+      const d = DIFF[k];
+      assert(d.lag > 0, k + ': needs a reaction delay');
+      assert(d.speed < P_SPEED, k + ': must be slower than a human paddle');
+      assert(d.err > 0, k + ': must have tracking error');
+    }
+    return 'lag/speed/error present on all three levels';
+  });
 
-            // Paddle collision
-            if (ball.x <= p1.x + paddleW && ball.x >= p1.x &&
-                ball.y + ballSize >= p1.y && ball.y <= p1.y + paddleH) {
-                ball.vx = Math.abs(ball.vx) * 1.05;
-                const hitPos = (ball.y + ballSize/2 - p1.y) / paddleH - 0.5;
-                ball.vy = hitPos * 8;
-                ball.x = p1.x + paddleW + 1;
-            }
-            if (ball.x + ballSize >= p2.x && ball.x <= p2.x + paddleW &&
-                ball.y + ballSize >= p2.y && ball.y <= p2.y + paddleH) {
-                ball.vx = -Math.abs(ball.vx) * 1.05;
-                const hitPos = (ball.y + ballSize/2 - p2.y) / paddleH - 0.5;
-                ball.vy = hitPos * 8;
-                ball.x = p2.x - ballSize - 1;
-            }
+  // ── 7. match ends first-to-11 win-by-2
+  T('match ends at 11, win by 2', ()=>{
+    G.mode = '2p';
+    resetGame(11, {demo:false});
+    G.mode = '2p';
+    G.score.p1 = 10; G.score.p2 = 10;
+    G.ball.x = LW - 60; G.ball.y = 20; G.p2.y = LH-PH; G.p1.y = LH-PH;
+    G.ball.speed = 600; G.ball.vx = 600; G.ball.vy = 0;
+    for (let i=0;i<40 && G.score.p1 === 10;i++) tick();
+    assert(G.score.p1 === 11, 'p1 should be on 11');
+    assert(G.phase !== 'over', '11–10 must not end the match (win by 2)');
+    G.phase = 'rally';
+    G.ball.x = LW - 60; G.ball.y = 20; G.p2.y = LH-PH;
+    G.ball.speed = 600; G.ball.vx = 600; G.ball.vy = 0;
+    for (let i=0;i<40 && G.score.p1 === 11;i++) tick();
+    assert(G.score.p1 === 12 && G.phase === 'over' && G.winner === 'p1',
+      '12–10 should end the match, got ' + G.phase + ' ' + JSON.stringify(G.score));
+    return '11–10 continues, 12–10 wins';
+  });
 
-            // Scoring
-            if (ball.x < 0) {
-                p2.score++;
-                checkWin();
-                if (!gameOver) resetBall();
-            }
-            if (ball.x > W) {
-                p1.score++;
-                checkWin();
-                if (!gameOver) resetBall();
-            }
+  // ── 8. determinism
+  T('reset(seed) is reproducible', ()=>{
+    const snap = (seed)=>{
+      resetGame(seed,{demo:false});
+      G.mode = '1p'; G.diff = 'normal';
+      for (let i=0;i<900;i++) tick();
+      const s = api.getState();
+      return JSON.stringify([s.score, s.ball, s.p1.y, s.p2.y, s.phase]);
+    };
+    assert(snap(2024) === snap(2024), 'same seed must replay identically');
+    assert(snap(2024) !== snap(2025), 'different seeds must diverge');
+    return 'seeded PRNG drives serves and AI';
+  });
 
-            // Update score display
-            document.getElementById('score-p1').textContent = p1.score;
-            document.getElementById('score-p2').textContent = p2.score;
-        }
+  G.mode = savedMode; G.diff = savedDiff;
+  resetGame(undefined, {demo:true});
 
-        function checkWin() {
-            if (p1.score >= 5 || p2.score >= 5) {
-                gameOver = true;
-                gameRunning = false;
-                winner = p1.score >= 5 ? 'Player 1' : 'Player 2';
-                document.getElementById('start-msg').textContent = winner + ' wins! Press SPACE to restart';
-                document.getElementById('start-msg').style.display = 'block';
-            }
-        }
+  const failed = tests.filter(t=>!t.ok);
+  return { ok: failed.length === 0, passed: tests.length - failed.length, failed: failed.length, tests };
+}
 
-        function draw() {
-            // Clear
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, W, H);
+/* ─────────────────────────────  __GAME__ contract  ───────────────────── */
 
-            // Center line
-            ctx.setLineDash([8, 8]);
-            ctx.strokeStyle = '#222';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(W/2, 0);
-            ctx.lineTo(W/2, H);
-            ctx.stroke();
-            ctx.setLineDash([]);
+const ACTIONS = ['p1up','p1down','p2up','p2down','release','pause','restart','serve','mode','difficulty','selftest'];
 
-            // Paddles
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(p1.x, p1.y, paddleW, paddleH);
-            ctx.fillRect(p2.x, p2.y, paddleW, paddleH);
+const api = {
+  id: 'pong',
+  version: 1,
+  ready: false,
+  meta: { name:'Pong', players:'1-2', mode:'realtime' },
 
-            // Ball
-            ctx.beginPath();
-            ctx.arc(ball.x + ballSize/2, ball.y + ballSize/2, ballSize/2, 0, Math.PI * 2);
-            ctx.fill();
-        }
+  getState(){
+    const status = G.phase === 'over' ? 'over' : (G.phase === 'idle' ? 'idle' : 'playing');
+    return {
+      status,
+      turn: null,
+      score: { p1:G.score.p1, p2:G.score.p2 },
+      phase: G.phase,
+      mode: G.mode,
+      difficulty: G.diff,
+      winner: G.winner,
+      tick: G.tick,
+      rally: G.rally,
+      lastHit: G.lastHit,
+      serveTo: G.serveTo,
+      serveTimer: G.serveTimer,
+      target: { winScore: WIN_SCORE, winBy: WIN_BY },
+      arena: { w:LW, h:LH, paddleW:PW, paddleH:PH, ballR:R },
+      limits: { minSpeed: BALL_MIN, maxSpeed: BALL_MAX },
+      ball: { x:G.ball.x, y:G.ball.y, vx:G.ball.vx, vy:G.ball.vy, speed:Math.hypot(G.ball.vx,G.ball.vy) },
+      p1: { x:G.p1.x, y:G.p1.y, vel:G.p1.vel },
+      p2: { x:G.p2.x, y:G.p2.y, vel:G.p2.vel },
+      held: { p1up:G.held.p1up, p1down:G.held.p1down, p2up:G.held.p2up, p2down:G.held.p2down },
+    };
+  },
 
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
+  reset(seed){
+    resetGame(seed === undefined ? G.seed : seed, { demo:false });
+    return { ok:true };
+  },
 
-        loop();
-    </script>
+  step(n){
+    const k = Math.max(0, Math.min(500000, Math.floor(n === undefined ? 1 : n)));
+    for (let i=0;i<k;i++) tick();
+    return { ok:true, ticks:k };
+  },
+
+  input(action, payload){
+    switch (action){
+      case 'p1up':   G.p1.touch = null; G.held.p1up = true;  G.held.p1down = false; return { ok:true };
+      case 'p1down': G.p1.touch = null; G.held.p1down = true; G.held.p1up = false;  return { ok:true };
+      case 'p2up':   G.p2.touch = null; G.held.p2up = true;  G.held.p2down = false; return { ok:true };
+      case 'p2down': G.p2.touch = null; G.held.p2down = true; G.held.p2up = false;  return { ok:true };
+      case 'release': {
+        const who = payload && payload.who;
+        if (who === 'p1'){ G.held.p1up = G.held.p1down = false; G.p1.touch = null; }
+        else if (who === 'p2'){ G.held.p2up = G.held.p2down = false; G.p2.touch = null; }
+        else { G.held.p1up = G.held.p1down = G.held.p2up = G.held.p2down = false; G.p1.touch = null; G.p2.touch = null; }
+        return { ok:true };
+      }
+      case 'pause':
+        if (G.phase === 'idle' || G.phase === 'over') return { ok:false, reason:'not in a live match' };
+        togglePause();
+        return { ok:true, paused: G.phase === 'paused' };
+      case 'restart':
+        resetGame(undefined, { demo:false });
+        return { ok:true };
+      case 'serve':
+        if (G.phase === 'serve'){ G.serveTimer = 1; return { ok:true }; }
+        if (G.phase === 'idle' || G.phase === 'over'){ resetGame(undefined,{demo:false}); return { ok:true }; }
+        return { ok:false, reason:'not waiting to serve' };
+      case 'mode': {
+        const m = payload && payload.mode;
+        return setMode(m) ? { ok:true, mode:G.mode } : { ok:false, reason:'mode must be "1p" or "2p"' };
+      }
+      case 'difficulty': {
+        const d = payload && payload.difficulty;
+        return setDiff(d) ? { ok:true, difficulty:G.diff } : { ok:false, reason:'difficulty must be easy|normal|hard' };
+      }
+      case 'selftest':
+        return selftest();
+      default:
+        return { ok:false, reason:'unknown action: ' + String(action) };
+    }
+  },
+
+  actions(){ return ACTIONS.slice(); },
+};
+
+window.__GAME__ = api;
+
+/* ─────────────────────────────  boot  ────────────────────────────────── */
+
+buildBg();
+resetGame(((Date.now() >>> 0) || 1), { demo:true });
+fit();
+if (window.ResizeObserver) new ResizeObserver(fit).observe(stage);
+window.addEventListener('resize', fit);
+api.ready = true;
+requestAnimationFrame((t)=>{ last = t; requestAnimationFrame(frame); });
+
+})();
+</script>
 </body>
 </html>

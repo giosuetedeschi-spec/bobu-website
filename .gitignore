@@ -49,3 +49,6 @@ next-env.d.ts
 # python
 __pycache__/
 *.pyc
+
+# Harness run artifacts (screenshots + last-run report)
+harness/reports/
