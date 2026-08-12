@@ -271,6 +271,8 @@ export function runSelfTest(api) {
     e.players[0].total = 190;
     e.players[1].total = 120;
     e.players[1].status = 'stayed';
+    // Seat rotation deals to Ada first; she is out, so the turn is the human's.
+    e.turnIndex = 0;
     e._stack([num(12)]);
     e.flip(0);
     e.stay();
@@ -287,6 +289,8 @@ export function runSelfTest(api) {
     e.players[0].total = 100;
     e.players[1].total = 120;
     e.players[1].status = 'stayed';
+    // Seat rotation deals to Ada first; she is out, so the turn is the human's.
+    e.turnIndex = 0;
     e._stack([num(9)]);
     e.flip(0);
     e.stay();
@@ -302,6 +306,8 @@ export function runSelfTest(api) {
     e.players[0].total = 195;
     e.players[1].total = 205;
     e.players[1].status = 'stayed';
+    // Seat rotation deals to Ada first; she is out, so the turn is the human's.
+    e.turnIndex = 0;
     e._stack([num(10)]);
     e.flip(0);
     e.stay();

@@ -199,9 +199,16 @@ export class Flip7Engine {
     return false;
   }
 
+  /**
+   * Run the engine's own work forward, but stop at a scoreboard: the end of a
+   * round and the end of the game are both states a player has to look at, so
+   * clearing them takes an explicit `advance()`. Without this a single step(n)
+   * would deal the next round on top of the hands you were about to read.
+   */
   step(n = 1) {
     let moved = 0;
     for (let i = 0; i < n; i++) {
+      if (this.phase === 'roundend' || this.phase === 'gameover') break;
       if (!this.advance()) break;
       moved += 1;
     }
@@ -400,6 +407,10 @@ export class Flip7Engine {
 
   endRound(reason) {
     if (this.phase === 'roundend' || this.phase === 'gameover') return;
+    // Action cards still in flight when the round ends never reach a player,
+    // so they go to the discard rather than vanishing out of the deck census.
+    if (this.pendingChoice) this.discard.push(this.pendingChoice.card);
+    for (const d of this.deferred) this.discard.push(d.card);
     this.pendingChoice = null;
     this.pendingFlips = null;
     this.deferred = [];
