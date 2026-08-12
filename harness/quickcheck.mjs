@@ -24,6 +24,10 @@ const shotIdx = process.argv.indexOf("--shot");
 const shot = shotIdx > -1 ? process.argv[shotIdx + 1] : null;
 const tickIdx = process.argv.indexOf("--ticks");
 const ticks = tickIdx > -1 ? Number(process.argv[tickIdx + 1]) : 30;
+// --play N drives the game N ticks right before the screenshot, so the shot
+// shows a game in progress rather than its opening frame.
+const playIdx = process.argv.indexOf("--play");
+const play = playIdx > -1 ? Number(process.argv[playIdx + 1]) : 0;
 
 const server = await startStaticServer({ dir: path.join(ROOT, "public") });
 const browser = await chromium.launch({ args: ["--no-sandbox", "--disable-dev-shm-usage"] });
@@ -93,6 +97,10 @@ if (ready) {
   if (painted !== "no-canvas") check("canvas paints pixels", painted === true, String(painted));
 }
 
+if (play > 0) {
+  await page.evaluate((n) => { window.__GAME__?.reset(7); window.__GAME__?.step(n); }, play);
+  await page.waitForTimeout(120); // let one animation frame paint the new state
+}
 if (shot) await page.screenshot({ path: shot });
 
 check("no console errors / failed requests", errors.length === 0, errors.slice(0, 8).join(" | "));

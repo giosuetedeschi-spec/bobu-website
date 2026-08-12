@@ -183,10 +183,26 @@ export const PROBES = {
     return { checks };
   },
 
-  async twindrift(page) {
+  async mirrordrift(page) {
     const checks = await selftest(page);
     checks.push(...(await advances(page, { inputs: ["left"], ticks: 200 })));
     checks.push(...(await seedMatters(page, 120)));
+    return { checks };
+  },
+
+  async twins(page) {
+    const checks = await selftest(page);
+    checks.push(...(await advances(page, { inputs: ["holdLeft"], ticks: 120 })));
+    checks.push(...(await seedMatters(page, 200)));
+    const mirrored = await page.evaluate(() => {
+      const g = window.__GAME__;
+      g.reset(3);
+      const before = g.getState().balls.map((b) => b.side);
+      g.input("swap");
+      const after = g.getState().balls.map((b) => b.side);
+      return before[0] !== after[0] && before[1] !== after[1];
+    });
+    checks.push(ok("a swap crosses both balls over", mirrored));
     return { checks };
   },
 

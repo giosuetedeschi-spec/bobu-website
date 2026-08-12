@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Twins</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  background: #0b0d14;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  overflow: hidden;
+}
+
+#wrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 10 / 16;
+  max-width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.overlay[hidden] { display: none; }
+
+.panel {
+  width: min(300px, 100%);
+  text-align: center;
+  padding: 26px 22px;
+  border-radius: 18px;
+  background: rgba(11, 13, 20, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f5f6fa;
+  pointer-events: auto;
+}
+
+.panel h2 { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.06em; margin-bottom: 8px; }
+.panel p { font-size: 0.82rem; color: #a5adc0; line-height: 1.6; margin-bottom: 16px; }
+
+.scores { display: flex; gap: 9px; margin-bottom: 16px; }
+
+.scores div {
+  flex: 1;
+  padding: 10px 6px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scores .n { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.scores .k { font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase; color: #a5adc0; }
+
+.keys { font-size: 0.68rem; color: #8890a6; line-height: 2; margin-bottom: 16px; }
+
+kbd {
+  display: inline-block;
+  min-width: 19px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom-width: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.64rem;
+}
+
+button {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0b0d14;
+  background: #f5f6fa;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 34px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+button:active { transform: translateY(1px); }
+</style>
+</head>
+
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="ov-title">TWINS</h2>
+      <p id="ov-text">Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.</p>
+      <div class="scores" id="ov-scores" hidden>
+        <div><div class="n" id="ov-score">0</div><div class="k">Score</div></div>
+        <div><div class="n" id="ov-best">0</div><div class="k">Best</div></div>
+      </div>
+      <div class="keys" id="ov-keys">
+        touch: hold the left or right half<br>
+        <kbd>←</kbd><kbd>→</kbd> &nbsp; <kbd>A</kbd><kbd>L</kbd> &nbsp; <kbd>Z</kbd><kbd>M</kbd> &nbsp; or click a half
+      </div>
+      <button id="ov-btn">Play</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================== constants */
+
+// Logical portrait space; the canvas scales to fit whatever box it gets.
+const W = 500, H = 800;
+const MID = W / 2;
+const WALL = 7;                    // half-thickness of the centre wall
+const BALL_R = 13;
+const BALL_Y = H * 0.60;           // both balls sit at a fixed screen height
+
+// Sideways gravity pulls each ball toward the centre wall. A held input
+// pushes it outward; the longer the hold, the wider the arc.
+const GRAVITY = 0.78;
+const THRUST = 1.9;
+const MAX_HOLD = 20;               // ticks of thrust a single hold can apply
+const MAX_OUT = 104;               // furthest a ball may get from the wall
+
+const SPEED_START = 3.6, SPEED_MAX = 9.0, RAMP_DISTANCE = 6000;
+
+// Spike spacing is measured in TICKS, not pixels. A ball's arc takes a fixed
+// number of ticks regardless of scroll speed, so spacing the course by
+// distance would make it literally impossible once the speed ramps up.
+const GAP_TICKS_START = 78, GAP_TICKS_MIN = 40;
+
+// Kept deliberately short: a spike blocks the lane for (SPIKE_H + 2*BALL_R)
+// pixels of travel, and at the opening scroll speed that time has to fit
+// inside the window a single arc can stay clear of the wall.
+const SPIKE_H = 30;                // spike footprint along the course
+const SPIKE_DEPTH = 40;            // how far it juts into the lane
+
+const GATE_EVERY = 900;            // distance between swap gates
+const GATE_H = 26;
+
+const THEMES = [
+  { name: 'ink',    dark: '#222b3d', light: '#e8e9ed', accent: '#f5f6fa' },
+  { name: 'teal',   dark: '#0f9b8e', light: '#f2f5f4', accent: '#ffffff' },
+  { name: 'cyan',   dark: '#12a8d6', light: '#f0f7fa', accent: '#ffffff' },
+  { name: 'purple', dark: '#a626d4', light: '#f8f2fb', accent: '#ffffff' },
+  { name: 'coral',  dark: '#e2455c', light: '#fdf2f3', accent: '#ffffff' },
+];
+const THEME_EVERY = 400;           // distance between palette changes
+
+function mulberry32(seed) {
+  let a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function safeGet(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch { /* sandboxed iframe */ } }
+
+/* ================================================================== state */
+
+/**
+ * `side` is which half of the screen the ball is currently in (0 = left,
+ * 1 = right). `input` is which control drives it. A swap gate flips BOTH:
+ * the balls cross over and each input keeps its own ball, so you end up
+ * reaching across.
+ */
+const game = {
+  seed: 1,
+  rng: mulberry32(1),
+  status: 'ready',                 // ready | playing | over
+  balls: [],
+  spikes: [],                      // { side, y } -- side is the lane it blocks
+  gates: [],                       // { y, passed }
+  particles: [],
+  ticks: 0,
+  distance: 0,
+  score: 0,
+  best: Number(safeGet('twins-best', '0')) || 0,
+  laneNext: [0, 0],                // ticks until the next spike in each lane
+  nextGateAt: GATE_EVERY,
+  gatePending: false,              // a gate is due, waiting for a clear row
+  swapFlash: 0,
+  shake: 0,
+  dead: null,                      // which ball hit something
+  theme: 0,
+  themeMix: 1,                     // 0..1 crossfade into the current theme
+};
+
+const speed = () => SPEED_START + (SPEED_MAX - SPEED_START) * Math.min(1, game.distance / RAMP_DISTANCE);
+const gapTicks = () => GAP_TICKS_START - (GAP_TICKS_START - GAP_TICKS_MIN) * Math.min(1, game.distance / RAMP_DISTANCE);
+const spikeGap = () => gapTicks() * speed();
+
+/** Outward direction for a lane: left lane pushes left, right lane pushes right. */
+const outward = (side) => (side === 0 ? -1 : 1);
+
+/** x of the wall face a ball rests against, in its lane. */
+const wallFace = (side) => (side === 0 ? MID - WALL - BALL_R : MID + WALL + BALL_R);
+
+function makeBall(input) {
+  const side = input;
+  return {
+    input,                         // 0 = left control, 1 = right control
+    side,                          // which half it is currently in
+    out: 0,                        // distance from the wall face, >= 0
+    vel: 0,                        // outward velocity
+    held: 0,                       // ticks of thrust used in this hold
+    grounded: true,                // touching the wall
+    trail: [],
+  };
+}
+
+function reset(seed) {
+  game.seed = seed === undefined ? game.seed : (seed >>> 0 || 1);
+  game.rng = mulberry32(game.seed);
+  game.status = 'ready';
+  game.balls = [makeBall(0), makeBall(1)];
+  game.spikes = [];
+  game.gates = [];
+  game.particles = [];
+  game.ticks = 0;
+  game.distance = 0;
+  game.score = 0;
+  game.laneNext = [10, 34];        // stagger the two lanes so they never sync
+  game.nextGateAt = GATE_EVERY;
+  game.gatePending = false;
+  game.swapFlash = 0;
+  game.shake = 0;
+  game.dead = null;
+  game.theme = 0;
+  game.themeMix = 1;
+  HELD[0] = false;
+  HELD[1] = false;
+}
+
+/* ================================================================= spawns */
+
+/**
+ * Each lane runs its own independent spike schedule, which is what makes the
+ * two courses genuinely different rather than mirrored. Scheduling per lane
+ * (rather than jittering a shared spawn) guarantees a minimum gap within a
+ * lane, so a course can never demand an arc the ball has no time to make.
+ */
+function spawnLaneSpike(side) {
+  game.spikes.push({ side, y: -SPIKE_H });
+  game.laneNext[side] = Math.round(gapTicks() * (1 + game.rng() * 0.55));
+}
+
+function spawnGate() {
+  game.gates.push({ y: -GATE_H, passed: false });
+}
+
+/* ================================================================== death */
+
+function die(ball) {
+  if (game.status !== 'playing') return;
+  game.status = 'over';
+  game.dead = ball.input;
+  game.shake = 1;
+  const bx = ballX(ball);
+  for (let i = 0; i < 24; i++) {
+    game.particles.push({
+      x: bx, y: BALL_Y,
+      vx: (game.rng() - 0.5) * 9,
+      vy: (game.rng() - 0.5) * 9,
+      life: 1,
+      side: ball.side,
+    });
+  }
+  if (Math.round(game.score) > game.best) {
+    game.best = Math.round(game.score);
+    safeSet('twins-best', String(game.best));
+  }
+}
+
+const ballX = (b) => wallFace(b.side) + outward(b.side) * b.out;
+
+/* =================================================================== tick */
+
+const HELD = [false, false];
+
+function tick() {
+  game.ticks++;
+  if (game.shake > 0) game.shake = Math.max(0, game.shake - 0.04);
+  if (game.swapFlash > 0) game.swapFlash = Math.max(0, game.swapFlash - 0.045);
+  if (game.themeMix < 1) game.themeMix = Math.min(1, game.themeMix + 0.02);
+
+  for (const p of game.particles) { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life -= 0.02; }
+  game.particles = game.particles.filter((p) => p.life > 0);
+
+  if (game.status !== 'playing') return;
+
+  const v = speed();
+  game.distance += v;
+  game.score = game.distance / 10;
+
+  const themeIndex = Math.floor(game.distance / 10 / THEME_EVERY) % THEMES.length;
+  if (themeIndex !== game.theme) { game.theme = themeIndex; game.themeMix = 0; }
+
+  // ---- balls ------------------------------------------------------------
+  for (const ball of game.balls) {
+    const holding = HELD[ball.input];
+
+    if (holding && ball.held < MAX_HOLD) {
+      // Thrust away from the wall, tapering so a long hold is wide but bounded.
+      ball.vel += THRUST * (1 - ball.held / MAX_HOLD) * 0.9 + 0.35;
+      ball.held++;
+      ball.grounded = false;
+    } else if (!holding) {
+      // Releasing re-arms the next hold, but only once back on the wall.
+      if (ball.grounded) ball.held = 0;
+    }
+
+    ball.vel -= GRAVITY;             // gravity always pulls back to the wall
+    ball.out += ball.vel;
+
+    if (ball.out >= MAX_OUT) { ball.out = MAX_OUT; ball.vel = Math.min(ball.vel, 0); }
+
+    if (ball.out <= 0) {
+      ball.out = 0;
+      ball.vel = 0;
+      ball.grounded = true;
+      if (!holding) ball.held = 0;
+    }
+
+    ball.trail.push({ x: ballX(ball), y: BALL_Y, life: 1 });
+    if (ball.trail.length > 26) ball.trail.shift();
+    for (const t of ball.trail) t.life -= 0.038;
+  }
+
+  // ---- course -----------------------------------------------------------
+  // A gate swaps the balls between lanes. If a spike happened to be sitting at
+  // the ball's row when that lands, the swap is an unavoidable death -- so a
+  // gate waits for a genuinely clear row, and spikes pause until it has been
+  // spawned. That pause doubles as a readable "something is coming" beat.
+  game.nextGateAt -= v;
+  if (game.nextGateAt <= 0) game.gatePending = true;
+
+  if (game.gatePending) {
+    const rowBusy = game.spikes.some((s) => s.y < BALL_Y + BALL_R);
+    if (!rowBusy) {
+      spawnGate();
+      game.gatePending = false;
+      game.nextGateAt = GATE_EVERY;
+      // Leave a settling beat after the swap before spikes resume, so the
+      // player can re-orient to which thumb is now on which side.
+      const settle = Math.ceil((BALL_Y + GATE_H) / v) + 26;
+      game.laneNext[0] = Math.max(game.laneNext[0], settle);
+      game.laneNext[1] = Math.max(game.laneNext[1], settle);
+    }
+  } else {
+    for (const side of [0, 1]) {
+      game.laneNext[side] -= 1;
+      if (game.laneNext[side] <= 0) spawnLaneSpike(side);
+    }
+  }
+
+  for (const s of game.spikes) s.y += v;
+  for (const g of game.gates) g.y += v;
+  game.spikes = game.spikes.filter((s) => s.y < H + SPIKE_H);
+  game.gates = game.gates.filter((g) => g.y < H + GATE_H);
+
+  // ---- collisions -------------------------------------------------------
+  for (const ball of game.balls) {
+    for (const s of game.spikes) {
+      if (s.side !== ball.side) continue;
+      // Spikes jut out of the wall, so only a ball still close to the wall
+      // is in danger. Swing wide enough and it passes over the tip.
+      const overlapY = BALL_Y + BALL_R > s.y && BALL_Y - BALL_R < s.y + SPIKE_H;
+      if (overlapY && ball.out < SPIKE_DEPTH) { die(ball); return; }
+    }
+  }
+
+  // ---- swap gates -------------------------------------------------------
+  for (const g of game.gates) {
+    if (g.passed || g.y + GATE_H < BALL_Y) continue;
+    if (g.y <= BALL_Y && g.y + GATE_H >= BALL_Y) {
+      g.passed = true;
+      swap();
+    }
+  }
+}
+
+/** Balls cross to the other half; each control keeps its own ball. */
+function swap() {
+  for (const ball of game.balls) ball.side = 1 - ball.side;
+  game.swapFlash = 1;
+  for (let i = 0; i < 14; i++) {
+    game.particles.push({
+      x: MID, y: BALL_Y + (game.rng() - 0.5) * 40,
+      vx: (game.rng() - 0.5) * 7, vy: (game.rng() - 0.5) * 7,
+      life: 1, side: i % 2,
+    });
+  }
+}
+
+/* ================================================================= render */
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+function fit() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const r = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round((r.width || W) * dpr));
+  const h = Math.max(1, Math.round((r.height || H) * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function mixHex(a, b, t) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.substr(i, 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.substr(i, 2), 16));
+  return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], t))).join(',')})`;
+}
+
+function palette() {
+  const cur = THEMES[game.theme];
+  const prev = THEMES[(game.theme - 1 + THEMES.length) % THEMES.length];
+  const t = game.themeMix;
+  return { dark: mixHex(prev.dark, cur.dark, t), light: mixHex(prev.light, cur.light, t) };
+}
+
+/** A spike is a triangle jutting out of the wall into `side`'s lane. */
+function spikePath(s) {
+  const dir = outward(s.side);
+  const base = s.side === 0 ? MID - WALL : MID + WALL;
+  ctx.beginPath();
+  ctx.moveTo(base, s.y);
+  ctx.lineTo(base + dir * SPIKE_DEPTH, s.y + SPIKE_H / 2);
+  ctx.lineTo(base, s.y + SPIKE_H);
+  ctx.closePath();
+}
+
+function draw(t) {
+  fit();
+  const scale = canvas.width / W;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (game.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * 10 * game.shake, (Math.random() - 0.5) * 10 * game.shake);
+  }
+
+  const { dark, light } = palette();
+
+  // Two halves, inverted.
+  ctx.fillStyle = dark;
+  ctx.fillRect(0, 0, MID, H);
+  ctx.fillStyle = light;
+  ctx.fillRect(MID, 0, MID, H);
+
+  // Drifting speckles, so motion reads even on an empty stretch.
+  const drift = (t * speed() * 0.35) % H;
+  for (let i = 0; i < 46; i++) {
+    const px = ((i * 97) % W);
+    const py = ((i * 173) + drift) % H;
+    ctx.fillStyle = px < MID ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.10)';
+    ctx.fillRect(px, py, 2.5, 2.5);
+  }
+
+  // Spikes: each is drawn in the colour of the *other* half, cut into the lane.
+  for (const s of game.spikes) {
+    ctx.fillStyle = s.side === 0 ? light : dark;
+    spikePath(s);
+    ctx.fill();
+  }
+
+  // The wall itself.
+  ctx.fillStyle = light;
+  ctx.fillRect(MID - WALL, 0, WALL, H);
+  ctx.fillStyle = dark;
+  ctx.fillRect(MID, 0, WALL, H);
+
+  // Swap gates: a bright band across both lanes.
+  for (const g of game.gates) {
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = light;
+    ctx.fillRect(0, g.y, MID, GATE_H);
+    ctx.fillStyle = dark;
+    ctx.fillRect(MID, g.y, MID, GATE_H);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = dark;
+    ctx.font = '600 13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SWAP', MID / 2, g.y + 18);
+    ctx.fillStyle = light;
+    ctx.fillText('SWAP', MID + MID / 2, g.y + 18);
+  }
+
+  // Trails.
+  for (const ball of game.balls) {
+    const colour = ball.side === 0 ? light : dark;
+    for (const p of ball.trail) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = p.life * 0.5;
+      ctx.fillStyle = colour;
+      const r = BALL_R * 0.42 * p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Balls: each takes the colour of the opposite half so it always contrasts.
+  for (const ball of game.balls) {
+    ctx.fillStyle = ball.side === 0 ? light : dark;
+    ctx.beginPath();
+    ctx.arc(ballX(ball), BALL_Y, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (const p of game.particles) {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.side === 0 ? light : dark;
+    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+  }
+  ctx.globalAlpha = 1;
+
+  if (game.swapFlash > 0) {
+    ctx.globalAlpha = game.swapFlash * 0.4;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Score, drawn twice so it reads on both halves.
+  if (game.status === 'playing') {
+    const label = String(Math.round(game.score));
+    ctx.font = '700 44px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.30)';
+    ctx.fillText(label, MID - 22, 74);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillText(label, MID + 22, 74);
+  }
+
+  // "Hold this side" hint before the first run.
+  if (game.status === 'ready') {
+    ctx.font = '600 17px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText('hold this side', MID / 2, BALL_Y - 90);
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    ctx.fillText('hold this side', MID + MID / 2, BALL_Y - 90);
+  }
+}
+
+/* ===================================================================== UI */
+
+const el = (id) => document.getElementById(id);
+
+function syncUI() {
+  const over = game.status === 'over';
+  const ready = game.status === 'ready';
+  el('overlay').hidden = !(over || ready);
+  el('ov-scores').hidden = !over;
+  el('ov-keys').hidden = over;
+  el('ov-title').textContent = over ? 'CRASHED' : 'TWINS';
+  el('ov-text').textContent = over
+    ? `Your ${game.dead === 0 ? 'left' : 'right'} ball clipped a spike.`
+    : 'Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.';
+  el('ov-btn').textContent = over ? 'Again' : 'Play';
+  el('ov-score').textContent = String(Math.round(game.score));
+  el('ov-best').textContent = String(game.best);
+}
+
+let last = performance.now();
+let acc = 0;
+const STEP = 1000 / 60;
+
+function frame(now) {
+  const dt = Math.min(now - last, 250);
+  last = now;
+  acc += dt;
+  let guard = 0;
+  while (acc >= STEP && guard++ < 6) { acc -= STEP; tick(); }
+  draw(now / 16.67);
+  syncUI();
+  requestAnimationFrame(frame);
+}
+
+/* ================================================================== input */
+
+function start() {
+  if (game.status === 'ready') { game.status = 'playing'; last = performance.now(); acc = 0; }
+  else if (game.status === 'over') { reset((Math.random() * 0xffffffff) >>> 0); game.status = 'playing'; }
+}
+
+/**
+ * Input index is the *control*, not the panel: after a swap the left control
+ * still drives the ball it was driving, which is now on the right.
+ */
+function hold(which, down) {
+  if (down) start();
+  HELD[which] = down;
+}
+
+const KEY_LEFT = new Set(['arrowleft', 'a', 'z']);
+const KEY_RIGHT = new Set(['arrowright', 'l', 'm']);
+
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (KEY_LEFT.has(k)) { e.preventDefault(); hold(0, true); }
+  else if (KEY_RIGHT.has(k)) { e.preventDefault(); hold(1, true); }
+});
+
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (KEY_LEFT.has(k)) hold(0, false);
+  else if (KEY_RIGHT.has(k)) hold(1, false);
+});
+
+// Pointer/touch: which half of the canvas was pressed. Multi-touch aware, so
+// two thumbs work independently.
+const activePointers = new Map();
+
+function halfOf(e) {
+  const rect = canvas.getBoundingClientRect();
+  return e.clientX - rect.left < rect.width / 2 ? 0 : 1;
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  canvas.setPointerCapture?.(e.pointerId);
+  const half = halfOf(e);
+  activePointers.set(e.pointerId, half);
+  hold(half, true);
+});
+
+function release(e) {
+  const half = activePointers.get(e.pointerId);
+  if (half === undefined) return;
+  activePointers.delete(e.pointerId);
+  if (![...activePointers.values()].includes(half)) hold(half, false);
+}
+
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+el('ov-btn').addEventListener('click', (e) => { e.stopPropagation(); start(); });
+window.addEventListener('resize', fit);
+
+/* ======================================================= harness contract */
+
+function runSelfTest() {
+  const results = [];
+  const check = (name, ok, detail = '') => { results.push({ name, ok: !!ok, detail: String(detail) }); };
+  const saveBest = game.best;
+
+  const play = (seed, fn, ticks) => {
+    reset(seed);
+    game.status = 'playing';
+    for (let i = 0; i < ticks && game.status === 'playing'; i++) { fn?.(i); tick(); }
+  };
+
+  // Gravity returns a ball to the wall.
+  reset(1);
+  game.status = 'playing';
+  HELD[0] = true;
+  for (let i = 0; i < 10; i++) tick();
+  const peakOut = game.balls[0].out;
+  HELD[0] = false;
+  for (let i = 0; i < 200 && game.balls[0].out > 0; i++) tick();
+  check('a launched ball is pulled back to the wall', game.balls[0].out === 0, `peaked at ${peakOut.toFixed(1)}`);
+  check('holding actually launches it outward', peakOut > BALL_R, peakOut.toFixed(1));
+
+  // Holding longer goes further.
+  const arcFor = (holdTicks) => {
+    reset(4);
+    game.status = 'playing';
+    let peak = 0;
+    for (let i = 0; i < 80; i++) {
+      HELD[0] = i < holdTicks;
+      tick();
+      peak = Math.max(peak, game.balls[0].out);
+    }
+    HELD[0] = false;
+    return peak;
+  };
+  const shortArc = arcFor(3);
+  const longArc = arcFor(20);
+  check('holding longer produces a wider arc', longArc > shortArc + 5, `${shortArc.toFixed(1)} vs ${longArc.toFixed(1)}`);
+  check('the arc is bounded', longArc <= MAX_OUT + 0.001, longArc.toFixed(1));
+
+  // Never jumping must die on a spike.
+  play(7, null, 4000);
+  check('never holding ends the run on a spike', game.status === 'over');
+
+  // ...and a competent player must be able to keep going. This is the check
+  // that the game is actually playable, not merely runnable: hold whenever a
+  // spike is close enough to matter, release once it has gone by.
+  const autopilot = (seed, maxTicks) => {
+    reset(seed);
+    game.status = 'playing';
+    for (let i = 0; i < maxTicks && game.status === 'playing'; i++) {
+      // The arc needs ~10 ticks to clear SPIKE_DEPTH, so the lead has to be
+      // measured in ticks and scale with the scroll speed -- holding too early
+      // is just as fatal as too late, because the ball falls back.
+      const lead = 12 * speed();
+      for (const ball of game.balls) {
+        const threat = game.spikes.some((sp) =>
+          sp.side === ball.side
+          && sp.y + SPIKE_H > BALL_Y - BALL_R - lead
+          && sp.y < BALL_Y + BALL_R + 10);
+        HELD[ball.input] = threat;
+      }
+      tick();
+    }
+    HELD[0] = HELD[1] = false;
+    return { survived: game.status === 'playing', score: game.score };
+  };
+
+  let worst = Infinity, worstSeed = 0;
+  for (let s = 1; s <= 5; s++) {
+    const r = autopilot(s, 2400);
+    if (r.score < worst) { worst = r.score; worstSeed = s; }
+  }
+  check('an autopilot survives a long run on every seed', worst >= 150,
+    `worst score ${worst.toFixed(0)} on seed ${worstSeed}`);
+
+  // Both lanes carry independent courses.
+  reset(12);
+  game.status = 'playing';
+  for (let i = 0; i < 600 && game.status === 'playing'; i++) { HELD[0] = HELD[1] = i % 30 < 14; tick(); }
+  HELD[0] = HELD[1] = false;
+  const left = game.spikes.filter((s) => s.side === 0).map((s) => Math.round(s.y));
+  const right = game.spikes.filter((s) => s.side === 1).map((s) => Math.round(s.y));
+  check('the two lanes have independent spike patterns',
+    JSON.stringify(left) !== JSON.stringify(right), `${left.length} vs ${right.length}`);
+
+  // A swap gate crosses the balls over.
+  reset(3);
+  game.status = 'playing';
+  const before = game.balls.map((b) => b.side);
+  swap();
+  const after = game.balls.map((b) => b.side);
+  check('a swap gate crosses both balls over',
+    after[0] === 1 - before[0] && after[1] === 1 - before[1], `${before} -> ${after}`);
+  check('each control keeps its own ball across a swap',
+    game.balls[0].input === 0 && game.balls[1].input === 1);
+
+  // Score rises with distance.
+  play(9, () => { HELD[0] = HELD[1] = true; }, 90);
+  HELD[0] = HELD[1] = false;
+  check('score climbs with distance', game.score > 0, game.score.toFixed(1));
+
+  // Determinism.
+  const runOf = (s) => {
+    reset(s);
+    game.status = 'playing';
+    for (let i = 0; i < 240; i++) { HELD[0] = HELD[1] = i % 24 < 12; tick(); }
+    HELD[0] = HELD[1] = false;
+    return JSON.stringify({ s: game.spikes.map((x) => [x.side, Math.round(x.y)]), d: Math.round(game.distance) });
+  };
+  const a = runOf(21), b = runOf(21), c = runOf(22);
+  check('same seed reproduces the same course', a === b);
+  check('different seeds give different courses', a !== c);
+
+  game.best = saveBest;
+  reset(1);
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+window.__GAME__ = {
+  id: 'twins',
+  version: 1,
+  ready: true,
+  meta: { name: 'Twins', players: '1 (two thumbs)', mode: 'realtime' },
+
+  getState() {
+    return {
+      status: game.status === 'over' ? 'over' : game.status === 'ready' ? 'idle' : 'playing',
+      turn: null,
+      score: Math.round(game.score),
+      distance: Math.round(game.distance),
+      best: game.best,
+      seed: game.seed,
+      ticks: game.ticks,
+      speed: Math.round(speed() * 100) / 100,
+      theme: THEMES[game.theme].name,
+      balls: game.balls.map((b) => ({
+        input: b.input, side: b.side,
+        out: Math.round(b.out * 100) / 100,
+        vel: Math.round(b.vel * 100) / 100,
+        grounded: b.grounded,
+      })),
+      spikes: game.spikes.map((s) => ({ side: s.side, y: Math.round(s.y * 100) / 100 })),
+      gates: game.gates.map((g) => ({ y: Math.round(g.y * 100) / 100, passed: g.passed })),
+      held: [HELD[0], HELD[1]],
+      dead: game.dead,
+      world: { w: W, h: H, mid: MID, ballY: BALL_Y, maxOut: MAX_OUT },
+    };
+  },
+
+  reset(seed = 1) {
+    reset(seed);
+    game.status = 'playing';   // the harness drives ticks; skip the title card
+    syncUI();
+  },
+
+  step(n = 1) {
+    for (let i = 0; i < n; i++) tick();
+    syncUI();
+  },
+
+  input(action, payload) {
+    switch (action) {
+      case 'holdLeft': hold(0, true); return { ok: true };
+      case 'holdRight': hold(1, true); return { ok: true };
+      case 'releaseLeft': hold(0, false); return { ok: true };
+      case 'releaseRight': hold(1, false); return { ok: true };
+      case 'hold': {
+        const which = payload?.which;
+        if (which !== 0 && which !== 1) return { ok: false, reason: 'hold needs { which: 0 | 1 }' };
+        hold(which, payload.down !== false);
+        return { ok: true };
+      }
+      case 'swap': swap(); return { ok: true };
+      case 'start': start(); return { ok: true, status: game.status };
+      case 'restart': this.reset(payload?.seed ?? game.seed); return { ok: true };
+      case 'selftest': return runSelfTest();
+      default: return { ok: false, reason: `unknown action '${action}'` };
+    }
+  },
+
+  actions: () => ['holdLeft', 'holdRight', 'releaseLeft', 'releaseRight', 'hold', 'swap', 'start', 'restart', 'selftest'],
+};
+
+/* ==================================================================== go */
+
+reset((Math.random() * 0xffffffff) >>> 0);
+fit();
+syncUI();
+requestAnimationFrame(frame);
+</script>
+</body>
+
+</html>

@@ -13,20 +13,28 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 
 const projects = [
   {
-    title: "Twin Drift",
-    description: "A high-octane racing game built with React and Three.js.",
-    href: "/progetti/twin-drift",
+    title: "Twins",
+    description: "Two balls, two obstacle courses, two thumbs. Jump both, and survive the swap gates.",
+    href: "/progetti/twins",
+    icon: <GamepadIcon />,
+    color: "#0f172a",
+    status: "New!",
+  },
+  {
+    title: "Mirror Drift",
+    description: "Steer two mirrored cars at once down twin neon roads. Drift for a multiplier.",
+    href: "/progetti/mirror-drift",
     icon: <GamepadIcon />,
     color: "#2563eb",
-    status: "Porting...",
+    status: "Playable",
   },
   {
     title: "Breakout",
-    description: "Classic Breakout in Rust with Bevy Engine, running via WASM.",
+    description: "Brick-breaker with power-ups, multi-ball and level progression.",
     href: "/progetti/breakout",
     icon: <MemoryIcon />,
     color: "#f97316",
-    status: "WIP",
+    status: "Playable",
   },
   {
     title: "Kalaha AI",

@@ -35,7 +35,8 @@ export const PAGES = [
   { id: "progetti-snake", route: "/progetti/snake", title: "Snake page", expect: { selector: "iframe" } },
   { id: "progetti-sudoku", route: "/progetti/sudoku", title: "Sudoku page", expect: { text: "Sudoku" } },
   { id: "progetti-tris", route: "/progetti/tris", title: "Tris page", expect: { selector: "iframe" } },
-  { id: "progetti-twin-drift", route: "/progetti/twin-drift", title: "Twin Drift page", expect: { selector: "iframe" } },
+  { id: "progetti-mirror-drift", route: "/progetti/mirror-drift", title: "Mirror Drift page", expect: { selector: "iframe" } },
+  { id: "progetti-twins", route: "/progetti/twins", title: "Twins page", expect: { selector: "iframe" } },
 ];
 
 /**
@@ -53,7 +54,8 @@ export const GAMES = [
   { id: "pong", name: "Pong", url: "/games/pong/index.html", kind: "js", folder: "Arcade", probe: "pong" },
   { id: "flappy-bird", name: "Flappy Bird", url: "/games/flappy-bird/index.html", kind: "js", folder: "Arcade", probe: "flappy" },
   { id: "breakout", name: "Breakout", url: "/games/breakout/index.html", kind: "js", folder: "Arcade", probe: "breakout" },
-  { id: "twin-drift", name: "Twin Drift", url: "/games/twin-drift/index.html", kind: "js", folder: "Arcade", probe: "twindrift" },
+  { id: "mirror-drift", name: "Mirror Drift", url: "/games/mirror-drift/index.html", kind: "js", folder: "Arcade", probe: "mirrordrift" },
+  { id: "twins", name: "Twins", url: "/games/twins/index.html", kind: "js", folder: "Arcade", probe: "twins" },
   { id: "flip-7", name: "Flip 7", url: "/projects/js-demos/flip-7/index.html", kind: "js", folder: "Arcade", probe: "flip7" },
   { id: "bitwise-ops", name: "Bitwise Ops", url: "/projects/js-demos/bitwise-ops/index.html", kind: "js", folder: "Puzzle", probe: "bitwise" },
   { id: "maze-generator", name: "Maze Generator", url: "/projects/js-demos/maze-generator/index.html", kind: "js", folder: "Visual", probe: "mazegen" },

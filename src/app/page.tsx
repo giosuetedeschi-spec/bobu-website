@@ -93,7 +93,8 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
       { id: "flappy", label: "Flappy Bird", icon: "navigation", action: "open", contentType: "game", payload: "/games/flappy-bird/index.html", folder: "Arcade", status: "New!" },
       { id: "flip7", label: "Flip 7", icon: "layers", action: "open", contentType: "game", payload: "/projects/js-demos/flip-7/index.html", folder: "Arcade", status: "New!" },
       { id: "breakout", label: "Breakout", icon: "rectangle-horizontal", action: "open", contentType: "game", payload: "/games/breakout/index.html", folder: "Arcade", status: "New!" },
-      { id: "twin-drift", label: "Twin Drift", icon: "navigation", action: "open", contentType: "game", payload: "/games/twin-drift/index.html", folder: "Arcade", status: "New!" },
+      { id: "mirror-drift", label: "Mirror Drift", icon: "navigation", action: "open", contentType: "game", payload: "/games/mirror-drift/index.html", folder: "Arcade", status: "New!" },
+      { id: "twins", label: "Twins", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/twins/index.html", folder: "Arcade", status: "New!" },
     ],
   },
   {
