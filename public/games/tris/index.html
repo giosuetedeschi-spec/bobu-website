@@ -1,116 +1,591 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tris</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
-h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#f472b6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#board{display:grid;grid-template-columns:repeat(3,90px);grid-template-rows:repeat(3,90px);gap:8px}
-.cell{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-size:2.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;user-select:none}
-.cell:hover{background:rgba(255,255,255,0.1)}
-.cell.x{color:#60a5fa}
-.cell.o{color:#f472b6}
-.cell.win{background:rgba(34,197,94,0.25)}
-#msg{min-height:24px;font-size:0.95rem;color:#94a3b8}
-#controls{display:flex;gap:10px}
-button{padding:8px 22px;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;font-size:0.85rem}
-button.ghost{background:rgba(255,255,255,0.08);color:#94a3b8}
-#score{font-size:0.8rem;color:#64748b}
-</style>
-</head>
-<body>
-<h1>TRIS</h1>
-<div id="board"></div>
-<div id="msg">Your turn — you are X</div>
-<div id="controls">
-  <button id="btn-new">New Game</button>
-  <button id="btn-first" class="ghost">Let AI start</button>
-</div>
-<div id="score">You 0 · AI 0 · Draws 0</div>
-<script>
-const HU='X',AI='O';
-const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-let board,over,tally={hu:0,ai:0,dr:0};
-
-function init(aiFirst){
-  board=Array(9).fill(null);over=false;
-  render();
-  msg('Your turn — you are X');
-  if(aiFirst)aiMove();
+:root {
+  --bg: #0a0d1a;
+  --panel: rgba(23, 30, 51, 0.8);
+  --line: rgba(148, 163, 184, 0.16);
+  --text: #e6edf7;
+  --muted: #8ba0bd;
+  --x: #60a5fa;
+  --o: #f472b6;
+  --win: #34d399;
+  --radius: 14px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-function winner(b){
-  for(const l of LINES)if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[1]]===b[l[2]])return{p:b[l[0]],line:l};
-  if(b.every(Boolean))return{p:'draw',line:[]};
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background:
+    radial-gradient(900px 520px at 50% -10%, #1d2a4d 0%, transparent 62%),
+    radial-gradient(700px 400px at 100% 105%, #2c1a45 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  gap: clamp(16px, 4vw, 40px);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 900px;
+}
+
+/* ----------------------------------------------------------------- board */
+
+.stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+h1 {
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  background: linear-gradient(135deg, var(--x), var(--o));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(3, clamp(72px, 20vw, 104px));
+  grid-template-rows: repeat(3, clamp(72px, 20vw, 104px));
+  gap: 9px;
+  padding: 9px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+.cell {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  font-size: clamp(2rem, 6vw, 2.9rem);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.2s;
+}
+
+.cell:hover:not(.taken):not(.locked) { background: rgba(255, 255, 255, 0.09); transform: translateY(-2px); }
+.cell.taken, .cell.locked { cursor: default; }
+.cell.x { color: var(--x); text-shadow: 0 0 22px rgba(96, 165, 250, 0.5); }
+.cell.o { color: var(--o); text-shadow: 0 0 22px rgba(244, 114, 182, 0.5); }
+
+.cell.win {
+  background: rgba(52, 211, 153, 0.18);
+  box-shadow: inset 0 0 0 2px rgba(52, 211, 153, 0.55), 0 0 26px rgba(52, 211, 153, 0.28);
+}
+
+.cell .mark { animation: pop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+#msg { min-height: 22px; font-size: 0.9rem; color: var(--muted); text-align: center; }
+
+/* ------------------------------------------------------------------ side */
+
+.side {
+  width: min(260px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.card h2 {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+
+.group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+button {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 570;
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.34); }
+button:active { transform: translateY(1px); }
+
+button[aria-pressed="true"] {
+  color: #061423;
+  background: linear-gradient(140deg, #93c5fd, var(--x));
+  border-color: transparent;
+}
+
+button.primary {
+  width: 100%;
+  color: #061423;
+  background: linear-gradient(140deg, #93c5fd, var(--x));
+  border-color: transparent;
+  font-size: 0.86rem;
+  padding: 10px 16px;
+  box-shadow: 0 8px 22px rgba(96, 165, 250, 0.24);
+}
+
+.tally { display: flex; justify-content: space-between; gap: 8px; text-align: center; }
+
+.tally div { flex: 1; }
+
+.tally .n { font-size: 1.35rem; font-weight: 680; font-variant-numeric: tabular-nums; }
+.tally .k { font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); }
+.tally .you .n { color: var(--x); }
+.tally .ai .n { color: var(--o); }
+.tally .dr .n { color: var(--muted); }
+
+.note { font-size: 0.73rem; line-height: 1.55; color: var(--muted); }
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div class="stage">
+    <h1>TRIS</h1>
+    <div id="board"></div>
+    <div id="msg">Your turn — you are X</div>
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <h2>Difficulty</h2>
+      <div class="group" id="difficulty">
+        <button data-level="easy">Easy</button>
+        <button data-level="medium">Medium</button>
+        <button data-level="impossible" aria-pressed="true">Impossible</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>You play</h2>
+      <div class="group" id="side-pick">
+        <button data-side="X" aria-pressed="true">X · first</button>
+        <button data-side="O">O · second</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Score</h2>
+      <div class="tally">
+        <div class="you"><div class="n" id="t-you">0</div><div class="k">You</div></div>
+        <div class="ai"><div class="n" id="t-ai">0</div><div class="k">AI</div></div>
+        <div class="dr"><div class="n" id="t-dr">0</div><div class="k">Draws</div></div>
+      </div>
+    </div>
+
+    <button class="primary" id="btn-new">New game</button>
+
+    <p class="note">On <strong>Impossible</strong> the AI searches the whole game tree and prefers faster wins over slower ones. Perfect play at noughts and crosses can never lose — the best you can do is draw.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const HU = "X", AI = "O";
+const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+/* Deterministic PRNG so a seed reproduces a whole match. */
+function mulberry32(seed) {
+  let a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const MISTAKE_RATE = { easy: 1, medium: 0.35, impossible: 0 };
+
+const state = {
+  board: Array(9).fill(null),
+  over: false,
+  busy: false,          // true while the AI's move is pending — blocks input
+  human: HU,
+  level: "impossible",
+  seed: 1,
+  rng: mulberry32(1),
+  tally: { hu: 0, ai: 0, dr: 0 },
+  winLine: [],
+  aiTimer: null,
+};
+
+const el = (id) => document.getElementById(id);
+const other = (p) => (p === "X" ? "O" : "X");
+
+/* ================================================================= rules */
+
+function winner(b) {
+  for (const l of LINES) {
+    if (b[l[0]] && b[l[0]] === b[l[1]] && b[l[1]] === b[l[2]]) return { p: b[l[0]], line: l };
+  }
+  if (b.every(Boolean)) return { p: "draw", line: [] };
   return null;
 }
 
-// Minimax with depth preference: win fast, lose slow. Unbeatable.
-function minimax(b,player,depth){
-  const w=winner(b);
-  if(w){
-    if(w.p===AI)return{score:10-depth};
-    if(w.p===HU)return{score:depth-10};
-    return{score:0};
+/**
+ * Minimax with a depth penalty, from `me`'s point of view: win as fast as
+ * possible, lose as slowly as possible. Exhaustive over 3x3, so the returned
+ * move is optimal — a player using it cannot be beaten.
+ */
+function minimax(b, turn, me, depth) {
+  const w = winner(b);
+  if (w) {
+    if (w.p === me) return { score: 10 - depth, move: -1 };
+    if (w.p === "draw") return { score: 0, move: -1 };
+    return { score: depth - 10, move: -1 };
   }
-  let best={score:player===AI?-Infinity:Infinity,move:-1};
-  for(let i=0;i<9;i++){
-    if(b[i])continue;
-    b[i]=player;
-    const r=minimax(b,player===AI?HU:AI,depth+1);
-    b[i]=null;
-    if(player===AI?r.score>best.score:r.score<best.score)best={score:r.score,move:i};
+  const maximising = turn === me;
+  let best = { score: maximising ? -Infinity : Infinity, move: -1 };
+  for (let i = 0; i < 9; i++) {
+    if (b[i]) continue;
+    b[i] = turn;
+    const r = minimax(b, other(turn), me, depth + 1);
+    b[i] = null;
+    if (maximising ? r.score > best.score : r.score < best.score) best = { score: r.score, move: i };
   }
   return best;
 }
 
-function aiMove(){
-  if(over)return;
-  const empty=board.filter(c=>!c).length;
-  // first move on empty board: center or corner, no need to search 9!
-  const move=empty===9?[0,2,4,6,8][Math.floor(Math.random()*5)]:minimax(board,AI,0).move;
-  board[move]=AI;
-  finishTurn(AI);
+function emptyCells(b) {
+  const out = [];
+  for (let i = 0; i < 9; i++) if (!b[i]) out.push(i);
+  return out;
 }
 
-function finishTurn(mover){
-  const w=winner(board);
-  render(w);
-  if(w){
-    over=true;
-    if(w.p===HU){tally.hu++;msg('🎉 You win!');}
-    else if(w.p===AI){tally.ai++;msg('🤖 AI wins.');}
-    else{tally.dr++;msg('Draw.');}
-    updateTally();
-  }else{
-    msg(mover===HU?'AI is thinking...':'Your turn');
+/** The AI's choice for `me`, at the current difficulty. */
+function chooseMove(b, me, level, rng) {
+  const free = emptyCells(b);
+  if (!free.length) return -1;
+  const slip = MISTAKE_RATE[level] ?? 0;
+  if (slip > 0 && rng() < slip) return free[Math.floor(rng() * free.length)];
+  // An empty board has a known-equal set of best openings; searching it is
+  // pointless and always picking the centre makes every game identical.
+  if (free.length === 9) {
+    const openings = [0, 2, 4, 6, 8];
+    return openings[Math.floor(rng() * openings.length)];
+  }
+  return minimax(b.slice(), me, me, 0).move;
+}
+
+/* ================================================================== flow */
+
+function place(index, player) {
+  if (state.over) return { ok: false, reason: "game is over" };
+  if (!Number.isInteger(index) || index < 0 || index > 8) return { ok: false, reason: "cell must be 0-8" };
+  if (state.board[index]) return { ok: false, reason: "cell occupied" };
+  state.board[index] = player;
+  const w = winner(state.board);
+  if (w) settle(w);
+  return { ok: true, index, player };
+}
+
+function settle(w) {
+  state.over = true;
+  state.busy = false;
+  state.winLine = w.line;
+  if (w.p === "draw") { state.tally.dr++; message("Draw."); }
+  else if (w.p === state.human) { state.tally.hu++; message("You win!"); }
+  else { state.tally.ai++; message("AI wins."); }
+  render();
+}
+
+function aiTurn() {
+  if (state.over) return;
+  const me = other(state.human);
+  const move = chooseMove(state.board, me, state.level, state.rng);
+  if (move < 0) return;
+  place(move, me);
+  state.busy = false;
+  if (!state.over) message("Your turn.");
+  render();
+}
+
+/** Human click: place, then hand over with a lock so a second click can't land. */
+function humanPlay(index) {
+  if (state.busy || state.over) return { ok: false, reason: state.over ? "game is over" : "AI is moving" };
+  const r = place(index, state.human);
+  if (!r.ok) return r;
+  render();
+  if (state.over) return r;
+  state.busy = true;               // held until the AI has actually moved
+  message("AI is thinking…");
+  render();
+  clearTimeout(state.aiTimer);
+  state.aiTimer = setTimeout(aiTurn, 280);
+  return r;
+}
+
+function newGame(seed) {
+  clearTimeout(state.aiTimer);
+  if (seed !== undefined) { state.seed = seed >>> 0 || 1; state.rng = mulberry32(state.seed); }
+  state.board = Array(9).fill(null);
+  state.over = false;
+  state.busy = false;
+  state.winLine = [];
+  message(state.human === HU ? "Your turn — you are X." : "AI opens.");
+  render();
+  if (state.human === "O") {        // the AI plays X and moves first
+    state.busy = true;
+    clearTimeout(state.aiTimer);
+    state.aiTimer = setTimeout(aiTurn, 320);
   }
 }
 
-function render(w){
-  const el=document.getElementById('board');el.innerHTML='';
-  board.forEach((v,i)=>{
-    const c=document.createElement('div');
-    c.className='cell'+(v==='X'?' x':v==='O'?' o':'')+(w&&w.line.includes(i)?' win':'');
-    c.textContent=v||'';
-    c.onclick=()=>{
-      if(over||board[i])return;
-      board[i]=HU;
-      finishTurn(HU);
-      if(!over)setTimeout(aiMove,300);
-    };
-    el.appendChild(c);
+/* ================================================================ render */
+
+function message(m) { el("msg").textContent = m; }
+
+function render() {
+  const board = el("board");
+  const frag = document.createDocumentFragment();
+  state.board.forEach((v, i) => {
+    const c = document.createElement("div");
+    c.className = "cell"
+      + (v === "X" ? " x" : v === "O" ? " o" : "")
+      + (v ? " taken" : "")
+      + (state.busy || state.over ? " locked" : "")
+      + (state.winLine.includes(i) ? " win" : "");
+    c.dataset.cell = String(i);
+    if (v) {
+      const span = document.createElement("span");
+      span.className = "mark";
+      span.textContent = v;
+      c.appendChild(span);
+    }
+    c.addEventListener("click", () => humanPlay(i));
+    frag.appendChild(c);
   });
+  board.replaceChildren(frag);
+
+  el("t-you").textContent = String(state.tally.hu);
+  el("t-ai").textContent = String(state.tally.ai);
+  el("t-dr").textContent = String(state.tally.dr);
+
+  for (const b of el("difficulty").children) b.setAttribute("aria-pressed", String(b.dataset.level === state.level));
+  for (const b of el("side-pick").children) b.setAttribute("aria-pressed", String(b.dataset.side === state.human));
 }
 
-function msg(m){document.getElementById('msg').textContent=m;}
-function updateTally(){document.getElementById('score').textContent='You '+tally.hu+' · AI '+tally.ai+' · Draws '+tally.dr;}
-document.getElementById('btn-new').onclick=()=>init(false);
-document.getElementById('btn-first').onclick=()=>init(true);
-init(false);
+/* =============================================================== wiring */
+
+el("difficulty").addEventListener("click", (e) => {
+  const level = e.target.dataset?.level;
+  if (!level) return;
+  state.level = level;
+  newGame();
+});
+
+el("side-pick").addEventListener("click", (e) => {
+  const side = e.target.dataset?.side;
+  if (!side) return;
+  state.human = side;
+  newGame();
+});
+
+el("btn-new").addEventListener("click", () => newGame());
+
+/* ====================================================== harness contract */
+
+/**
+ * The claim worth testing is that perfect play never loses. So: play the
+ * impossible AI against a random opponent from both sides over many seeded
+ * games and assert it never once loses, plus the two tactical basics.
+ */
+function runSelfTest() {
+  const results = [];
+  const check = (name, ok, detail = "") => { results.push({ name, ok: !!ok, detail: String(detail) }); };
+
+  const playOut = (seed, aiSide) => {
+    const rng = mulberry32(seed);
+    const b = Array(9).fill(null);
+    let turn = "X";
+    for (;;) {
+      const w = winner(b);
+      if (w) return w.p;
+      const free = emptyCells(b);
+      const move = turn === aiSide
+        ? chooseMove(b, aiSide, "impossible", rng)
+        : free[Math.floor(rng() * free.length)];
+      b[move] = turn;
+      turn = other(turn);
+    }
+  };
+
+  let losses = 0, sample = "";
+  for (let seed = 1; seed <= 120 && !losses; seed++) {
+    for (const aiSide of ["X", "O"]) {
+      const p = playOut(seed, aiSide);
+      if (p !== "draw" && p !== aiSide) { losses++; sample = `seed ${seed} as ${aiSide}`; break; }
+    }
+  }
+  check("perfect AI never loses over 120 seeded games from both sides", losses === 0, sample);
+
+  // Self-play between two perfect players is always a draw.
+  let nonDraw = 0;
+  for (let seed = 1; seed <= 40; seed++) {
+    const rng = mulberry32(seed);
+    const b = Array(9).fill(null);
+    let turn = "X";
+    let out = null;
+    for (;;) {
+      const w = winner(b);
+      if (w) { out = w.p; break; }
+      b[chooseMove(b, turn, "impossible", rng)] = turn;
+      turn = other(turn);
+    }
+    if (out !== "draw") nonDraw++;
+  }
+  check("perfect vs perfect is always a draw", nonDraw === 0, `${nonDraw} decisive games`);
+
+  // Takes the win when there is one.
+  const winNow = ["O", "O", null, "X", "X", null, null, null, null];
+  check("takes an immediate win", chooseMove(winNow, "O", "impossible", mulberry32(1)) === 2);
+
+  // Blocks the immediate threat when it has no win of its own.
+  const mustBlock = ["X", "X", null, "O", null, null, null, null, null];
+  check("blocks an immediate threat", chooseMove(mustBlock, "O", "impossible", mulberry32(1)) === 2);
+
+  // Rules plumbing.
+  check("detects a row win", winner(["X", "X", "X", null, null, null, null, null, null])?.p === "X");
+  check("detects a diagonal win", winner(["O", null, null, null, "O", null, null, null, "O"])?.p === "O");
+  check("detects a full-board draw", winner(["X","O","X","X","O","O","O","X","X"])?.p === "draw");
+  check("an empty board is unfinished", winner(Array(9).fill(null)) === null);
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+window.__GAME__ = {
+  id: "tris",
+  version: 1,
+  ready: true,
+  meta: { name: "Tris", players: "1 vs AI", mode: "turn-based" },
+
+  getState() {
+    const w = winner(state.board);
+    return {
+      status: state.over ? (w?.p === "draw" ? "draw" : w?.p === state.human ? "won" : "lost") : "playing",
+      turn: state.busy ? "ai" : "player",
+      score: { you: state.tally.hu, ai: state.tally.ai, draws: state.tally.dr },
+      board: state.board.slice(),
+      human: state.human,
+      ai: other(state.human),
+      difficulty: state.level,
+      winLine: state.winLine.slice(),
+      seed: state.seed,
+      busy: state.busy,
+      emptyCells: emptyCells(state.board),
+    };
+  },
+
+  reset(seed = 1) {
+    state.tally = { hu: 0, ai: 0, dr: 0 };
+    newGame(seed);
+    // The harness drives turns itself; don't leave a timer racing it.
+    clearTimeout(state.aiTimer);
+    state.busy = false;
+    if (state.human === "O") aiTurn();
+    render();
+  },
+
+  /** Each step is one AI reply, if one is owed. */
+  step(n = 1) {
+    for (let i = 0; i < n; i++) {
+      if (state.over) break;
+      const me = other(state.human);
+      const humanMoves = state.board.filter((v) => v === state.human).length;
+      const aiMoves = state.board.filter((v) => v === me).length;
+      const owed = state.human === "X" ? humanMoves > aiMoves : aiMoves >= humanMoves;
+      if (!owed) break;
+      clearTimeout(state.aiTimer);
+      aiTurn();
+    }
+  },
+
+  input(action, payload) {
+    switch (action) {
+      case "place": {
+        const cell = payload?.cell ?? payload;
+        clearTimeout(state.aiTimer);
+        state.busy = false;
+        const r = place(typeof cell === "number" ? cell : NaN, state.human);
+        render();
+        return r;
+      }
+      case "aiMove":
+        clearTimeout(state.aiTimer);
+        state.busy = false;
+        aiTurn();
+        return { ok: true };
+      case "restart":
+        this.reset(payload?.seed ?? state.seed);
+        return { ok: true };
+      case "setDifficulty": {
+        const level = payload?.level ?? payload;
+        if (!(level in MISTAKE_RATE)) return { ok: false, reason: `unknown difficulty '${level}'` };
+        state.level = level;
+        newGame();
+        return { ok: true, difficulty: level };
+      }
+      case "setSide": {
+        const side = payload?.side ?? payload;
+        if (side !== "X" && side !== "O") return { ok: false, reason: "side must be 'X' or 'O'" };
+        state.human = side;
+        this.reset(state.seed);
+        return { ok: true, human: side };
+      }
+      case "selftest":
+        return runSelfTest();
+      default:
+        return { ok: false, reason: `unknown action '${action}'` };
+    }
+  },
+
+  actions: () => ["place", "aiMove", "restart", "setDifficulty", "setSide", "selftest"],
+};
+
+newGame(1);
 </script>
 </body>
+
 </html>
