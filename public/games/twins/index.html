@@ -158,6 +158,24 @@ const SPIKE_DEPTH = 40;            // how far it juts into the lane
 const GATE_EVERY = 900;            // distance between swap gates
 const GATE_H = 26;
 
+// Collectibles sit out in the lane, so picking one up costs you an arc you
+// might have wanted for a spike. Reachable but never free.
+const ORB_R = 9;
+const ORB_POINTS = 25;
+const ORB_MIN_OUT = 46, ORB_MAX_OUT = 94;
+const ORB_TICKS_MIN = 70, ORB_TICKS_MAX = 150;
+const ORB_SPECIAL_CHANCE = 0.14;
+const X2_ORB_R = 12;
+const X2_DURATION = 420;           // ticks of doubled scoring
+const X2_COLOUR = '#fbbf24';
+
+// Backdrop: stars drift in the dark half, clouds in the light one.
+const STAR_COUNT = 60;
+const CLOUD_COUNT = 8;
+
+const TRAIL_EVERY = 2;             // ticks between trail motes
+const TRAIL_LIFE = 46;
+
 const THEMES = [
   { name: 'ink',    dark: '#222b3d', light: '#e8e9ed', accent: '#f5f6fa' },
   { name: 'teal',   dark: '#0f9b8e', light: '#f2f5f4', accent: '#ffffff' },
@@ -195,12 +213,19 @@ const game = {
   balls: [],
   spikes: [],                      // { side, y } -- side is the lane it blocks
   gates: [],                       // { y, passed }
+  orbs: [],                        // { side, y, out, kind, taken }
   particles: [],
+  motes: [],                       // trail particles shed by the balls
+  stars: [],                       // dark-half backdrop
+  clouds: [],                      // light-half backdrop
   ticks: 0,
   distance: 0,
   score: 0,
   best: Number(safeGet('twins-best', '0')) || 0,
   laneNext: [0, 0],                // ticks until the next spike in each lane
+  orbNext: [0, 0],                 // ticks until the next collectible per lane
+  x2Ticks: 0,                      // remaining ticks of doubled scoring
+  orbsTaken: 0,
   nextGateAt: GATE_EVERY,
   gatePending: false,              // a gate is due, waiting for a clear row
   swapFlash: 0,
@@ -240,11 +265,17 @@ function reset(seed) {
   game.balls = [makeBall(0), makeBall(1)];
   game.spikes = [];
   game.gates = [];
+  game.orbs = [];
   game.particles = [];
+  game.motes = [];
+  buildBackdrop();
   game.ticks = 0;
   game.distance = 0;
   game.score = 0;
   game.laneNext = [10, 34];        // stagger the two lanes so they never sync
+  game.orbNext = [55, 96];
+  game.x2Ticks = 0;
+  game.orbsTaken = 0;
   game.nextGateAt = GATE_EVERY;
   game.gatePending = false;
   game.swapFlash = 0;
@@ -272,6 +303,52 @@ function spawnLaneSpike(side) {
 function spawnGate() {
   game.gates.push({ y: -GATE_H, passed: false });
 }
+
+/**
+ * Backdrop layers. Built once per run from the seeded PRNG so a seed always
+ * produces the same sky, and scrolled at a fraction of the course speed so the
+ * lanes read as the fast layer.
+ */
+function buildBackdrop() {
+  game.stars = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    game.stars.push({
+      x: 6 + game.rng() * (MID - 18),
+      y: game.rng() * H,
+      r: 0.7 + game.rng() * 1.5,
+      par: 0.12 + game.rng() * 0.3,      // nearer stars scroll faster
+      phase: game.rng() * Math.PI * 2,   // twinkle offset
+    });
+  }
+  game.clouds = [];
+  for (let i = 0; i < CLOUD_COUNT; i++) {
+    const w = 54 + game.rng() * 78;
+    game.clouds.push({
+      x: MID + 10 + game.rng() * (MID - w - 16),
+      y: game.rng() * H,
+      w,
+      h: 15 + game.rng() * 13,
+      par: 0.16 + game.rng() * 0.24,
+      a: 0.05 + game.rng() * 0.07,
+    });
+  }
+}
+
+/** A collectible out in the lane: small points, or a rarer x2 token. */
+function spawnOrb(side) {
+  const special = game.rng() < ORB_SPECIAL_CHANCE;
+  const r = special ? X2_ORB_R : ORB_R;
+  game.orbs.push({
+    side,
+    y: -r * 2,
+    out: ORB_MIN_OUT + game.rng() * (ORB_MAX_OUT - ORB_MIN_OUT),
+    kind: special ? 'double' : 'point',
+    taken: false,
+  });
+  game.orbNext[side] = Math.round(ORB_TICKS_MIN + game.rng() * (ORB_TICKS_MAX - ORB_TICKS_MIN));
+}
+
+const orbX = (o) => wallFace(o.side) + outward(o.side) * o.out;
 
 /* ================================================================== death */
 
@@ -315,7 +392,18 @@ function tick() {
 
   const v = speed();
   game.distance += v;
-  game.score = game.distance / 10;
+  if (game.x2Ticks > 0) game.x2Ticks--;
+  const mult = game.x2Ticks > 0 ? 2 : 1;
+  game.score += (v / 10) * mult;
+
+  // Backdrop parallax. Stars and clouds are world-fixed, so they slide down the
+  // screen as the course scrolls up past them, each at its own fraction.
+  for (const st of game.stars) { st.y += v * st.par; if (st.y > H) st.y -= H; }
+  for (const cl of game.clouds) { cl.y += v * cl.par; if (cl.y > H + cl.h) cl.y -= H + cl.h * 2; }
+
+  // Trail motes are world-fixed too: dropped at the ball and left behind.
+  for (const m of game.motes) { m.y += v; m.x += m.vx; m.life--; }
+  game.motes = game.motes.filter((m) => m.life > 0 && m.y < H + 20);
 
   const themeIndex = Math.floor(game.distance / 10 / THEME_EVERY) % THEMES.length;
   if (themeIndex !== game.theme) { game.theme = themeIndex; game.themeMix = 0; }
@@ -349,6 +437,21 @@ function tick() {
     ball.trail.push({ x: ballX(ball), y: BALL_Y, life: 1 });
     if (ball.trail.length > 26) ball.trail.shift();
     for (const t of ball.trail) t.life -= 0.038;
+
+    // Motes are shed faster the harder the ball is moving, so a big arc leaves
+    // a visible comet tail and sitting on the wall leaves almost nothing.
+    const moving = Math.abs(ball.vel) > 0.6 || ball.out > 6;
+    if (moving && game.ticks % TRAIL_EVERY === 0) {
+      game.motes.push({
+        x: ballX(ball),
+        y: BALL_Y + (game.rng() - 0.5) * 4,
+        r: 1.4 + game.rng() * 2.4,
+        vx: -outward(ball.side) * (0.15 + game.rng() * 0.35),
+        life: Math.round(TRAIL_LIFE * (0.6 + game.rng() * 0.4)),
+        max: TRAIL_LIFE,
+        side: ball.side,
+      });
+    }
   }
 
   // ---- course -----------------------------------------------------------
@@ -375,13 +478,47 @@ function tick() {
     for (const side of [0, 1]) {
       game.laneNext[side] -= 1;
       if (game.laneNext[side] <= 0) spawnLaneSpike(side);
+      game.orbNext[side] -= 1;
+      if (game.orbNext[side] <= 0) spawnOrb(side);
     }
   }
 
   for (const s of game.spikes) s.y += v;
   for (const g of game.gates) g.y += v;
+  for (const o of game.orbs) o.y += v;
   game.spikes = game.spikes.filter((s) => s.y < H + SPIKE_H);
   game.gates = game.gates.filter((g) => g.y < H + GATE_H);
+  game.orbs = game.orbs.filter((o) => !o.taken && o.y < H + X2_ORB_R * 2);
+
+  // ---- collectibles -----------------------------------------------------
+  for (const ball of game.balls) {
+    const bx = ballX(ball);
+    for (const o of game.orbs) {
+      if (o.taken || o.side !== ball.side) continue;
+      const r = (o.kind === 'double' ? X2_ORB_R : ORB_R) + BALL_R;
+      const dx = orbX(o) - bx;
+      const dy = o.y - BALL_Y;
+      if (dx * dx + dy * dy > r * r) continue;
+
+      o.taken = true;
+      game.orbsTaken++;
+      if (o.kind === 'double') {
+        game.x2Ticks = X2_DURATION;
+        game.x2Flash = 1;
+      } else {
+        game.score += ORB_POINTS * (game.x2Ticks > 0 ? 2 : 1);
+      }
+      const burst = o.kind === 'double' ? 16 : 9;
+      for (let i = 0; i < burst; i++) {
+        game.particles.push({
+          x: orbX(o), y: o.y,
+          vx: (game.rng() - 0.5) * 6, vy: (game.rng() - 0.5) * 6,
+          life: 1, side: o.side, gold: o.kind === 'double',
+        });
+      }
+    }
+  }
+  if (game.orbs.some((o) => o.taken)) game.orbs = game.orbs.filter((o) => !o.taken);
 
   // ---- collisions -------------------------------------------------------
   for (const ball of game.balls) {
@@ -472,14 +609,29 @@ function draw(t) {
   ctx.fillStyle = light;
   ctx.fillRect(MID, 0, MID, H);
 
-  // Drifting speckles, so motion reads even on an empty stretch.
-  const drift = (t * speed() * 0.35) % H;
-  for (let i = 0; i < 46; i++) {
-    const px = ((i * 97) % W);
-    const py = ((i * 173) + drift) % H;
-    ctx.fillStyle = px < MID ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.10)';
-    ctx.fillRect(px, py, 2.5, 2.5);
+  // Stars in the dark half. Nearer ones are bigger, brighter and twinkle more.
+  for (const st of game.stars) {
+    const twinkle = 0.55 + Math.sin(t * 0.06 + st.phase) * 0.35;
+    ctx.globalAlpha = Math.max(0.08, (0.25 + st.par) * twinkle);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+    ctx.fill();
   }
+  ctx.globalAlpha = 1;
+
+  // Clouds in the light half: overlapping soft lozenges, a shade of the dark
+  // colour so they tint with the theme instead of going flat grey.
+  for (const cl of game.clouds) {
+    ctx.globalAlpha = cl.a;
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.ellipse(cl.x + cl.w * 0.3, cl.y, cl.w * 0.34, cl.h * 0.62, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.58, cl.y + cl.h * 0.18, cl.w * 0.28, cl.h * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.75, cl.y - cl.h * 0.08, cl.w * 0.24, cl.h * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 
   // Spikes: each is drawn in the colour of the *other* half, cut into the lane.
   for (const s of game.spikes) {
@@ -510,7 +662,68 @@ function draw(t) {
     ctx.fillText('SWAP', MID + MID / 2, g.y + 18);
   }
 
-  // Trails.
+  // Collectibles: a smaller, glowing shade of the ball that would collect it,
+  // ringed so it never reads as a second ball. The x2 token is gold.
+  for (const o of game.orbs) {
+    if (o.taken) continue;
+    const base = o.side === 0 ? light : dark;
+    const x = orbX(o);
+    const pulse = 1 + Math.sin(t * 0.16 + o.y * 0.04) * 0.12;
+
+    ctx.save();
+    if (o.kind === 'double') {
+      ctx.shadowColor = X2_COLOUR;
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = X2_COLOUR;
+      ctx.beginPath();
+      ctx.arc(x, o.y, X2_ORB_R * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = base;
+      ctx.lineWidth = 1.6;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.arc(x, o.y, X2_ORB_R * pulse + 4.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#3a2a05';
+      ctx.font = '800 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('x2', x, o.y + 0.5);
+      ctx.textBaseline = 'alphabetic';
+    } else {
+      ctx.shadowColor = base;
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = base;
+      ctx.globalAlpha = 0.92;
+      ctx.beginPath();
+      ctx.arc(x, o.y, ORB_R * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = base;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(x, o.y, ORB_R * pulse + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // Trail motes: world-fixed specks shed behind each ball, shrinking as they go.
+  for (const m of game.motes) {
+    const k = m.life / m.max;
+    ctx.globalAlpha = k * 0.62;
+    ctx.fillStyle = m.side === 0 ? light : dark;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.r * (0.35 + k * 0.65), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // The ribbon right behind each ball, on top of the motes.
   for (const ball of game.balls) {
     const colour = ball.side === 0 ? light : dark;
     for (const p of ball.trail) {
@@ -535,7 +748,7 @@ function draw(t) {
 
   for (const p of game.particles) {
     ctx.globalAlpha = Math.max(0, p.life);
-    ctx.fillStyle = p.side === 0 ? light : dark;
+    ctx.fillStyle = p.gold ? X2_COLOUR : (p.side === 0 ? light : dark);
     ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
   }
   ctx.globalAlpha = 1;
@@ -557,6 +770,22 @@ function draw(t) {
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fillText(label, MID + 22, 74);
+
+    // While doubled, a gold badge and a bar draining toward expiry.
+    if (game.x2Ticks > 0) {
+      const k = game.x2Ticks / X2_DURATION;
+      ctx.textAlign = 'center';
+      ctx.font = '800 22px system-ui, sans-serif';
+      ctx.fillStyle = X2_COLOUR;
+      ctx.globalAlpha = 0.55 + Math.sin(t * 0.3) * 0.25;
+      ctx.fillText('x2', MID, 112);
+      ctx.globalAlpha = 1;
+      const barW = 96;
+      ctx.fillStyle = 'rgba(251,191,36,0.25)';
+      ctx.fillRect(MID - barW / 2, 122, barW, 4);
+      ctx.fillStyle = X2_COLOUR;
+      ctx.fillRect(MID - barW / 2, 122, barW * k, 4);
+    }
   }
 
   // "Hold this side" hint before the first run.
@@ -770,13 +999,82 @@ function runSelfTest() {
   HELD[0] = HELD[1] = false;
   check('score climbs with distance', game.score > 0, game.score.toFixed(1));
 
+  // ---- collectibles -----------------------------------------------------
+
+  // Every orb must sit inside the band a ball can actually reach.
+  reset(15);
+  game.status = 'playing';
+  let unreachable = null;
+  for (let i = 0; i < 2500 && game.status === 'playing'; i++) {
+    HELD[0] = HELD[1] = i % 26 < 13;
+    tick();
+    for (const o of game.orbs) {
+      if (o.out < ORB_R || o.out > MAX_OUT - ORB_R) unreachable = o;
+    }
+  }
+  HELD[0] = HELD[1] = false;
+  check('every collectible is inside the reachable band', unreachable === null,
+    unreachable ? JSON.stringify(unreachable) : '');
+
+  // Touching a points orb scores and removes it.
+  reset(21);
+  game.status = 'playing';
+  game.orbs = [{ side: 0, y: BALL_Y, out: 0, kind: 'point', taken: false }];
+  const beforeOrb = game.score;
+  tick();
+  check('a points collectible scores', game.score - beforeOrb >= ORB_POINTS,
+    (game.score - beforeOrb).toFixed(1));
+  check('a collected orb is removed', game.orbs.length === 0);
+  check('the pickup is counted', game.orbsTaken === 1, String(game.orbsTaken));
+
+  // The special orb doubles scoring for a bounded window.
+  reset(22);
+  game.status = 'playing';
+  game.orbs = [{ side: 0, y: BALL_Y, out: 0, kind: 'double', taken: false }];
+  tick();
+  check('the special collectible starts an x2 window', game.x2Ticks > 0, String(game.x2Ticks));
+
+  const gainOver = (ticks) => {
+    const from = game.score;
+    for (let i = 0; i < ticks; i++) tick();
+    return game.score - from;
+  };
+  const doubled = gainOver(40);
+  game.x2Ticks = 0;
+  const plain = gainOver(40);
+  check('x2 really doubles the scoring rate', doubled > plain * 1.8,
+    `${doubled.toFixed(1)} vs ${plain.toFixed(1)}`);
+
+  reset(23);
+  game.status = 'playing';
+  game.x2Ticks = 5;
+  for (let i = 0; i < 20; i++) tick();
+  check('the x2 window expires', game.x2Ticks === 0, String(game.x2Ticks));
+
+  // Backdrop and trail are populated and stay bounded.
+  reset(24);
+  game.status = 'playing';
+  for (let i = 0; i < 200; i++) { HELD[0] = i % 30 < 12; tick(); }
+  HELD[0] = false;
+  check('stars fill the dark half', game.stars.length === STAR_COUNT
+    && game.stars.every((st) => st.x >= 0 && st.x <= MID), String(game.stars.length));
+  check('clouds fill the light half', game.clouds.length === CLOUD_COUNT
+    && game.clouds.every((cl) => cl.x >= MID && cl.x <= W), String(game.clouds.length));
+  check('the ball sheds a trail while moving', game.motes.length > 0, String(game.motes.length));
+  for (let i = 0; i < 400; i++) tick();
+  check('trail motes are culled, not accumulated', game.motes.length < 200, String(game.motes.length));
+
   // Determinism.
   const runOf = (s) => {
     reset(s);
     game.status = 'playing';
     for (let i = 0; i < 240; i++) { HELD[0] = HELD[1] = i % 24 < 12; tick(); }
     HELD[0] = HELD[1] = false;
-    return JSON.stringify({ s: game.spikes.map((x) => [x.side, Math.round(x.y)]), d: Math.round(game.distance) });
+    return JSON.stringify({
+      s: game.spikes.map((x) => [x.side, Math.round(x.y)]),
+      o: game.orbs.map((x) => [x.side, x.kind, Math.round(x.y), Math.round(x.out)]),
+      d: Math.round(game.distance),
+    });
   };
   const a = runOf(21), b = runOf(21), c = runOf(22);
   check('same seed reproduces the same course', a === b);
@@ -806,6 +1104,14 @@ window.__GAME__ = {
       ticks: game.ticks,
       speed: Math.round(speed() * 100) / 100,
       theme: THEMES[game.theme].name,
+      multiplier: game.x2Ticks > 0 ? 2 : 1,
+      x2Ticks: game.x2Ticks,
+      orbsTaken: game.orbsTaken,
+      orbs: game.orbs.filter((o) => !o.taken).map((o) => ({
+        side: o.side, kind: o.kind,
+        y: Math.round(o.y * 100) / 100,
+        out: Math.round(o.out * 100) / 100,
+      })),
       balls: game.balls.map((b) => ({
         input: b.input, side: b.side,
         out: Math.round(b.out * 100) / 100,
