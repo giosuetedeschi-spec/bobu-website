@@ -206,6 +206,16 @@ const X2_ORB_R = 12;
 const X2_DURATION = 420;           // ticks of doubled scoring
 const X2_COLOUR = '#fbbf24';
 
+// Losing a twin is a setback, not the end: the survivor scores faster, and
+// portals start appearing that bring the lost twin back.
+const SOLO_RATE = 1.8;             // distance scoring multiplier while solo
+const PORTAL_R = 20;
+const PORTAL_COLOUR = '#7dd3fc';
+const PORTAL_TICKS_MIN = 150, PORTAL_TICKS_MAX = 300;
+const PORTAL_MIN_OUT = 40, PORTAL_MAX_OUT = 92;
+const REVIVE_GRACE = 50;           // ticks the returning twin cannot die
+const REVIVE_SETTLE = 60;          // ticks before its lane spawns spikes again
+
 // Backdrop: stars drift in the dark half, clouds in the light one.
 const STAR_COUNT = 60;
 const CLOUD_COUNT = 8;
@@ -262,6 +272,9 @@ const game = {
   best: Number(safeGet('twins-best', '0')) || 0,
   laneNext: [0, 0],                // ticks until the next spike in each lane
   orbNext: [0, 0],                 // ticks until the next collectible per lane
+  portals: [],                     // { side, y, out, used } -- only while solo
+  portalNext: 0,
+  revives: 0,
   x2Ticks: 0,                      // remaining ticks of doubled scoring
   orbsTaken: 0,
   nextGateAt: GATE_EVERY,
@@ -292,9 +305,13 @@ function makeBall(input) {
     vel: 0,                        // outward velocity
     held: 0,                       // ticks of thrust used in this hold
     grounded: true,                // touching the wall
+    alive: true,
+    grace: 0,                      // ticks of immunity after being revived
     trail: [],
   };
 }
+
+const aliveBalls = () => game.balls.filter((b) => b.alive);
 
 function reset(seed) {
   game.seed = seed === undefined ? game.seed : (seed >>> 0 || 1);
@@ -305,6 +322,7 @@ function reset(seed) {
   game.spikes = [];
   game.gates = [];
   game.orbs = [];
+  game.portals = [];
   game.particles = [];
   game.motes = [];
   buildBackdrop();
@@ -313,6 +331,8 @@ function reset(seed) {
   game.score = 0;
   game.laneNext = [10, 34];        // stagger the two lanes so they never sync
   game.orbNext = [55, 96];
+  game.portalNext = 0;
+  game.revives = 0;
   game.x2Ticks = 0;
   game.orbsTaken = 0;
   game.nextGateAt = GATE_EVERY;
@@ -391,11 +411,18 @@ const orbX = (o) => wallFace(o.side) + outward(o.side) * o.out;
 
 /* ================================================================== death */
 
+/**
+ * Losing one twin no longer ends the run. The survivor carries on at a higher
+ * scoring rate, and portals begin appearing that can bring the twin back. The
+ * run only ends once both have crashed.
+ */
 function die(ball) {
-  if (game.status !== 'playing') return;
-  game.status = 'over';
+  if (game.status !== 'playing' || !ball.alive) return;
+  ball.alive = false;
+  ball.trail.length = 0;
   game.dead = ball.input;
   game.shake = 1;
+
   const bx = ballX(ball);
   for (let i = 0; i < 24; i++) {
     game.particles.push({
@@ -406,11 +433,70 @@ function die(ball) {
       side: ball.side,
     });
   }
-  if (Math.round(game.score) > game.best) {
-    game.best = Math.round(game.score);
-    safeSet('twins-best', String(game.best));
+
+  if (aliveBalls().length === 0) {
+    game.status = 'over';
+    game.portals = [];
+    if (Math.round(game.score) > game.best) {
+      game.best = Math.round(game.score);
+      safeSet('twins-best', String(game.best));
+    }
+    return;
   }
+
+  // Solo now: give the player a beat before the first rescue chance.
+  game.portalNext = Math.round(PORTAL_TICKS_MIN * 0.7);
 }
+
+/** Brings the lost twin back through a portal, into the free lane. */
+function revive() {
+  const twin = game.balls.find((b) => !b.alive);
+  const survivor = aliveBalls()[0];
+  if (!twin || !survivor) return false;
+
+  twin.side = 1 - survivor.side;
+  twin.out = 0;
+  twin.vel = 0;
+  twin.held = 0;
+  twin.grounded = true;
+  twin.trail.length = 0;
+  twin.alive = true;
+  twin.grace = REVIVE_GRACE;
+
+  // It returns to the wall, so clear the row it lands on and hold that lane's
+  // spikes back -- otherwise the rescue could drop it straight onto a spike.
+  game.spikes = game.spikes.filter((sp) => !(
+    sp.side === twin.side && sp.y + SPIKE_H > BALL_Y - 140 && sp.y < BALL_Y + 80
+  ));
+  game.laneNext[twin.side] = Math.max(game.laneNext[twin.side], REVIVE_SETTLE);
+
+  game.portals = [];
+  game.revives++;
+  game.swapFlash = 1;
+  for (let i = 0; i < 20; i++) {
+    game.particles.push({
+      x: ballX(twin), y: BALL_Y,
+      vx: (game.rng() - 0.5) * 7, vy: (game.rng() - 0.5) * 7,
+      life: 1, side: twin.side, portal: true,
+    });
+  }
+  return true;
+}
+
+/** A rescue portal, only ever spawned in the surviving twin's lane. */
+function spawnPortal() {
+  const survivor = aliveBalls()[0];
+  if (!survivor) return;
+  game.portals.push({
+    side: survivor.side,
+    y: -PORTAL_R * 2,
+    out: PORTAL_MIN_OUT + game.rng() * (PORTAL_MAX_OUT - PORTAL_MIN_OUT),
+    used: false,
+  });
+  game.portalNext = Math.round(PORTAL_TICKS_MIN + game.rng() * (PORTAL_TICKS_MAX - PORTAL_TICKS_MIN));
+}
+
+const portalX = (p) => wallFace(p.side) + outward(p.side) * p.out;
 
 const ballX = (b) => wallFace(b.side) + outward(b.side) * b.out;
 
@@ -432,7 +518,8 @@ function tick() {
   const v = speed();
   game.distance += v;
   if (game.x2Ticks > 0) game.x2Ticks--;
-  const mult = game.x2Ticks > 0 ? 2 : 1;
+  const solo = aliveBalls().length === 1;
+  const mult = (game.x2Ticks > 0 ? 2 : 1) * (solo ? SOLO_RATE : 1);
   game.score += (v / 10) * mult;
 
   // Backdrop parallax. Stars and clouds are world-fixed, so they slide down the
@@ -457,6 +544,8 @@ function tick() {
 
   // ---- balls ------------------------------------------------------------
   for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    if (ball.grace > 0) ball.grace--;
     const holding = HELD[ball.input];
 
     if (holding && ball.held < MAX_HOLD) {
@@ -534,15 +623,42 @@ function tick() {
     }
   }
 
+  // Rescue portals only exist while a twin is missing.
+  if (solo) {
+    game.portalNext -= 1;
+    if (game.portalNext <= 0 && game.portals.length === 0) spawnPortal();
+  } else if (game.portals.length) {
+    game.portals = [];
+  }
+
   for (const s of game.spikes) s.y += v;
   for (const g of game.gates) g.y += v;
   for (const o of game.orbs) o.y += v;
+  for (const pt of game.portals) pt.y += v;
   game.spikes = game.spikes.filter((s) => s.y < H + SPIKE_H);
   game.gates = game.gates.filter((g) => g.y < H + GATE_H);
   game.orbs = game.orbs.filter((o) => !o.taken && o.y < H + X2_ORB_R * 2);
+  game.portals = game.portals.filter((pt) => !pt.used && pt.y < H + PORTAL_R * 2);
+
+  // ---- portals ----------------------------------------------------------
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const bx = ballX(ball);
+    for (const pt of game.portals) {
+      if (pt.used || pt.side !== ball.side) continue;
+      const r = PORTAL_R + BALL_R;
+      const dx = portalX(pt) - bx;
+      const dy = pt.y - BALL_Y;
+      if (dx * dx + dy * dy > r * r) continue;
+      pt.used = true;
+      revive();
+      break;
+    }
+  }
 
   // ---- collectibles -----------------------------------------------------
   for (const ball of game.balls) {
+    if (!ball.alive) continue;
     const bx = ballX(ball);
     for (const o of game.orbs) {
       if (o.taken || o.side !== ball.side) continue;
@@ -572,15 +688,19 @@ function tick() {
   if (game.orbs.some((o) => o.taken)) game.orbs = game.orbs.filter((o) => !o.taken);
 
   // ---- collisions -------------------------------------------------------
+  // No early return: one twin dying leaves the other still playing, so the
+  // rest of the tick has to run.
   for (const ball of game.balls) {
+    if (!ball.alive || ball.grace > 0) continue;
     for (const s of game.spikes) {
       if (s.side !== ball.side) continue;
       // Spikes jut out of the wall, so only a ball still close to the wall
       // is in danger. Swing wide enough and it passes over the tip.
       const overlapY = BALL_Y + BALL_R > s.y && BALL_Y - BALL_R < s.y + SPIKE_H;
-      if (overlapY && ball.out < SPIKE_DEPTH) { die(ball); return; }
+      if (overlapY && ball.out < SPIKE_DEPTH) { die(ball); break; }
     }
   }
+  if (game.status !== 'playing') return;
 
   // ---- swap gates -------------------------------------------------------
   for (const g of game.gates) {
@@ -594,7 +714,10 @@ function tick() {
 
 /** Balls cross to the other half; each control keeps its own ball. */
 function swap() {
-  for (const ball of game.balls) ball.side = 1 - ball.side;
+  for (const ball of game.balls) if (ball.alive) ball.side = 1 - ball.side;
+  // Portals cross too. Without this a swap leaves the rescue sitting in the
+  // lane the survivor just left, where it can never be reached.
+  for (const pt of game.portals) pt.side = 1 - pt.side;
   game.swapFlash = 1;
   for (let i = 0; i < 14; i++) {
     game.particles.push({
@@ -764,6 +887,39 @@ function draw(t) {
   }
   ctx.globalAlpha = 1;
 
+  // Rescue portals: a bright ring you steer the surviving twin through.
+  for (const pt of game.portals) {
+    if (pt.used) continue;
+    const x = portalX(pt);
+    const spin = t * 0.05;
+    const pulse = 1 + Math.sin(t * 0.12 + pt.y * 0.03) * 0.08;
+    ctx.save();
+    ctx.translate(x, pt.y);
+    ctx.rotate(spin);
+    ctx.shadowColor = PORTAL_COLOUR;
+    ctx.shadowBlur = 26;
+    ctx.strokeStyle = PORTAL_COLOUR;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, PORTAL_R * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 7]);
+    ctx.beginPath();
+    ctx.arc(0, 0, PORTAL_R * pulse - 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = PORTAL_COLOUR;
+    ctx.font = '700 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TWIN', x, pt.y + PORTAL_R + 14);
+    ctx.globalAlpha = 1;
+  }
+
   // Trail motes: world-fixed specks shed behind each ball, shrinking as they go.
   for (const m of game.motes) {
     const k = m.life / m.max;
@@ -777,6 +933,7 @@ function draw(t) {
 
   // The ribbon right behind each ball, on top of the motes.
   for (const ball of game.balls) {
+    if (!ball.alive) continue;
     const colour = ball.side === 0 ? light : dark;
     for (const p of ball.trail) {
       if (p.life <= 0) continue;
@@ -791,16 +948,29 @@ function draw(t) {
   ctx.globalAlpha = 1;
 
   // Balls: each takes the colour of the opposite half so it always contrasts.
+  // A just-revived twin blinks for its grace window.
   for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const blink = ball.grace > 0 && Math.floor(t * 0.25) % 2 === 0;
+    ctx.globalAlpha = blink ? 0.45 : 1;
     ctx.fillStyle = ball.side === 0 ? light : dark;
     ctx.beginPath();
     ctx.arc(ballX(ball), BALL_Y, BALL_R, 0, Math.PI * 2);
     ctx.fill();
+    if (ball.grace > 0) {
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = PORTAL_COLOUR;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ballX(ball), BALL_Y, BALL_R + 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
   }
 
   for (const p of game.particles) {
     ctx.globalAlpha = Math.max(0, p.life);
-    ctx.fillStyle = p.gold ? X2_COLOUR : (p.side === 0 ? light : dark);
+    ctx.fillStyle = p.gold ? X2_COLOUR : p.portal ? PORTAL_COLOUR : (p.side === 0 ? light : dark);
     ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
   }
   ctx.globalAlpha = 1;
@@ -823,6 +993,21 @@ function draw(t) {
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fillText(label, MID + 22, 74);
 
+    // Badges stack under the score rather than sitting on top of it.
+    let badgeY = 108;
+
+    // Flying solo: show the boosted rate, so the reward for surviving alone
+    // is legible rather than silent.
+    if (aliveBalls().length === 1) {
+      ctx.textAlign = 'center';
+      ctx.font = '700 13px system-ui, sans-serif';
+      ctx.fillStyle = PORTAL_COLOUR;
+      ctx.globalAlpha = 0.75 + Math.sin(t * 0.16) * 0.2;
+      ctx.fillText(`SOLO x${SOLO_RATE}`, MID, badgeY);
+      ctx.globalAlpha = 1;
+      badgeY += 30;
+    }
+
     // While doubled, a gold badge and a bar draining toward expiry.
     if (game.x2Ticks > 0) {
       const k = game.x2Ticks / X2_DURATION;
@@ -830,13 +1015,13 @@ function draw(t) {
       ctx.font = '800 22px system-ui, sans-serif';
       ctx.fillStyle = X2_COLOUR;
       ctx.globalAlpha = 0.55 + Math.sin(t * 0.3) * 0.25;
-      ctx.fillText('x2', MID, 112);
+      ctx.fillText('x2', MID, badgeY);
       ctx.globalAlpha = 1;
       const barW = 96;
       ctx.fillStyle = 'rgba(251,191,36,0.25)';
-      ctx.fillRect(MID - barW / 2, 122, barW, 4);
+      ctx.fillRect(MID - barW / 2, badgeY + 10, barW, 4);
       ctx.fillStyle = X2_COLOUR;
-      ctx.fillRect(MID - barW / 2, 122, barW * k, 4);
+      ctx.fillRect(MID - barW / 2, badgeY + 10, barW * k, 4);
     }
   }
 
@@ -868,7 +1053,7 @@ function syncUI() {
 
   el('ov-title').textContent = over ? 'CRASHED' : paused ? 'PAUSED' : 'TWINS';
   el('ov-text').textContent = over
-    ? `Your ${game.dead === 0 ? 'left' : 'right'} ball clipped a spike.`
+    ? `Both twins are down${game.revives ? ` — ${game.revives} rescue${game.revives > 1 ? 's' : ''} along the way.` : '.'}`
     : paused
       ? 'Take your time — the course is holding.'
       : 'Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.';
@@ -1149,6 +1334,106 @@ function runSelfTest() {
   for (let i = 0; i < 400; i++) tick();
   check('trail motes are culled, not accumulated', game.motes.length < 200, String(game.motes.length));
 
+  // ---- losing one twin --------------------------------------------------
+  reset(41);
+  game.status = 'playing';
+  for (let i = 0; i < 30; i++) tick();
+  die(game.balls[0]);
+  check('losing one twin does not end the run', game.status === 'playing', game.status);
+  check('the lost twin is out of play', game.balls[0].alive === false && game.balls[1].alive === true);
+  for (let i = 0; i < 40; i++) tick();
+  check('the survivor keeps going', game.status === 'playing');
+
+  // The solo rate really is higher than playing as a pair.
+  const rateOver = (killOne, ticks) => {
+    reset(42);
+    game.status = 'playing';
+    if (killOne) die(game.balls[0]);
+    game.x2Ticks = 0;
+    const from = game.score;
+    for (let i = 0; i < ticks; i++) { game.x2Ticks = 0; tick(); }
+    return game.score - from;
+  };
+  const paired = rateOver(false, 60);
+  const soloGain = rateOver(true, 60);
+  check('flying solo scores faster', soloGain > paired * 1.5,
+    `${soloGain.toFixed(1)} vs ${paired.toFixed(1)}`);
+
+  // ---- rescue portals ---------------------------------------------------
+  // Spikes are cleared each tick here so the balls cannot die: this isolates
+  // portal spawning from survival, which is covered separately.
+  const tickSafely = (n, fn) => {
+    for (let i = 0; i < n; i++) {
+      game.spikes.length = 0;
+      if (fn && fn(i)) return true;
+      tick();
+    }
+    return false;
+  };
+
+  reset(43);
+  game.status = 'playing';
+  tickSafely(400);
+  check('no portals appear while both twins are alive', game.portals.length === 0,
+    String(game.portals.length));
+
+  die(game.balls[1]);
+  let sawPortal = false;
+  tickSafely(400, () => (sawPortal = game.portals.length > 0));
+  check('a portal appears once a twin is lost', sawPortal);
+  check('the portal is in the survivor lane',
+    !sawPortal || game.portals[0].side === game.balls[0].side);
+  check('the portal is inside the reachable band',
+    !sawPortal || (game.portals[0].out >= PORTAL_R * 0 && game.portals[0].out <= MAX_OUT),
+    sawPortal ? String(Math.round(game.portals[0].out)) : '');
+
+  // A swap must not strand the rescue in the lane the survivor left.
+  reset(47);
+  game.status = 'playing';
+  die(game.balls[1]);
+  game.portals = [{ side: game.balls[0].side, y: 100, out: 60, used: false }];
+  swap();
+  check('a portal follows the survivor across a swap',
+    game.portals[0].side === game.balls[0].side,
+    `portal ${game.portals[0].side}, survivor ${game.balls[0].side}`);
+
+  // Passing through one brings the twin back, into the other lane.
+  reset(44);
+  game.status = 'playing';
+  die(game.balls[1]);
+  const survivor = game.balls[0];
+  game.portals = [{ side: survivor.side, y: BALL_Y, out: survivor.out, used: false }];
+  tick();
+  check('passing a portal revives the twin', game.balls[1].alive === true);
+  check('the revived twin lands in the free lane', game.balls[1].side === 1 - survivor.side,
+    `${game.balls[1].side} vs survivor ${survivor.side}`);
+  check('the revived twin is briefly immune', game.balls[1].grace > 0, String(game.balls[1].grace));
+  check('the rescue is counted', game.revives === 1, String(game.revives));
+  check('portals clear once the twin is back', game.portals.length === 0);
+
+  // The returning twin must not land on a spike.
+  reset(45);
+  game.status = 'playing';
+  die(game.balls[1]);
+  game.spikes.push({ side: 1 - game.balls[0].side, y: BALL_Y - 10 });
+  game.portals = [{ side: game.balls[0].side, y: BALL_Y, out: game.balls[0].out, used: false }];
+  tick();
+  const twinLane = game.balls[1].side;
+  check('the rescue row is cleared of spikes',
+    !game.spikes.some((sp) => sp.side === twinLane
+      && sp.y + SPIKE_H > BALL_Y - BALL_R && sp.y < BALL_Y + BALL_R));
+  for (let i = 0; i < 30; i++) tick();
+  check('the revived twin survives its first moments', game.balls[1].alive === true);
+
+  // ---- the run only ends when both are down -----------------------------
+  reset(46);
+  game.status = 'playing';
+  die(game.balls[0]);
+  check('one down is not game over', game.status === 'playing');
+  die(game.balls[1]);
+  check('both down ends the run', game.status === 'over');
+  check('a dead twin cannot die twice', (die(game.balls[0]), game.status === 'over'));
+
   // ---- pause ------------------------------------------------------------
   reset(31);
   game.status = 'playing';
@@ -1218,10 +1503,19 @@ window.__GAME__ = {
         out: Math.round(o.out * 100) / 100,
       })),
       balls: game.balls.map((b) => ({
-        input: b.input, side: b.side,
+        input: b.input, side: b.side, alive: b.alive, grace: b.grace,
         out: Math.round(b.out * 100) / 100,
         vel: Math.round(b.vel * 100) / 100,
         grounded: b.grounded,
+      })),
+      alive: aliveBalls().length,
+      solo: aliveBalls().length === 1,
+      soloRate: SOLO_RATE,
+      revives: game.revives,
+      portals: game.portals.filter((pt) => !pt.used).map((pt) => ({
+        side: pt.side,
+        y: Math.round(pt.y * 100) / 100,
+        out: Math.round(pt.out * 100) / 100,
       })),
       spikes: game.spikes.map((s) => ({ side: s.side, y: Math.round(s.y * 100) / 100 })),
       gates: game.gates.map((g) => ({ y: Math.round(g.y * 100) / 100, passed: g.passed })),
