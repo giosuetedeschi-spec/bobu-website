@@ -6,9 +6,10 @@ works unchanged under Pyodide in the browser.  There is no input(), no
 pygame/tkinter, and nothing is read from or written to disk.
 
 Search bounds were chosen for the browser: Pyodide runs roughly 3-10x slower
-than CPython, so both engines search to depth 7 (with extra turns costing no
-depth, which effectively deepens the tree further).  That keeps a whole game
-well under a second natively and comfortably inside the ~10s browser budget.
+than CPython, so both engines search to depth 6 (with extra turns costing no
+depth, which effectively deepens the tree further).  Measured at 2.4s for a
+whole game natively, which leaves headroom inside the ~10s browser budget --
+depth 7 measured 8.5s natively and would have blown straight through it.
 """
 
 import time
@@ -26,7 +27,7 @@ import ai_engine
 # --- demo configuration ------------------------------------------------------
 
 SEED = 20260811          # fixed so every visitor sees the identical game
-DEPTH = 7                # plies of lookahead for both engines
+DEPTH = 6                # plies of lookahead for both engines
 MAX_PLIES = 250          # hard safety bound; real games finish far sooner
 
 PLAYERS = (
