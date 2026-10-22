@@ -4,12 +4,12 @@ import { render, screen } from '@testing-library/react';
 import CollectionPage from '@/app/ecommerce/collection/page';
 
 describe('EcommerceCollectionPage', () => {
-  it('renders the product grid with prices and stock status', () => {
+  it('renders concept products without claiming real prices or stock', () => {
     render(<CollectionPage />);
-    expect(screen.getByText('Collection')).toBeInTheDocument();
+    expect(screen.getByText('Concept collection')).toBeInTheDocument();
     expect(screen.getByText('Bobu Terminal Tee')).toBeInTheDocument();
-    expect(screen.getByText('€28')).toBeInTheDocument();
-    expect(screen.getByText('Sold Out')).toBeInTheDocument();
+    expect(screen.getAllByText('Concept only')).toHaveLength(6);
+    expect(screen.getAllByText('Not for sale')).toHaveLength(6);
   });
 
   it('links back to the shop', () => {

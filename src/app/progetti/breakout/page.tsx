@@ -1,5 +1,12 @@
-import { GameIframePage } from "@/components/games/GameIframePage";
+import Container from "@mui/material/Container";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
+import { BreakoutGame } from "@/components/games/BreakoutGame";
 
 export default function BreakoutPage() {
-  return <GameIframePage title="Breakout" tag="Canvas Arcade" src="/games/breakout/index.html" />;
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <GamePageHeader title="Breakout" tag="TypeScript · Canvas" />
+      <BreakoutGame />
+    </Container>
+  );
 }

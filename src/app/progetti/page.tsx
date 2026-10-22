@@ -30,7 +30,7 @@ const projects = [
   },
   {
     title: "Breakout",
-    description: "Brick-breaker with power-ups, multi-ball and level progression.",
+    description: "Brick breaker with power-ups, multiball and level progression, built in TypeScript.",
     href: "/progetti/breakout",
     icon: <MemoryIcon />,
     color: "#f97316",
@@ -38,7 +38,7 @@ const projects = [
   },
   {
     title: "Kalaha AI",
-    description: "Ancient board game against a Python AI running locally.",
+    description: "Ancient board game against a TypeScript AI, with extra turns and capture rules.",
     href: "/progetti/kalaha",
     icon: <CodeIcon />,
     color: "#22c55e",
@@ -46,7 +46,7 @@ const projects = [
   },
   {
     title: "Pong",
-    description: "The classic arcade game for two players. Vanilla JS implementation.",
+    description: "The classic arcade game for two players, implemented in TypeScript.",
     href: "/progetti/pong",
     icon: <GamepadIcon />,
     color: "#64748b",

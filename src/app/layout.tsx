@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import theme from "@/lib/theme";
 import "./globals.css";
 
@@ -42,7 +43,9 @@ export default function RootLayout({
           and the page flashes unstyled on the way in.
         */}
         <AppRouterCacheProvider options={{ key: "mui" }}>
-          <ThemeProvider theme={theme}>{children}</ThemeProvider>
+          <ThemeProvider theme={theme}>
+            <SiteChrome>{children}</SiteChrome>
+          </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

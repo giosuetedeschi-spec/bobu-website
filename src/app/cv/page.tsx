@@ -10,64 +10,64 @@ import Divider from "@mui/material/Divider";
 import WorkIcon from "@mui/icons-material/Work";
 import SchoolIcon from "@mui/icons-material/School";
 import CodeIcon from "@mui/icons-material/Code";
+import { withBasePath } from "@/lib/basePath";
 
 const skills = [
-  { label: "Programming", items: ["TypeScript", "Python", "Rust", "Java", "React", "Next.js"] },
-  { label: "Tools", items: ["Git", "Docker", "Linux", "WASM"] },
-  { label: "Languages", items: ["Italian (native)", "English (good)", "Spanish (A2)"] },
+  { label: "Project stack", items: ["TypeScript", "React", "Next.js", "Bun"] },
+  { label: "Languages", items: ["Italian (native)", "English (good)", "Spanish (A2, CEFR)"] },
   { label: "Creative", items: ["Creative writing", "Podcast production", "Video direction", "Calligraphy"] },
 ];
 
 const experience = [
   {
     title: "Python & Cryptography Teaching Assistant — I.I.S. Liceo Classico Cavour",
-    period: "2023 - 2024",
+    period: "19 Dec 2023 - 30 Apr 2024",
     description:
       "Technical assistant for Python and cryptographic-systems lessons: deepened course topics and helped students through individual problems.",
   },
   {
     title: "Co-founder & Writer — Mercuzio & Friends",
-    period: "2022 - Present",
+    period: "15 Nov 2022 - 28 Nov 2025",
     description:
       "Cultural collective in Torino: writing, mediation, collaborations with city institutions, video direction, podcast design.",
   },
   {
     title: "Radio Collaborator — Radio erre18",
-    period: "2024 - Present",
+    period: "27 Feb 2024 - 28 Aug 2025",
     description:
       "Episode planning, mixer operation and streaming software for live radio programming.",
   },
   {
     title: "Production Member — Amaro (student cultural journal)",
-    period: "2022 - 2023",
+    period: "10 Sep 2022 - 28 Feb 2023",
     description:
       "Article writing, proofreading, print-shop relations, distribution, and video-podcast direction.",
   },
   {
-    title: "Events Staff — Salone del Libro, Torino Comics, TEDxTorino, Club Silencio",
+    title: "Event and volunteer roles — cultural and public events in Torino",
     period: "2019 - 2024",
     description:
-      "Reception, crowd flow, stand and stage setup, speaker preparation, materials logistics across Torino's main cultural events. Jury member for the LiberAzioni film festival (AMNC, 2023).",
+      "Reception, crowd management, stand and stage setup, speaker preparation, and materials logistics at Salone del Libro, Torino Comics, TEDxTorino, Club Silencio, and other events. Jury member for the LiberAzioni film festival (AMNC, 2023).",
   },
 ];
 
 const education = [
   {
     title: "Liceo Scientifico Ettore Majorana, Torino",
-    period: "2016 - 2021",
+    period: "June 2021",
     description: "Diploma di maturità scientifica — mathematics, physics, philosophy.",
   },
   {
     title: "Scuola Holden — writing program",
-    period: "2023",
+    period: "3 Aug 2023 - 24 Aug 2023",
     description:
-      "Group work with established writers (Kate Williams, Adam Gollner, Amidon Steven): short stories, copy, TV series, novel outline.",
+      "Writing, communication, and English-language communication. Group work with Kate Williams, Adam Gollner, and Amidon Steven on stories, copy, TV series, and a novel outline.",
   },
   {
     title: "\"Diventare Imprenditori\" — Università di Torino",
-    period: "2022",
+    period: "17 Feb 2022 - 5 May 2022",
     description:
-      "Business Model Canvas, market analysis, marketing principles, business plans and startup finance.",
+      "Business Model Canvas, market analysis, marketing, entrepreneurship and business models, business plans, and startup finance. Certificate of attendance.",
   },
 ];
 
@@ -93,7 +93,7 @@ export default function ResumePage() {
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
           <Chip icon={<WorkIcon sx={{ fontSize: 16 }} />} label="Torino, IT" size="small" variant="outlined" />
           <Chip label="giosue.tedeschi31@gmail.com" size="small" variant="outlined" />
-          <Chip label="Full CV (PDF)" size="small" variant="outlined" component="a" href="/cv.pdf" target="_blank" clickable />
+          <Chip label="Full CV (PDF)" size="small" variant="outlined" component="a" href={withBasePath("/cv.pdf")} target="_blank" rel="noreferrer" clickable />
         </Box>
       </Box>
 

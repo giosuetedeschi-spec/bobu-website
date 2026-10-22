@@ -10,6 +10,7 @@ import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Link from "next/link";
+import { withBasePath } from "@/lib/basePath";
 
 const projects = [
   {
@@ -23,16 +24,16 @@ const projects = [
   {
     id: "breakout",
     title: "Breakout WASM",
-    category: "Rust + Bevy",
-    description: "Classic arcade action reimplemented in Rust using the Bevy engine, compiled to WebAssembly.",
+    category: "TypeScript + Canvas",
+    description: "Classic arcade action with keyboard, pointer, and touch controls.",
     image: "/projects/breakout.png",
     href: "/progetti/breakout",
   },
   {
     id: "kalaha",
     title: "Kalaha AI",
-    category: "Python + Pyodide",
-    description: "Ancient board game played against a Python AI agent running fully in the browser via Pyodide.",
+    category: "TypeScript + AI",
+    description: "Ancient board game against a computer opponent with extra turns and capture rules.",
     image: "/projects/kalaha.webp",
     href: "/progetti/kalaha",
   },
@@ -110,7 +111,7 @@ export default function PortfolioPage() {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={project.image}
+                  image={withBasePath(project.image)}
                   alt={project.title}
                   sx={{ objectFit: "cover" }}
                 />

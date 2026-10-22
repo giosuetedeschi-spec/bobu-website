@@ -457,7 +457,7 @@ function CVWindow() {
       <div className={styles.cvEntry}>
         <div className={styles.cvEntryHeader}>
           <strong>Co-founder & Writer — Mercuzio & Friends</strong>
-          <span className={styles.cvEntryDate}>2022 - Present</span>
+          <span className={styles.cvEntryDate}>15 Nov 2022 - 28 Nov 2025</span>
         </div>
         <p className={styles.cvEntryDesc}>Cultural collective: articles, podcast production, video direction, and collaborations with local institutions in Torino.</p>
       </div>
@@ -466,7 +466,7 @@ function CVWindow() {
           <strong>Events & Culture — Salone del Libro, TEDxTorino, Torino Comics</strong>
           <span className={styles.cvEntryDate}>2019 - 2024</span>
         </div>
-        <p className={styles.cvEntryDesc}>Staff and volunteer roles: logistics, speaker prep, crowd flow, plus jury work for the LiberAzioni film festival and radio programming at Radio erre18.</p>
+        <p className={styles.cvEntryDesc}>Staff and volunteer roles: logistics, speaker prep, crowd flow, jury work for the LiberAzioni film festival, and radio programming at Radio erre18 (27 Feb 2024 - 28 Aug 2025).</p>
       </div>
       <h3 className={`${styles.cvSection} ${styles.cvSectionPurple}`}>Education</h3>
       <div className={styles.cvEntry}>

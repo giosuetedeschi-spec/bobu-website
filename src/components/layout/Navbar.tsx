@@ -20,6 +20,7 @@ const navItems = [
   { name: "CV", href: "/cv" },
   { name: "Portfolio", href: "/portfolio" },
   { name: "Progetti", href: "/progetti" },
+  { name: "Shop", href: "/ecommerce" },
 ];
 
 export function Navbar() {
@@ -45,7 +46,7 @@ export function Navbar() {
           borderColor: "divider",
         }}
       >
-        <Toolbar sx={{ maxWidth: 1200, mx: "auto", width: "100%" }}>
+        <Toolbar sx={{ maxWidth: 1200, mx: "auto", width: "100%", boxSizing: "border-box" }}>
           <Link href="/" style={{ textDecoration: "none" }}>
             <Button sx={{
               fontFamily: '"Outfit", sans-serif',

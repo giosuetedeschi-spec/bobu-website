@@ -1,24 +1,14 @@
-import { PyodideGamePage } from "@/components/games/PyodideGamePage";
-
-const MODULES = [
-  "config.py",
-  "sudoku_utils.py",
-  "generator.py",
-  "solvers/__init__.py",
-  "solvers/backtracking.py",
-  "solvers/ac3.py",
-  "solvers/simulated_annealing.py",
-];
+import Container from "@mui/material/Container";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
+import { SudokuGame } from "@/components/games/SudokuGame";
+import { SudokuSolverVisualizer } from "@/components/games/SudokuSolverVisualizer";
 
 export default function SudokuPage() {
   return (
-    <PyodideGamePage
-      gameId="sudoku"
-      title="Sudoku Solver"
-      tag="Python + Pyodide"
-      scriptPath="/games/sudoku/main.py"
-      moduleFiles={MODULES}
-      description="This runs the Python Sudoku solver in your browser. Check the console output below."
-    />
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <GamePageHeader title="Sudoku" tag="TypeScript · Puzzle" />
+      <SudokuGame />
+      <SudokuSolverVisualizer />
+    </Container>
   );
 }

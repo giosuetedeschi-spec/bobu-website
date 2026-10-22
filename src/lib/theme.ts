@@ -28,31 +28,31 @@ const theme = createTheme({
     divider: "#e2e8f0",
   },
   typography: {
-    fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif',
+    fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
     h1: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 700,
       letterSpacing: "-0.025em",
     },
     h2: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 700,
       letterSpacing: "-0.025em",
     },
     h3: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 600,
     },
     h4: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 600,
     },
     h5: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 600,
     },
     h6: {
-      fontFamily: '"Outfit", sans-serif',
+      fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
       fontWeight: 600,
     },
     button: {

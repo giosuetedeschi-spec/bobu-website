@@ -1,16 +1,12 @@
-import { PyodideGamePage } from "@/components/games/PyodideGamePage";
-
-const MODULES = ["game_logic.py", "ai_engine.py", "endgame_db.py", "zobrist_hashing.py"];
+import Container from "@mui/material/Container";
+import { GamePageHeader } from "@/components/games/GamePageHeader";
+import { KalahaGame } from "@/components/games/KalahaGame";
 
 export default function KalahaPage() {
   return (
-    <PyodideGamePage
-      gameId="kalaha"
-      title="Kalaha"
-      tag="Python + Pyodide"
-      scriptPath="/games/kalaha/main.py"
-      moduleFiles={MODULES}
-      description="This runs the Python implementation of Kalaha in your browser. Check the console output below."
-    />
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <GamePageHeader title="Kalaha" tag="TypeScript · AI" />
+      <KalahaGame />
+    </Container>
   );
 }

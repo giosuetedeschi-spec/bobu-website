@@ -12,7 +12,7 @@ import { GamePageHeader } from "@/components/games/GamePageHeader";
 export default function MazeSolverPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <GamePageHeader title="Maze Solver" tag="JS Native" />
+      <GamePageHeader title="Maze Solver" tag="TypeScript" />
       <Card variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -39,7 +39,7 @@ export default function MazeSolverPage() {
         </CardContent>
       </Card>
       <Box sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-        <GameIframe src="/projects/js-demos/maze-solver/index.html" />
+        <GameIframe src="/projects/js-demos/maze-solver/index.html" title="Maze Solver" />
       </Box>
     </Container>
   );

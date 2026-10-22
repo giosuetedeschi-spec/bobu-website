@@ -25,12 +25,12 @@ export default function EcommercePage() {
           <ConstructionIcon sx={{ fontSize: 40 }} />
         </Box>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
-          Work in Progress
+          Shop concept
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          The shop is currently being built. We are crafting a curated experience for high-quality digital and physical goods.
+          A concept preview of possible Bobu merchandise. No items are currently for sale and checkout is not available.
         </Typography>
-        <NextLink href="/" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "underline" }}>
+        <NextLink href="/" style={{ color: "#2563eb", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif", fontWeight: 600, textDecoration: "underline" }}>
           Back Home
         </NextLink>
       </Box>

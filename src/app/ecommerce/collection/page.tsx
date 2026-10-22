@@ -10,39 +10,39 @@ import NextLink from "next/link";
 const products = [
   {
     name: "Bobu Terminal Tee",
-    price: "€28",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#2563eb,#7c3aed)",
-    status: "In Stock",
+    status: "Not for sale",
   },
   {
     name: "BobuOS Sticker Pack",
-    price: "€6",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#22c55e,#16a34a)",
-    status: "In Stock",
+    status: "Not for sale",
   },
   {
     name: "Pixel Bobu Hoodie",
-    price: "€52",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#f97316,#ea580c)",
-    status: "Preorder",
+    status: "Not for sale",
   },
   {
     name: "Retro Arcade Mug",
-    price: "€14",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#ec4899,#db2777)",
-    status: "In Stock",
+    status: "Not for sale",
   },
   {
     name: "Kalaha Wooden Set",
-    price: "€45",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#eab308,#ca8a04)",
-    status: "Sold Out",
+    status: "Not for sale",
   },
   {
     name: "Bobu Enamel Pin",
-    price: "€9",
+    price: "Concept only",
     gradient: "linear-gradient(135deg,#06b6d4,#0891b2)",
-    status: "In Stock",
+    status: "Not for sale",
   },
 ];
 
@@ -57,10 +57,10 @@ export default function CollectionPage() {
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Box sx={{ mb: 5 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-          Collection
+          Concept collection
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          A small first drop. More on the way.
+          Design mockups only; these products, prices, and stock are not available for purchase.
         </Typography>
       </Box>
 
@@ -90,7 +90,7 @@ export default function CollectionPage() {
         ))}
       </Grid>
 
-      <NextLink href="/ecommerce" style={{ display: "inline-block", marginTop: 32, color: "#2563eb", fontWeight: 600, textDecoration: "underline" }}>
+      <NextLink href="/ecommerce" style={{ display: "inline-block", marginTop: 32, color: "#2563eb", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif", fontWeight: 600, textDecoration: "underline" }}>
         Back to Shop
       </NextLink>
     </Container>

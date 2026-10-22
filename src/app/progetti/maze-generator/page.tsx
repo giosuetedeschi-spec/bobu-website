@@ -12,7 +12,7 @@ import { GamePageHeader } from "@/components/games/GamePageHeader";
 export default function MazeGeneratorPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <GamePageHeader title="Maze Generator" tag="JS Native" />
+      <GamePageHeader title="Maze Generator" tag="TypeScript" />
       <Card variant="outlined" sx={{ borderRadius: 3, mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -39,7 +39,7 @@ export default function MazeGeneratorPage() {
         </CardContent>
       </Card>
       <Box sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-        <GameIframe src="/projects/js-demos/maze-generator/index.html" />
+        <GameIframe src="/projects/js-demos/maze-generator/index.html" title="Maze Generator" />
       </Box>
     </Container>
   );
