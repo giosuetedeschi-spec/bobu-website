@@ -6,5 +6,5 @@
     "moduleDetection": "force"
   },
   "include": ["projects/browser-game-sources/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "projects/browser-game-sources/external/games/*/game.ts"]
 }

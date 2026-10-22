@@ -1,11 +1,35 @@
 [
   {
+    "source": "inline/abalone.ts",
+    "output": "public/games/abalone/game.js"
+  },
+  {
+    "source": "inline/azul.ts",
+    "output": "public/games/azul/game.js"
+  },
+  {
     "source": "external/games/bitwise-ops/js/main.ts",
     "output": "public/games/bitwise-ops/js/main.js"
   },
   {
+    "source": "inline/flappy-bird.ts",
+    "output": "public/games/flappy-bird/game.js"
+  },
+  {
+    "source": "inline/mastermind.ts",
+    "output": "public/games/mastermind/game.js"
+  },
+  {
+    "source": "inline/pong.ts",
+    "output": "public/games/pong/game.js"
+  },
+  {
     "source": "external/games/snake/js/constants.ts",
     "output": "public/games/snake/js/constants.js"
+  },
+  {
+    "source": "external/games/snake/js/engine.ts",
+    "output": "public/games/snake/js/engine.js"
   },
   {
     "source": "external/games/snake/js/entities.ts",
@@ -16,8 +40,24 @@
     "output": "public/games/snake/js/main.js"
   },
   {
+    "source": "external/games/snake/js/renderer.ts",
+    "output": "public/games/snake/js/renderer.js"
+  },
+  {
+    "source": "external/games/snake/js/rng.ts",
+    "output": "public/games/snake/js/rng.js"
+  },
+  {
     "source": "external/games/snake/js/scenes.ts",
     "output": "public/games/snake/js/scenes.js"
+  },
+  {
+    "source": "external/games/snake/js/selftest.ts",
+    "output": "public/games/snake/js/selftest.js"
+  },
+  {
+    "source": "inline/tris.ts",
+    "output": "public/games/tris/game.js"
   },
   {
     "source": "external/projects/js-demos/bitwise-ops/js/main.ts",
@@ -36,6 +76,10 @@
     "output": "public/projects/js-demos/flip-7/src/engine.js"
   },
   {
+    "source": "external/projects/js-demos/flip-7/src/selftest.ts",
+    "output": "public/projects/js-demos/flip-7/src/selftest.js"
+  },
+  {
     "source": "external/projects/js-demos/flip-7/src/ui.ts",
     "output": "public/projects/js-demos/flip-7/src/ui.js"
   },
@@ -52,6 +96,10 @@
     "output": "public/projects/js-demos/maze-generator/src/algorithms/prims.js"
   },
   {
+    "source": "external/projects/js-demos/maze-generator/src/grid.ts",
+    "output": "public/projects/js-demos/maze-generator/src/grid.js"
+  },
+  {
     "source": "external/projects/js-demos/maze-generator/src/main.ts",
     "output": "public/projects/js-demos/maze-generator/src/main.js"
   },
@@ -62,6 +110,10 @@
   {
     "source": "external/projects/js-demos/maze-solver/src/algorithms/astar.ts",
     "output": "public/projects/js-demos/maze-solver/src/algorithms/astar.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/backtracker.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/backtracker.js"
   },
   {
     "source": "external/projects/js-demos/maze-solver/src/algorithms/bfs.ts",
@@ -76,6 +128,14 @@
     "output": "public/projects/js-demos/maze-solver/src/algorithms/generator.js"
   },
   {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/search.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/search.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/grid.ts",
+    "output": "public/projects/js-demos/maze-solver/src/grid.js"
+  },
+  {
     "source": "external/projects/js-demos/maze-solver/src/main.ts",
     "output": "public/projects/js-demos/maze-solver/src/main.js"
   },
@@ -84,27 +144,15 @@
     "output": "public/projects/js-demos/maze-solver/src/renderer.js"
   },
   {
-    "source": "inline/abalone.ts",
-    "output": "public/games/abalone/game.js"
+    "source": "inline/breakout.ts",
+    "output": "public/games/breakout/game.js"
   },
   {
-    "source": "inline/azul.ts",
-    "output": "public/games/azul/game.js"
+    "source": "inline/mirror-drift.ts",
+    "output": "public/games/mirror-drift/game.js"
   },
   {
-    "source": "inline/flappy-bird.ts",
-    "output": "public/games/flappy-bird/game.js"
-  },
-  {
-    "source": "inline/mastermind.ts",
-    "output": "public/games/mastermind/game.js"
-  },
-  {
-    "source": "inline/pong.ts",
-    "output": "public/games/pong/game.js"
-  },
-  {
-    "source": "inline/tris.ts",
-    "output": "public/games/tris/game.js"
+    "source": "inline/twins.ts",
+    "output": "public/games/twins/game.js"
   }
 ]

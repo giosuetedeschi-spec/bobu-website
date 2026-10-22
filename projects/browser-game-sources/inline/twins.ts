@@ -1,0 +1,1407 @@
+// @ts-nocheck
+"use strict";
+
+/* ============================================================== constants */
+
+// Logical portrait space; the canvas scales to fit whatever box it gets.
+const W = 500, H = 800;
+const MID = W / 2;
+const WALL = 7;                    // half-thickness of the centre wall
+const BALL_R = 13;
+const BALL_Y = H * 0.60;           // both balls sit at a fixed screen height
+
+// Sideways gravity pulls each ball toward the centre wall. A held input
+// pushes it outward; the longer the hold, the wider the arc.
+const GRAVITY = 0.78;
+const THRUST = 1.9;
+const MAX_HOLD = 20;               // ticks of thrust a single hold can apply
+const MAX_OUT = 104;               // furthest a ball may get from the wall
+
+const SPEED_START = 3.6, SPEED_MAX = 9.0, RAMP_DISTANCE = 6000;
+
+// Spike spacing is measured in TICKS, not pixels. A ball's arc takes a fixed
+// number of ticks regardless of scroll speed, so spacing the course by
+// distance would make it literally impossible once the speed ramps up.
+const GAP_TICKS_START = 78, GAP_TICKS_MIN = 40;
+
+// Kept deliberately short: a spike blocks the lane for (SPIKE_H + 2*BALL_R)
+// pixels of travel, and at the opening scroll speed that time has to fit
+// inside the window a single arc can stay clear of the wall.
+const SPIKE_H = 30;                // spike footprint along the course
+const SPIKE_DEPTH = 40;            // how far it juts into the lane
+
+const GATE_EVERY = 900;            // distance between swap gates
+const GATE_H = 26;
+
+// Collectibles sit out in the lane, so picking one up costs you an arc you
+// might have wanted for a spike. Reachable but never free.
+const ORB_R = 9;
+const ORB_POINTS = 25;
+const ORB_MIN_OUT = 46, ORB_MAX_OUT = 94;
+const ORB_TICKS_MIN = 70, ORB_TICKS_MAX = 150;
+const ORB_SPECIAL_CHANCE = 0.14;
+const X2_ORB_R = 12;
+const X2_DURATION = 420;           // ticks of doubled scoring
+const X2_COLOUR = '#fbbf24';
+
+// Losing a twin is a setback, not the end: the survivor scores faster, and
+// portals start appearing that bring the lost twin back.
+const SOLO_RATE = 1.8;             // distance scoring multiplier while solo
+const PORTAL_R = 20;
+const PORTAL_COLOUR = '#7dd3fc';
+const PORTAL_TICKS_MIN = 150, PORTAL_TICKS_MAX = 300;
+const PORTAL_MIN_OUT = 40, PORTAL_MAX_OUT = 92;
+const REVIVE_GRACE = 50;           // ticks the returning twin cannot die
+const REVIVE_SETTLE = 60;          // ticks before its lane spawns spikes again
+
+// Backdrop: stars drift in the dark half, clouds in the light one.
+const STAR_COUNT = 60;
+const CLOUD_COUNT = 8;
+
+const TRAIL_EVERY = 2;             // ticks between trail motes
+const TRAIL_LIFE = 46;
+
+const THEMES = [
+  { name: 'ink',    dark: '#222b3d', light: '#e8e9ed', accent: '#f5f6fa' },
+  { name: 'teal',   dark: '#0f9b8e', light: '#f2f5f4', accent: '#ffffff' },
+  { name: 'cyan',   dark: '#12a8d6', light: '#f0f7fa', accent: '#ffffff' },
+  { name: 'purple', dark: '#a626d4', light: '#f8f2fb', accent: '#ffffff' },
+  { name: 'coral',  dark: '#e2455c', light: '#fdf2f3', accent: '#ffffff' },
+];
+const THEME_EVERY = 400;           // distance between palette changes
+
+function mulberry32(seed) {
+  let a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function safeGet(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch { /* sandboxed iframe */ } }
+
+/* ================================================================== state */
+
+/**
+ * `side` is which half of the screen the ball is currently in (0 = left,
+ * 1 = right). `input` is which control drives it. A swap gate flips BOTH:
+ * the balls cross over and each input keeps its own ball, so you end up
+ * reaching across.
+ */
+const game = {
+  seed: 1,
+  rng: mulberry32(1),
+  status: 'ready',                 // ready | playing | over
+  paused: false,
+  balls: [],
+  spikes: [],                      // { side, y } -- side is the lane it blocks
+  gates: [],                       // { y, passed }
+  orbs: [],                        // { side, y, out, kind, taken }
+  particles: [],
+  motes: [],                       // trail particles shed by the balls
+  stars: [],                       // dark-half backdrop
+  clouds: [],                      // light-half backdrop
+  ticks: 0,
+  distance: 0,
+  score: 0,
+  best: Number(safeGet('twins-best', '0')) || 0,
+  laneNext: [0, 0],                // ticks until the next spike in each lane
+  orbNext: [0, 0],                 // ticks until the next collectible per lane
+  portals: [],                     // { side, y, out, used } -- only while solo
+  portalNext: 0,
+  revives: 0,
+  x2Ticks: 0,                      // remaining ticks of doubled scoring
+  orbsTaken: 0,
+  nextGateAt: GATE_EVERY,
+  gatePending: false,              // a gate is due, waiting for a clear row
+  swapFlash: 0,
+  shake: 0,
+  dead: null,                      // which ball hit something
+  theme: 0,
+  themeMix: 1,                     // 0..1 crossfade into the current theme
+};
+
+const speed = () => SPEED_START + (SPEED_MAX - SPEED_START) * Math.min(1, game.distance / RAMP_DISTANCE);
+const gapTicks = () => GAP_TICKS_START - (GAP_TICKS_START - GAP_TICKS_MIN) * Math.min(1, game.distance / RAMP_DISTANCE);
+const spikeGap = () => gapTicks() * speed();
+
+/** Outward direction for a lane: left lane pushes left, right lane pushes right. */
+const outward = (side) => (side === 0 ? -1 : 1);
+
+/** x of the wall face a ball rests against, in its lane. */
+const wallFace = (side) => (side === 0 ? MID - WALL - BALL_R : MID + WALL + BALL_R);
+
+function makeBall(input) {
+  const side = input;
+  return {
+    input,                         // 0 = left control, 1 = right control
+    side,                          // which half it is currently in
+    out: 0,                        // distance from the wall face, >= 0
+    vel: 0,                        // outward velocity
+    held: 0,                       // ticks of thrust used in this hold
+    grounded: true,                // touching the wall
+    alive: true,
+    grace: 0,                      // ticks of immunity after being revived
+    trail: [],
+  };
+}
+
+const aliveBalls = () => game.balls.filter((b) => b.alive);
+
+function reset(seed) {
+  game.seed = seed === undefined ? game.seed : (seed >>> 0 || 1);
+  game.rng = mulberry32(game.seed);
+  game.status = 'ready';
+  game.paused = false;
+  game.balls = [makeBall(0), makeBall(1)];
+  game.spikes = [];
+  game.gates = [];
+  game.orbs = [];
+  game.portals = [];
+  game.particles = [];
+  game.motes = [];
+  buildBackdrop();
+  game.ticks = 0;
+  game.distance = 0;
+  game.score = 0;
+  game.laneNext = [10, 34];        // stagger the two lanes so they never sync
+  game.orbNext = [55, 96];
+  game.portalNext = 0;
+  game.revives = 0;
+  game.x2Ticks = 0;
+  game.orbsTaken = 0;
+  game.nextGateAt = GATE_EVERY;
+  game.gatePending = false;
+  game.swapFlash = 0;
+  game.shake = 0;
+  game.dead = null;
+  game.theme = 0;
+  game.themeMix = 1;
+  HELD[0] = false;
+  HELD[1] = false;
+}
+
+/* ================================================================= spawns */
+
+/**
+ * Each lane runs its own independent spike schedule, which is what makes the
+ * two courses genuinely different rather than mirrored. Scheduling per lane
+ * (rather than jittering a shared spawn) guarantees a minimum gap within a
+ * lane, so a course can never demand an arc the ball has no time to make.
+ */
+function spawnLaneSpike(side) {
+  game.spikes.push({ side, y: -SPIKE_H });
+  game.laneNext[side] = Math.round(gapTicks() * (1 + game.rng() * 0.55));
+}
+
+function spawnGate() {
+  game.gates.push({ y: -GATE_H, passed: false });
+}
+
+/**
+ * Backdrop layers. Built once per run from the seeded PRNG so a seed always
+ * produces the same sky, and scrolled at a fraction of the course speed so the
+ * lanes read as the fast layer.
+ */
+function buildBackdrop() {
+  game.stars = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    game.stars.push({
+      x: 6 + game.rng() * (MID - 18),
+      y: game.rng() * H,
+      r: 0.7 + game.rng() * 1.5,
+      par: 0.12 + game.rng() * 0.3,      // nearer stars scroll faster
+      phase: game.rng() * Math.PI * 2,   // twinkle offset
+    });
+  }
+  game.clouds = [];
+  for (let i = 0; i < CLOUD_COUNT; i++) {
+    const w = 54 + game.rng() * 78;
+    game.clouds.push({
+      x: MID + 10 + game.rng() * (MID - w - 16),
+      y: game.rng() * H,
+      w,
+      h: 15 + game.rng() * 13,
+      par: 0.16 + game.rng() * 0.24,
+      a: 0.05 + game.rng() * 0.07,
+    });
+  }
+}
+
+/** A collectible out in the lane: small points, or a rarer x2 token. */
+function spawnOrb(side) {
+  const special = game.rng() < ORB_SPECIAL_CHANCE;
+  const r = special ? X2_ORB_R : ORB_R;
+  game.orbs.push({
+    side,
+    y: -r * 2,
+    out: ORB_MIN_OUT + game.rng() * (ORB_MAX_OUT - ORB_MIN_OUT),
+    kind: special ? 'double' : 'point',
+    taken: false,
+  });
+  game.orbNext[side] = Math.round(ORB_TICKS_MIN + game.rng() * (ORB_TICKS_MAX - ORB_TICKS_MIN));
+}
+
+const orbX = (o) => wallFace(o.side) + outward(o.side) * o.out;
+
+/* ================================================================== death */
+
+/**
+ * Losing one twin no longer ends the run. The survivor carries on at a higher
+ * scoring rate, and portals begin appearing that can bring the twin back. The
+ * run only ends once both have crashed.
+ */
+function die(ball) {
+  if (game.status !== 'playing' || !ball.alive) return;
+  ball.alive = false;
+  ball.trail.length = 0;
+  game.dead = ball.input;
+  game.shake = 1;
+
+  const bx = ballX(ball);
+  for (let i = 0; i < 24; i++) {
+    game.particles.push({
+      x: bx, y: BALL_Y,
+      vx: (game.rng() - 0.5) * 9,
+      vy: (game.rng() - 0.5) * 9,
+      life: 1,
+      side: ball.side,
+    });
+  }
+
+  if (aliveBalls().length === 0) {
+    game.status = 'over';
+    game.portals = [];
+    if (Math.round(game.score) > game.best) {
+      game.best = Math.round(game.score);
+      safeSet('twins-best', String(game.best));
+    }
+    return;
+  }
+
+  // Solo now: give the player a beat before the first rescue chance.
+  game.portalNext = Math.round(PORTAL_TICKS_MIN * 0.7);
+}
+
+/** Brings the lost twin back through a portal, into the free lane. */
+function revive() {
+  const twin = game.balls.find((b) => !b.alive);
+  const survivor = aliveBalls()[0];
+  if (!twin || !survivor) return false;
+
+  twin.side = 1 - survivor.side;
+  twin.out = 0;
+  twin.vel = 0;
+  twin.held = 0;
+  twin.grounded = true;
+  twin.trail.length = 0;
+  twin.alive = true;
+  twin.grace = REVIVE_GRACE;
+
+  // It returns to the wall, so clear the row it lands on and hold that lane's
+  // spikes back -- otherwise the rescue could drop it straight onto a spike.
+  game.spikes = game.spikes.filter((sp) => !(
+    sp.side === twin.side && sp.y + SPIKE_H > BALL_Y - 140 && sp.y < BALL_Y + 80
+  ));
+  game.laneNext[twin.side] = Math.max(game.laneNext[twin.side], REVIVE_SETTLE);
+
+  game.portals = [];
+  game.revives++;
+  game.swapFlash = 1;
+  for (let i = 0; i < 20; i++) {
+    game.particles.push({
+      x: ballX(twin), y: BALL_Y,
+      vx: (game.rng() - 0.5) * 7, vy: (game.rng() - 0.5) * 7,
+      life: 1, side: twin.side, portal: true,
+    });
+  }
+  return true;
+}
+
+/** A rescue portal, only ever spawned in the surviving twin's lane. */
+function spawnPortal() {
+  const survivor = aliveBalls()[0];
+  if (!survivor) return;
+  game.portals.push({
+    side: survivor.side,
+    y: -PORTAL_R * 2,
+    out: PORTAL_MIN_OUT + game.rng() * (PORTAL_MAX_OUT - PORTAL_MIN_OUT),
+    used: false,
+  });
+  game.portalNext = Math.round(PORTAL_TICKS_MIN + game.rng() * (PORTAL_TICKS_MAX - PORTAL_TICKS_MIN));
+}
+
+const portalX = (p) => wallFace(p.side) + outward(p.side) * p.out;
+
+const ballX = (b) => wallFace(b.side) + outward(b.side) * b.out;
+
+/* =================================================================== tick */
+
+const HELD = [false, false];
+
+function tick() {
+  game.ticks++;
+  if (game.shake > 0) game.shake = Math.max(0, game.shake - 0.04);
+  if (game.swapFlash > 0) game.swapFlash = Math.max(0, game.swapFlash - 0.045);
+  if (game.themeMix < 1) game.themeMix = Math.min(1, game.themeMix + 0.02);
+
+  for (const p of game.particles) { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life -= 0.02; }
+  game.particles = game.particles.filter((p) => p.life > 0);
+
+  if (game.status !== 'playing' || game.paused) return;
+
+  const v = speed();
+  game.distance += v;
+  if (game.x2Ticks > 0) game.x2Ticks--;
+  const solo = aliveBalls().length === 1;
+  const mult = (game.x2Ticks > 0 ? 2 : 1) * (solo ? SOLO_RATE : 1);
+  game.score += (v / 10) * mult;
+
+  // Backdrop parallax. Stars and clouds are world-fixed, so they slide down the
+  // screen as the course scrolls up past them, each at its own fraction.
+  for (const st of game.stars) { st.y += v * st.par; if (st.y > H) st.y -= H; }
+  for (const cl of game.clouds) { cl.y += v * cl.par; if (cl.y > H + cl.h) cl.y -= H + cl.h * 2; }
+
+  // Motes stream *backwards along the ball's own path* -- they do not inherit
+  // the course scroll, so the tail traces the arc instead of raining straight
+  // down. They coast and slow rather than falling.
+  for (const m of game.motes) {
+    m.x += m.vx;
+    m.y += m.vy;
+    m.vx *= 0.93;
+    m.vy *= 0.93;
+    m.life--;
+  }
+  game.motes = game.motes.filter((m) => m.life > 0);
+
+  const themeIndex = Math.floor(game.distance / 10 / THEME_EVERY) % THEMES.length;
+  if (themeIndex !== game.theme) { game.theme = themeIndex; game.themeMix = 0; }
+
+  // ---- balls ------------------------------------------------------------
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    if (ball.grace > 0) ball.grace--;
+    const holding = HELD[ball.input];
+
+    if (holding && ball.held < MAX_HOLD) {
+      // Thrust away from the wall, tapering so a long hold is wide but bounded.
+      ball.vel += THRUST * (1 - ball.held / MAX_HOLD) * 0.9 + 0.35;
+      ball.held++;
+      ball.grounded = false;
+    } else if (!holding) {
+      // Releasing re-arms the next hold, but only once back on the wall.
+      if (ball.grounded) ball.held = 0;
+    }
+
+    ball.vel -= GRAVITY;             // gravity always pulls back to the wall
+    ball.out += ball.vel;
+
+    if (ball.out >= MAX_OUT) { ball.out = MAX_OUT; ball.vel = Math.min(ball.vel, 0); }
+
+    if (ball.out <= 0) {
+      ball.out = 0;
+      ball.vel = 0;
+      ball.grounded = true;
+      if (!holding) ball.held = 0;
+    }
+
+    ball.trail.push({ x: ballX(ball), y: BALL_Y, life: 1 });
+    if (ball.trail.length > 26) ball.trail.shift();
+    for (const t of ball.trail) t.life -= 0.038;
+
+    // Motes are shed faster the harder the ball is moving, so a big arc leaves
+    // a visible comet tail and sitting on the wall leaves almost nothing.
+    const moving = Math.abs(ball.vel) > 0.6 || ball.out > 6;
+    if (moving && game.ticks % TRAIL_EVERY === 0) {
+      // Emitted moving the opposite way to the ball, at a fraction of its
+      // speed, with a little spread so the tail reads as particles.
+      const screenVel = outward(ball.side) * ball.vel;
+      game.motes.push({
+        x: ballX(ball),
+        y: BALL_Y + (game.rng() - 0.5) * 3,
+        r: 1.4 + game.rng() * 2.4,
+        vx: -screenVel * (0.22 + game.rng() * 0.2),
+        vy: (game.rng() - 0.5) * 0.5,
+        life: Math.round(TRAIL_LIFE * (0.6 + game.rng() * 0.4)),
+        max: TRAIL_LIFE,
+        side: ball.side,
+      });
+    }
+  }
+
+  // ---- course -----------------------------------------------------------
+  // A gate swaps the balls between lanes. If a spike happened to be sitting at
+  // the ball's row when that lands, the swap is an unavoidable death -- so a
+  // gate waits for a genuinely clear row, and spikes pause until it has been
+  // spawned. That pause doubles as a readable "something is coming" beat.
+  game.nextGateAt -= v;
+  if (game.nextGateAt <= 0) game.gatePending = true;
+
+  if (game.gatePending) {
+    const rowBusy = game.spikes.some((s) => s.y < BALL_Y + BALL_R);
+    if (!rowBusy) {
+      spawnGate();
+      game.gatePending = false;
+      game.nextGateAt = GATE_EVERY;
+      // Leave a settling beat after the swap before spikes resume, so the
+      // player can re-orient to which thumb is now on which side.
+      const settle = Math.ceil((BALL_Y + GATE_H) / v) + 26;
+      game.laneNext[0] = Math.max(game.laneNext[0], settle);
+      game.laneNext[1] = Math.max(game.laneNext[1], settle);
+    }
+  } else {
+    for (const side of [0, 1]) {
+      game.laneNext[side] -= 1;
+      if (game.laneNext[side] <= 0) spawnLaneSpike(side);
+      game.orbNext[side] -= 1;
+      if (game.orbNext[side] <= 0) spawnOrb(side);
+    }
+  }
+
+  // Rescue portals only exist while a twin is missing.
+  if (solo) {
+    game.portalNext -= 1;
+    if (game.portalNext <= 0 && game.portals.length === 0) spawnPortal();
+  } else if (game.portals.length) {
+    game.portals = [];
+  }
+
+  for (const s of game.spikes) s.y += v;
+  for (const g of game.gates) g.y += v;
+  for (const o of game.orbs) o.y += v;
+  for (const pt of game.portals) pt.y += v;
+  game.spikes = game.spikes.filter((s) => s.y < H + SPIKE_H);
+  game.gates = game.gates.filter((g) => g.y < H + GATE_H);
+  game.orbs = game.orbs.filter((o) => !o.taken && o.y < H + X2_ORB_R * 2);
+  game.portals = game.portals.filter((pt) => !pt.used && pt.y < H + PORTAL_R * 2);
+
+  // ---- portals ----------------------------------------------------------
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const bx = ballX(ball);
+    for (const pt of game.portals) {
+      if (pt.used || pt.side !== ball.side) continue;
+      const r = PORTAL_R + BALL_R;
+      const dx = portalX(pt) - bx;
+      const dy = pt.y - BALL_Y;
+      if (dx * dx + dy * dy > r * r) continue;
+      pt.used = true;
+      revive();
+      break;
+    }
+  }
+
+  // ---- collectibles -----------------------------------------------------
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const bx = ballX(ball);
+    for (const o of game.orbs) {
+      if (o.taken || o.side !== ball.side) continue;
+      const r = (o.kind === 'double' ? X2_ORB_R : ORB_R) + BALL_R;
+      const dx = orbX(o) - bx;
+      const dy = o.y - BALL_Y;
+      if (dx * dx + dy * dy > r * r) continue;
+
+      o.taken = true;
+      game.orbsTaken++;
+      if (o.kind === 'double') {
+        game.x2Ticks = X2_DURATION;
+        game.x2Flash = 1;
+      } else {
+        game.score += ORB_POINTS * (game.x2Ticks > 0 ? 2 : 1);
+      }
+      const burst = o.kind === 'double' ? 16 : 9;
+      for (let i = 0; i < burst; i++) {
+        game.particles.push({
+          x: orbX(o), y: o.y,
+          vx: (game.rng() - 0.5) * 6, vy: (game.rng() - 0.5) * 6,
+          life: 1, side: o.side, gold: o.kind === 'double',
+        });
+      }
+    }
+  }
+  if (game.orbs.some((o) => o.taken)) game.orbs = game.orbs.filter((o) => !o.taken);
+
+  // ---- collisions -------------------------------------------------------
+  // No early return: one twin dying leaves the other still playing, so the
+  // rest of the tick has to run.
+  for (const ball of game.balls) {
+    if (!ball.alive || ball.grace > 0) continue;
+    for (const s of game.spikes) {
+      if (s.side !== ball.side) continue;
+      // Spikes jut out of the wall, so only a ball still close to the wall
+      // is in danger. Swing wide enough and it passes over the tip.
+      const overlapY = BALL_Y + BALL_R > s.y && BALL_Y - BALL_R < s.y + SPIKE_H;
+      if (overlapY && ball.out < SPIKE_DEPTH) { die(ball); break; }
+    }
+  }
+  if (game.status !== 'playing') return;
+
+  // ---- swap gates -------------------------------------------------------
+  for (const g of game.gates) {
+    if (g.passed || g.y + GATE_H < BALL_Y) continue;
+    if (g.y <= BALL_Y && g.y + GATE_H >= BALL_Y) {
+      g.passed = true;
+      swap();
+    }
+  }
+}
+
+/** Balls cross to the other half; each control keeps its own ball. */
+function swap() {
+  for (const ball of game.balls) if (ball.alive) ball.side = 1 - ball.side;
+  // Portals cross too. Without this a swap leaves the rescue sitting in the
+  // lane the survivor just left, where it can never be reached.
+  for (const pt of game.portals) pt.side = 1 - pt.side;
+  game.swapFlash = 1;
+  for (let i = 0; i < 14; i++) {
+    game.particles.push({
+      x: MID, y: BALL_Y + (game.rng() - 0.5) * 40,
+      vx: (game.rng() - 0.5) * 7, vy: (game.rng() - 0.5) * 7,
+      life: 1, side: i % 2,
+    });
+  }
+}
+
+/* ================================================================= render */
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+function fit() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const r = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round((r.width || W) * dpr));
+  const h = Math.max(1, Math.round((r.height || H) * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function mixHex(a, b, t) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.substr(i, 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.substr(i, 2), 16));
+  return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], t))).join(',')})`;
+}
+
+function palette() {
+  const cur = THEMES[game.theme];
+  const prev = THEMES[(game.theme - 1 + THEMES.length) % THEMES.length];
+  const t = game.themeMix;
+  return { dark: mixHex(prev.dark, cur.dark, t), light: mixHex(prev.light, cur.light, t) };
+}
+
+/** A spike is a triangle jutting out of the wall into `side`'s lane. */
+function spikePath(s) {
+  const dir = outward(s.side);
+  const base = s.side === 0 ? MID - WALL : MID + WALL;
+  ctx.beginPath();
+  ctx.moveTo(base, s.y);
+  ctx.lineTo(base + dir * SPIKE_DEPTH, s.y + SPIKE_H / 2);
+  ctx.lineTo(base, s.y + SPIKE_H);
+  ctx.closePath();
+}
+
+function draw(t) {
+  fit();
+  const scale = canvas.width / W;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (game.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * 10 * game.shake, (Math.random() - 0.5) * 10 * game.shake);
+  }
+
+  const { dark, light } = palette();
+
+  // Two halves, inverted.
+  ctx.fillStyle = dark;
+  ctx.fillRect(0, 0, MID, H);
+  ctx.fillStyle = light;
+  ctx.fillRect(MID, 0, MID, H);
+
+  // Stars in the dark half. Nearer ones are bigger, brighter and twinkle more.
+  for (const st of game.stars) {
+    const twinkle = 0.55 + Math.sin(t * 0.06 + st.phase) * 0.35;
+    ctx.globalAlpha = Math.max(0.08, (0.25 + st.par) * twinkle);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Clouds in the light half: overlapping soft lozenges, a shade of the dark
+  // colour so they tint with the theme instead of going flat grey.
+  for (const cl of game.clouds) {
+    ctx.globalAlpha = cl.a;
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    // Mirrored: the bulk sits on the right and the wisp tapers off to the left.
+    ctx.ellipse(cl.x + cl.w * 0.7, cl.y, cl.w * 0.34, cl.h * 0.62, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.42, cl.y + cl.h * 0.18, cl.w * 0.28, cl.h * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(cl.x + cl.w * 0.25, cl.y - cl.h * 0.08, cl.w * 0.24, cl.h * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Spikes: each is drawn in the colour of the *other* half, cut into the lane.
+  for (const s of game.spikes) {
+    ctx.fillStyle = s.side === 0 ? light : dark;
+    spikePath(s);
+    ctx.fill();
+  }
+
+  // The wall itself.
+  ctx.fillStyle = light;
+  ctx.fillRect(MID - WALL, 0, WALL, H);
+  ctx.fillStyle = dark;
+  ctx.fillRect(MID, 0, WALL, H);
+
+  // Swap gates: a bright band across both lanes.
+  for (const g of game.gates) {
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = light;
+    ctx.fillRect(0, g.y, MID, GATE_H);
+    ctx.fillStyle = dark;
+    ctx.fillRect(MID, g.y, MID, GATE_H);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = dark;
+    ctx.font = '600 13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SWAP', MID / 2, g.y + 18);
+    ctx.fillStyle = light;
+    ctx.fillText('SWAP', MID + MID / 2, g.y + 18);
+  }
+
+  // Collectibles: a smaller, glowing shade of the ball that would collect it,
+  // ringed so it never reads as a second ball. The x2 token is gold.
+  for (const o of game.orbs) {
+    if (o.taken) continue;
+    const base = o.side === 0 ? light : dark;
+    const x = orbX(o);
+    const pulse = 1 + Math.sin(t * 0.16 + o.y * 0.04) * 0.12;
+
+    ctx.save();
+    if (o.kind === 'double') {
+      ctx.shadowColor = X2_COLOUR;
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = X2_COLOUR;
+      ctx.beginPath();
+      ctx.arc(x, o.y, X2_ORB_R * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = base;
+      ctx.lineWidth = 1.6;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.arc(x, o.y, X2_ORB_R * pulse + 4.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#3a2a05';
+      ctx.font = '800 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('x2', x, o.y + 0.5);
+      ctx.textBaseline = 'alphabetic';
+    } else {
+      ctx.shadowColor = base;
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = base;
+      ctx.globalAlpha = 0.92;
+      ctx.beginPath();
+      ctx.arc(x, o.y, ORB_R * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = base;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(x, o.y, ORB_R * pulse + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // Rescue portals: a bright ring you steer the surviving twin through.
+  for (const pt of game.portals) {
+    if (pt.used) continue;
+    const x = portalX(pt);
+    const spin = t * 0.05;
+    const pulse = 1 + Math.sin(t * 0.12 + pt.y * 0.03) * 0.08;
+    ctx.save();
+    ctx.translate(x, pt.y);
+    ctx.rotate(spin);
+    ctx.shadowColor = PORTAL_COLOUR;
+    ctx.shadowBlur = 26;
+    ctx.strokeStyle = PORTAL_COLOUR;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, PORTAL_R * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 7]);
+    ctx.beginPath();
+    ctx.arc(0, 0, PORTAL_R * pulse - 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = PORTAL_COLOUR;
+    ctx.font = '700 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TWIN', x, pt.y + PORTAL_R + 14);
+    ctx.globalAlpha = 1;
+  }
+
+  // Trail motes: world-fixed specks shed behind each ball, shrinking as they go.
+  for (const m of game.motes) {
+    const k = m.life / m.max;
+    ctx.globalAlpha = k * 0.62;
+    ctx.fillStyle = m.side === 0 ? light : dark;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.r * (0.35 + k * 0.65), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // The ribbon right behind each ball, on top of the motes.
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const colour = ball.side === 0 ? light : dark;
+    for (const p of ball.trail) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = p.life * 0.5;
+      ctx.fillStyle = colour;
+      const r = BALL_R * 0.42 * p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Balls: each takes the colour of the opposite half so it always contrasts.
+  // A just-revived twin blinks for its grace window.
+  for (const ball of game.balls) {
+    if (!ball.alive) continue;
+    const blink = ball.grace > 0 && Math.floor(t * 0.25) % 2 === 0;
+    ctx.globalAlpha = blink ? 0.45 : 1;
+    ctx.fillStyle = ball.side === 0 ? light : dark;
+    ctx.beginPath();
+    ctx.arc(ballX(ball), BALL_Y, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    if (ball.grace > 0) {
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = PORTAL_COLOUR;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ballX(ball), BALL_Y, BALL_R + 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  for (const p of game.particles) {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.gold ? X2_COLOUR : p.portal ? PORTAL_COLOUR : (p.side === 0 ? light : dark);
+    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+  }
+  ctx.globalAlpha = 1;
+
+  if (game.swapFlash > 0) {
+    ctx.globalAlpha = game.swapFlash * 0.4;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Score, drawn twice so it reads on both halves.
+  if (game.status === 'playing') {
+    const label = String(Math.round(game.score));
+    ctx.font = '700 44px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.30)';
+    ctx.fillText(label, MID - 22, 74);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillText(label, MID + 22, 74);
+
+    // Badges stack under the score rather than sitting on top of it.
+    let badgeY = 108;
+
+    // Flying solo: show the boosted rate, so the reward for surviving alone
+    // is legible rather than silent.
+    if (aliveBalls().length === 1) {
+      ctx.textAlign = 'center';
+      ctx.font = '700 13px system-ui, sans-serif';
+      ctx.fillStyle = PORTAL_COLOUR;
+      ctx.globalAlpha = 0.75 + Math.sin(t * 0.16) * 0.2;
+      ctx.fillText(`SOLO x${SOLO_RATE}`, MID, badgeY);
+      ctx.globalAlpha = 1;
+      badgeY += 30;
+    }
+
+    // While doubled, a gold badge and a bar draining toward expiry.
+    if (game.x2Ticks > 0) {
+      const k = game.x2Ticks / X2_DURATION;
+      ctx.textAlign = 'center';
+      ctx.font = '800 22px system-ui, sans-serif';
+      ctx.fillStyle = X2_COLOUR;
+      ctx.globalAlpha = 0.55 + Math.sin(t * 0.3) * 0.25;
+      ctx.fillText('x2', MID, badgeY);
+      ctx.globalAlpha = 1;
+      const barW = 96;
+      ctx.fillStyle = 'rgba(251,191,36,0.25)';
+      ctx.fillRect(MID - barW / 2, badgeY + 10, barW, 4);
+      ctx.fillStyle = X2_COLOUR;
+      ctx.fillRect(MID - barW / 2, badgeY + 10, barW * k, 4);
+    }
+  }
+
+  // "Hold this side" hint before the first run.
+  if (game.status === 'ready') {
+    ctx.font = '600 17px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText('hold this side', MID / 2, BALL_Y - 90);
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    ctx.fillText('hold this side', MID + MID / 2, BALL_Y - 90);
+  }
+}
+
+/* ===================================================================== UI */
+
+const el = (id) => document.getElementById(id);
+
+function syncUI() {
+  const over = game.status === 'over';
+  const ready = game.status === 'ready';
+  const paused = game.status === 'playing' && game.paused;
+
+  el('overlay').hidden = !(over || ready || paused);
+  el('ov-scores').hidden = !(over || paused);
+  el('ov-keys').hidden = over;
+  el('ov-btn2').hidden = !paused;
+  el('pause-btn').hidden = !(game.status === 'playing' && !game.paused);
+
+  el('ov-title').textContent = over ? 'CRASHED' : paused ? 'PAUSED' : 'TWINS';
+  el('ov-text').textContent = over
+    ? `Both twins are down${game.revives ? ` — ${game.revives} rescue${game.revives > 1 ? 's' : ''} along the way.` : '.'}`
+    : paused
+      ? 'Take your time — the course is holding.'
+      : 'Two balls. Two courses. Hold a side to swing that ball out and over the spikes — the longer you hold, the wider the arc.';
+  el('ov-btn').textContent = over ? 'Again' : paused ? 'Resume' : 'Play';
+  el('ov-score').textContent = String(Math.round(game.score));
+  el('ov-best').textContent = String(game.best);
+}
+
+let last = performance.now();
+let acc = 0;
+const STEP = 1000 / 60;
+
+function frame(now) {
+  const dt = Math.min(now - last, 250);
+  last = now;
+  acc += dt;
+  let guard = 0;
+  while (acc >= STEP && guard++ < 6) { acc -= STEP; tick(); }
+  draw(now / 16.67);
+  syncUI();
+  requestAnimationFrame(frame);
+}
+
+/* ================================================================== input */
+
+function start() {
+  if (game.status === 'ready') { game.status = 'playing'; last = performance.now(); acc = 0; }
+  else if (game.status === 'over') { reset((Math.random() * 0xffffffff) >>> 0); game.status = 'playing'; }
+}
+
+function setPaused(value) {
+  if (game.status !== 'playing') return { ok: false, reason: `game is ${game.status}` };
+  const next = value === undefined ? !game.paused : !!value;
+  if (next === game.paused) return { ok: false, reason: next ? 'already paused' : 'not paused' };
+  game.paused = next;
+  // Drop any held input on pause, so resuming does not fire a stale hold.
+  if (game.paused) { HELD[0] = false; HELD[1] = false; }
+  else { last = performance.now(); acc = 0; }
+  syncUI();
+  return { ok: true, paused: game.paused };
+}
+
+/**
+ * Input index is the *control*, not the panel: after a swap the left control
+ * still drives the ball it was driving, which is now on the right.
+ */
+function hold(which, down) {
+  if (game.paused) return;      // the pause button is the only way back in
+  if (down) start();
+  HELD[which] = down;
+}
+
+const KEY_LEFT = new Set(['arrowleft', 'a', 'z']);
+const KEY_RIGHT = new Set(['arrowright', 'l', 'm']);
+
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k === 'p' || k === 'escape') { e.preventDefault(); setPaused(); return; }
+  if (KEY_LEFT.has(k)) { e.preventDefault(); hold(0, true); }
+  else if (KEY_RIGHT.has(k)) { e.preventDefault(); hold(1, true); }
+});
+
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (KEY_LEFT.has(k)) hold(0, false);
+  else if (KEY_RIGHT.has(k)) hold(1, false);
+});
+
+// Pointer/touch: which half of the canvas was pressed. Multi-touch aware, so
+// two thumbs work independently.
+const activePointers = new Map();
+
+function halfOf(e) {
+  const rect = canvas.getBoundingClientRect();
+  return e.clientX - rect.left < rect.width / 2 ? 0 : 1;
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (game.paused) return;
+  canvas.setPointerCapture?.(e.pointerId);
+  const half = halfOf(e);
+  activePointers.set(e.pointerId, half);
+  hold(half, true);
+});
+
+function release(e) {
+  const half = activePointers.get(e.pointerId);
+  if (half === undefined) return;
+  activePointers.delete(e.pointerId);
+  if (![...activePointers.values()].includes(half)) hold(half, false);
+}
+
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+el('pause-btn').addEventListener('click', (e) => { e.stopPropagation(); setPaused(true); });
+el('ov-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (game.paused) setPaused(false);
+  else start();
+});
+el('ov-btn2').addEventListener('click', (e) => {
+  e.stopPropagation();
+  reset((Math.random() * 0xffffffff) >>> 0);
+  game.status = 'playing';
+  syncUI();
+});
+window.addEventListener('resize', fit);
+
+/* ======================================================= harness contract */
+
+function runSelfTest() {
+  const results = [];
+  const check = (name, ok, detail = '') => { results.push({ name, ok: !!ok, detail: String(detail) }); };
+  const saveBest = game.best;
+
+  const play = (seed, fn, ticks) => {
+    reset(seed);
+    game.status = 'playing';
+    for (let i = 0; i < ticks && game.status === 'playing'; i++) { fn?.(i); tick(); }
+  };
+
+  // Gravity returns a ball to the wall.
+  reset(1);
+  game.status = 'playing';
+  HELD[0] = true;
+  for (let i = 0; i < 10; i++) tick();
+  const peakOut = game.balls[0].out;
+  HELD[0] = false;
+  for (let i = 0; i < 200 && game.balls[0].out > 0; i++) tick();
+  check('a launched ball is pulled back to the wall', game.balls[0].out === 0, `peaked at ${peakOut.toFixed(1)}`);
+  check('holding actually launches it outward', peakOut > BALL_R, peakOut.toFixed(1));
+
+  // Holding longer goes further.
+  const arcFor = (holdTicks) => {
+    reset(4);
+    game.status = 'playing';
+    let peak = 0;
+    for (let i = 0; i < 80; i++) {
+      HELD[0] = i < holdTicks;
+      tick();
+      peak = Math.max(peak, game.balls[0].out);
+    }
+    HELD[0] = false;
+    return peak;
+  };
+  const shortArc = arcFor(3);
+  const longArc = arcFor(20);
+  check('holding longer produces a wider arc', longArc > shortArc + 5, `${shortArc.toFixed(1)} vs ${longArc.toFixed(1)}`);
+  check('the arc is bounded', longArc <= MAX_OUT + 0.001, longArc.toFixed(1));
+
+  // Never jumping must die on a spike.
+  play(7, null, 4000);
+  check('never holding ends the run on a spike', game.status === 'over');
+
+  // ...and a competent player must be able to keep going. This is the check
+  // that the game is actually playable, not merely runnable: hold whenever a
+  // spike is close enough to matter, release once it has gone by.
+  const autopilot = (seed, maxTicks) => {
+    reset(seed);
+    game.status = 'playing';
+    for (let i = 0; i < maxTicks && game.status === 'playing'; i++) {
+      // The arc needs ~10 ticks to clear SPIKE_DEPTH, so the lead has to be
+      // measured in ticks and scale with the scroll speed -- holding too early
+      // is just as fatal as too late, because the ball falls back.
+      const lead = 12 * speed();
+      for (const ball of game.balls) {
+        const threat = game.spikes.some((sp) =>
+          sp.side === ball.side
+          && sp.y + SPIKE_H > BALL_Y - BALL_R - lead
+          && sp.y < BALL_Y + BALL_R + 10);
+        HELD[ball.input] = threat;
+      }
+      tick();
+    }
+    HELD[0] = HELD[1] = false;
+    return { survived: game.status === 'playing', score: game.score };
+  };
+
+  let worst = Infinity, worstSeed = 0;
+  for (let s = 1; s <= 5; s++) {
+    const r = autopilot(s, 2400);
+    if (r.score < worst) { worst = r.score; worstSeed = s; }
+  }
+  check('an autopilot survives a long run on every seed', worst >= 150,
+    `worst score ${worst.toFixed(0)} on seed ${worstSeed}`);
+
+  // Both lanes carry independent courses.
+  reset(12);
+  game.status = 'playing';
+  for (let i = 0; i < 600 && game.status === 'playing'; i++) { HELD[0] = HELD[1] = i % 30 < 14; tick(); }
+  HELD[0] = HELD[1] = false;
+  const left = game.spikes.filter((s) => s.side === 0).map((s) => Math.round(s.y));
+  const right = game.spikes.filter((s) => s.side === 1).map((s) => Math.round(s.y));
+  check('the two lanes have independent spike patterns',
+    JSON.stringify(left) !== JSON.stringify(right), `${left.length} vs ${right.length}`);
+
+  // A swap gate crosses the balls over.
+  reset(3);
+  game.status = 'playing';
+  const before = game.balls.map((b) => b.side);
+  swap();
+  const after = game.balls.map((b) => b.side);
+  check('a swap gate crosses both balls over',
+    after[0] === 1 - before[0] && after[1] === 1 - before[1], `${before} -> ${after}`);
+  check('each control keeps its own ball across a swap',
+    game.balls[0].input === 0 && game.balls[1].input === 1);
+
+  // Score rises with distance.
+  play(9, () => { HELD[0] = HELD[1] = true; }, 90);
+  HELD[0] = HELD[1] = false;
+  check('score climbs with distance', game.score > 0, game.score.toFixed(1));
+
+  // ---- collectibles -----------------------------------------------------
+
+  // Every orb must sit inside the band a ball can actually reach.
+  reset(15);
+  game.status = 'playing';
+  let unreachable = null;
+  for (let i = 0; i < 2500 && game.status === 'playing'; i++) {
+    HELD[0] = HELD[1] = i % 26 < 13;
+    tick();
+    for (const o of game.orbs) {
+      if (o.out < ORB_R || o.out > MAX_OUT - ORB_R) unreachable = o;
+    }
+  }
+  HELD[0] = HELD[1] = false;
+  check('every collectible is inside the reachable band', unreachable === null,
+    unreachable ? JSON.stringify(unreachable) : '');
+
+  // Touching a points orb scores and removes it.
+  reset(21);
+  game.status = 'playing';
+  game.orbs = [{ side: 0, y: BALL_Y, out: 0, kind: 'point', taken: false }];
+  const beforeOrb = game.score;
+  tick();
+  check('a points collectible scores', game.score - beforeOrb >= ORB_POINTS,
+    (game.score - beforeOrb).toFixed(1));
+  check('a collected orb is removed', game.orbs.length === 0);
+  check('the pickup is counted', game.orbsTaken === 1, String(game.orbsTaken));
+
+  // The special orb doubles scoring for a bounded window.
+  reset(22);
+  game.status = 'playing';
+  game.orbs = [{ side: 0, y: BALL_Y, out: 0, kind: 'double', taken: false }];
+  tick();
+  check('the special collectible starts an x2 window', game.x2Ticks > 0, String(game.x2Ticks));
+
+  const gainOver = (ticks) => {
+    const from = game.score;
+    for (let i = 0; i < ticks; i++) tick();
+    return game.score - from;
+  };
+  const doubled = gainOver(40);
+  game.x2Ticks = 0;
+  const plain = gainOver(40);
+  check('x2 really doubles the scoring rate', doubled > plain * 1.8,
+    `${doubled.toFixed(1)} vs ${plain.toFixed(1)}`);
+
+  reset(23);
+  game.status = 'playing';
+  game.x2Ticks = 5;
+  for (let i = 0; i < 20; i++) tick();
+  check('the x2 window expires', game.x2Ticks === 0, String(game.x2Ticks));
+
+  // Backdrop and trail are populated and stay bounded.
+  reset(24);
+  game.status = 'playing';
+  for (let i = 0; i < 200; i++) { HELD[0] = i % 30 < 12; tick(); }
+  HELD[0] = false;
+  check('stars fill the dark half', game.stars.length === STAR_COUNT
+    && game.stars.every((st) => st.x >= 0 && st.x <= MID), String(game.stars.length));
+  check('clouds fill the light half', game.clouds.length === CLOUD_COUNT
+    && game.clouds.every((cl) => cl.x >= MID && cl.x <= W), String(game.clouds.length));
+  check('the ball sheds a trail while moving', game.motes.length > 0, String(game.motes.length));
+  for (let i = 0; i < 400; i++) tick();
+  check('trail motes are culled, not accumulated', game.motes.length < 200, String(game.motes.length));
+
+  // ---- losing one twin --------------------------------------------------
+  reset(41);
+  game.status = 'playing';
+  for (let i = 0; i < 30; i++) tick();
+  die(game.balls[0]);
+  check('losing one twin does not end the run', game.status === 'playing', game.status);
+  check('the lost twin is out of play', game.balls[0].alive === false && game.balls[1].alive === true);
+  for (let i = 0; i < 40; i++) tick();
+  check('the survivor keeps going', game.status === 'playing');
+
+  // The solo rate really is higher than playing as a pair.
+  const rateOver = (killOne, ticks) => {
+    reset(42);
+    game.status = 'playing';
+    if (killOne) die(game.balls[0]);
+    game.x2Ticks = 0;
+    const from = game.score;
+    for (let i = 0; i < ticks; i++) { game.x2Ticks = 0; tick(); }
+    return game.score - from;
+  };
+  const paired = rateOver(false, 60);
+  const soloGain = rateOver(true, 60);
+  check('flying solo scores faster', soloGain > paired * 1.5,
+    `${soloGain.toFixed(1)} vs ${paired.toFixed(1)}`);
+
+  // ---- rescue portals ---------------------------------------------------
+  // Spikes are cleared each tick here so the balls cannot die: this isolates
+  // portal spawning from survival, which is covered separately.
+  const tickSafely = (n, fn) => {
+    for (let i = 0; i < n; i++) {
+      game.spikes.length = 0;
+      if (fn && fn(i)) return true;
+      tick();
+    }
+    return false;
+  };
+
+  reset(43);
+  game.status = 'playing';
+  tickSafely(400);
+  check('no portals appear while both twins are alive', game.portals.length === 0,
+    String(game.portals.length));
+
+  die(game.balls[1]);
+  let sawPortal = false;
+  tickSafely(400, () => (sawPortal = game.portals.length > 0));
+  check('a portal appears once a twin is lost', sawPortal);
+  check('the portal is in the survivor lane',
+    !sawPortal || game.portals[0].side === game.balls[0].side);
+  check('the portal is inside the reachable band',
+    !sawPortal || (game.portals[0].out >= PORTAL_R * 0 && game.portals[0].out <= MAX_OUT),
+    sawPortal ? String(Math.round(game.portals[0].out)) : '');
+
+  // A swap must not strand the rescue in the lane the survivor left.
+  reset(47);
+  game.status = 'playing';
+  die(game.balls[1]);
+  game.portals = [{ side: game.balls[0].side, y: 100, out: 60, used: false }];
+  swap();
+  check('a portal follows the survivor across a swap',
+    game.portals[0].side === game.balls[0].side,
+    `portal ${game.portals[0].side}, survivor ${game.balls[0].side}`);
+
+  // Passing through one brings the twin back, into the other lane.
+  reset(44);
+  game.status = 'playing';
+  die(game.balls[1]);
+  const survivor = game.balls[0];
+  game.portals = [{ side: survivor.side, y: BALL_Y, out: survivor.out, used: false }];
+  tick();
+  check('passing a portal revives the twin', game.balls[1].alive === true);
+  check('the revived twin lands in the free lane', game.balls[1].side === 1 - survivor.side,
+    `${game.balls[1].side} vs survivor ${survivor.side}`);
+  check('the revived twin is briefly immune', game.balls[1].grace > 0, String(game.balls[1].grace));
+  check('the rescue is counted', game.revives === 1, String(game.revives));
+  check('portals clear once the twin is back', game.portals.length === 0);
+
+  // The returning twin must not land on a spike.
+  reset(45);
+  game.status = 'playing';
+  die(game.balls[1]);
+  game.spikes.push({ side: 1 - game.balls[0].side, y: BALL_Y - 10 });
+  game.portals = [{ side: game.balls[0].side, y: BALL_Y, out: game.balls[0].out, used: false }];
+  tick();
+  const twinLane = game.balls[1].side;
+  check('the rescue row is cleared of spikes',
+    !game.spikes.some((sp) => sp.side === twinLane
+      && sp.y + SPIKE_H > BALL_Y - BALL_R && sp.y < BALL_Y + BALL_R));
+  for (let i = 0; i < 30; i++) tick();
+  check('the revived twin survives its first moments', game.balls[1].alive === true);
+
+  // ---- the run only ends when both are down -----------------------------
+  reset(46);
+  game.status = 'playing';
+  die(game.balls[0]);
+  check('one down is not game over', game.status === 'playing');
+  die(game.balls[1]);
+  check('both down ends the run', game.status === 'over');
+  check('a dead twin cannot die twice', (die(game.balls[0]), game.status === 'over'));
+
+  // ---- pause ------------------------------------------------------------
+  reset(31);
+  game.status = 'playing';
+  for (let i = 0; i < 40; i++) tick();
+  setPaused(true);
+  const frozen = JSON.stringify({ d: game.distance, s: game.spikes.map((x) => Math.round(x.y)) });
+  for (let i = 0; i < 60; i++) tick();
+  check('pause freezes the course', JSON.stringify({ d: game.distance, s: game.spikes.map((x) => Math.round(x.y)) }) === frozen);
+  check('pause is reported in state', game.paused === true);
+  check('a held input is dropped on pause', HELD[0] === false && HELD[1] === false);
+  check('holding while paused does nothing', (hold(0, true), HELD[0] === false));
+
+  setPaused(false);
+  for (let i = 0; i < 20; i++) tick();
+  check('resume restarts the course', game.distance > JSON.parse(frozen).d);
+  check('pausing twice is rejected', (setPaused(true), setPaused(true).ok === false));
+  setPaused(false);
+  check('pausing a finished game is rejected', (game.status = 'over', setPaused(true).ok === false));
+
+  // Determinism.
+  const runOf = (s) => {
+    reset(s);
+    game.status = 'playing';
+    for (let i = 0; i < 240; i++) { HELD[0] = HELD[1] = i % 24 < 12; tick(); }
+    HELD[0] = HELD[1] = false;
+    return JSON.stringify({
+      s: game.spikes.map((x) => [x.side, Math.round(x.y)]),
+      o: game.orbs.map((x) => [x.side, x.kind, Math.round(x.y), Math.round(x.out)]),
+      d: Math.round(game.distance),
+    });
+  };
+  const a = runOf(21), b = runOf(21), c = runOf(22);
+  check('same seed reproduces the same course', a === b);
+  check('different seeds give different courses', a !== c);
+
+  game.best = saveBest;
+  reset(1);
+
+  const passed = results.filter((r) => r.ok).length;
+  return { ok: passed === results.length, passed, failed: results.length - passed, total: results.length, results };
+}
+
+window.__GAME__ = {
+  id: 'twins',
+  version: 1,
+  ready: true,
+  meta: { name: 'Twins', players: '1 (two thumbs)', mode: 'realtime' },
+
+  getState() {
+    return {
+      status: game.status === 'over' ? 'over' : game.status === 'ready' ? 'idle' : 'playing',
+      turn: null,
+      score: Math.round(game.score),
+      distance: Math.round(game.distance),
+      best: game.best,
+      seed: game.seed,
+      ticks: game.ticks,
+      speed: Math.round(speed() * 100) / 100,
+      theme: THEMES[game.theme].name,
+      paused: game.paused,
+      multiplier: game.x2Ticks > 0 ? 2 : 1,
+      x2Ticks: game.x2Ticks,
+      orbsTaken: game.orbsTaken,
+      orbs: game.orbs.filter((o) => !o.taken).map((o) => ({
+        side: o.side, kind: o.kind,
+        y: Math.round(o.y * 100) / 100,
+        out: Math.round(o.out * 100) / 100,
+      })),
+      balls: game.balls.map((b) => ({
+        input: b.input, side: b.side, alive: b.alive, grace: b.grace,
+        out: Math.round(b.out * 100) / 100,
+        vel: Math.round(b.vel * 100) / 100,
+        grounded: b.grounded,
+      })),
+      alive: aliveBalls().length,
+      solo: aliveBalls().length === 1,
+      soloRate: SOLO_RATE,
+      revives: game.revives,
+      portals: game.portals.filter((pt) => !pt.used).map((pt) => ({
+        side: pt.side,
+        y: Math.round(pt.y * 100) / 100,
+        out: Math.round(pt.out * 100) / 100,
+      })),
+      spikes: game.spikes.map((s) => ({ side: s.side, y: Math.round(s.y * 100) / 100 })),
+      gates: game.gates.map((g) => ({ y: Math.round(g.y * 100) / 100, passed: g.passed })),
+      held: [HELD[0], HELD[1]],
+      dead: game.dead,
+      world: { w: W, h: H, mid: MID, ballY: BALL_Y, maxOut: MAX_OUT },
+    };
+  },
+
+  reset(seed = 1) {
+    reset(seed);
+    game.status = 'playing';   // the harness drives ticks; skip the title card
+    syncUI();
+  },
+
+  step(n = 1) {
+    for (let i = 0; i < n; i++) tick();
+    syncUI();
+  },
+
+  input(action, payload) {
+    switch (action) {
+      case 'holdLeft': hold(0, true); return { ok: true };
+      case 'holdRight': hold(1, true); return { ok: true };
+      case 'releaseLeft': hold(0, false); return { ok: true };
+      case 'releaseRight': hold(1, false); return { ok: true };
+      case 'hold': {
+        const which = payload?.which;
+        if (which !== 0 && which !== 1) return { ok: false, reason: 'hold needs { which: 0 | 1 }' };
+        hold(which, payload.down !== false);
+        return { ok: true };
+      }
+      case 'pause': return setPaused(true);
+      case 'resume': return setPaused(false);
+      case 'swap': swap(); return { ok: true };
+      case 'start': start(); return { ok: true, status: game.status };
+      case 'restart': this.reset(payload?.seed ?? game.seed); return { ok: true };
+      case 'selftest': return runSelfTest();
+      default: return { ok: false, reason: `unknown action '${action}'` };
+    }
+  },
+
+  actions: () => ['holdLeft', 'holdRight', 'releaseLeft', 'releaseRight', 'hold', 'pause', 'resume', 'swap', 'start', 'restart', 'selftest'],
+};
+
+/* ==================================================================== go */
+
+reset((Math.random() * 0xffffffff) >>> 0);
+fit();
+syncUI();
+requestAnimationFrame(frame);

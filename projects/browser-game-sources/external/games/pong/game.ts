@@ -1,0 +1,124 @@
+function byId(id) {
+  const element = document.getElementById(id);
+  if (!element)
+    throw new Error(`Missing required game element: #${id}`);
+  return element;
+}
+const canvas = byId("pong");
+const ctx = canvas.getContext("2d");
+const { width: W, height: H } = canvas;
+let gameRunning = false;
+let gameOver = false;
+let winner = "";
+const paddleW = 12, paddleH = 80, paddleSpeed = 6;
+let p1 = { x: 20, y: H / 2 - paddleH / 2, score: 0 };
+let p2 = { x: W - 20 - paddleW, y: H / 2 - paddleH / 2, score: 0 };
+const ballSize = 10;
+let ball = { x: W / 2, y: H / 2, vx: 5, vy: 3, speed: 5 };
+const keys = {};
+document.addEventListener("keydown", (e) => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key === " " && !gameRunning) {
+    gameRunning = true;
+    gameOver = false;
+    byId("start-msg").style.display = "none";
+  }
+  if (e.key === " " && gameOver) {
+    resetGame();
+  }
+});
+document.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
+function resetBall() {
+  ball.x = W / 2;
+  ball.y = H / 2;
+  ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
+  ball.vy = (Math.random() - 0.5) * 4;
+}
+function resetGame() {
+  p1.score = 0;
+  p2.score = 0;
+  p1.y = H / 2 - paddleH / 2;
+  p2.y = H / 2 - paddleH / 2;
+  gameOver = false;
+  winner = "";
+  byId("start-msg").style.display = "none";
+  resetBall();
+  gameRunning = true;
+}
+function update() {
+  if (!gameRunning)
+    return;
+  if (keys["w"] && p1.y > 0)
+    p1.y -= paddleSpeed;
+  if (keys["s"] && p1.y < H - paddleH)
+    p1.y += paddleSpeed;
+  if (keys["arrowup"] && p2.y > 0)
+    p2.y -= paddleSpeed;
+  if (keys["arrowdown"] && p2.y < H - paddleH)
+    p2.y += paddleSpeed;
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  if (ball.y <= 0 || ball.y >= H - ballSize) {
+    ball.vy *= -1;
+    ball.y = Math.max(0, Math.min(H - ballSize, ball.y));
+  }
+  if (ball.x <= p1.x + paddleW && ball.x >= p1.x && ball.y + ballSize >= p1.y && ball.y <= p1.y + paddleH) {
+    ball.vx = Math.abs(ball.vx) * 1.05;
+    const hitPos = (ball.y + ballSize / 2 - p1.y) / paddleH - 0.5;
+    ball.vy = hitPos * 8;
+    ball.x = p1.x + paddleW + 1;
+  }
+  if (ball.x + ballSize >= p2.x && ball.x <= p2.x + paddleW && ball.y + ballSize >= p2.y && ball.y <= p2.y + paddleH) {
+    ball.vx = -Math.abs(ball.vx) * 1.05;
+    const hitPos = (ball.y + ballSize / 2 - p2.y) / paddleH - 0.5;
+    ball.vy = hitPos * 8;
+    ball.x = p2.x - ballSize - 1;
+  }
+  if (ball.x < 0) {
+    p2.score++;
+    checkWin();
+    if (!gameOver)
+      resetBall();
+  }
+  if (ball.x > W) {
+    p1.score++;
+    checkWin();
+    if (!gameOver)
+      resetBall();
+  }
+  byId("score-p1").textContent = String(p1.score);
+  byId("score-p2").textContent = String(p2.score);
+}
+function checkWin() {
+  if (p1.score >= 5 || p2.score >= 5) {
+    gameOver = true;
+    gameRunning = false;
+    winner = p1.score >= 5 ? "Player 1" : "Player 2";
+    byId("start-msg").textContent = winner + " wins! Press SPACE to restart";
+    byId("start-msg").style.display = "block";
+  }
+}
+function draw() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0, 0, W, H);
+  ctx.setLineDash([8, 8]);
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(W / 2, 0);
+  ctx.lineTo(W / 2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(p1.x, p1.y, paddleW, paddleH);
+  ctx.fillRect(p2.x, p2.y, paddleW, paddleH);
+  ctx.beginPath();
+  ctx.arc(ball.x + ballSize / 2, ball.y + ballSize / 2, ballSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
