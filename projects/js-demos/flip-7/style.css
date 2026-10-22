@@ -31,14 +31,20 @@ body {
 }
 
 .background-effect {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    position: fixed;
+    inset: 0;
     background: radial-gradient(circle at center, rgba(188, 19, 254, 0.1) 0%, transparent 60%);
-    animation: rotate 20s linear infinite;
+    animation: none;
     z-index: -1;
+}
+
+@media (max-width: 600px) {
+    .game-header { gap: 12px; }
+    .logo { font-size: 1.6rem; letter-spacing: -1px; }
+    .stats-container { gap: 10px; }
+    .stat-box .value { font-size: 1.25rem; }
+    .card-container { padding: 12px 4px; gap: 6px; }
+    .controls { gap: 10px; }
 }
 
 @keyframes rotate {
@@ -187,6 +193,29 @@ body {
     padding: 5px;
 }
 
+.card.modifier {
+    border-color: #f6c453;
+    color: #f6c453;
+    font-size: 1.2rem;
+}
+
+.rules-note {
+    max-width: 680px;
+    margin: 18px auto 0;
+    color: rgba(255, 255, 255, .72);
+    font-family: Arial, sans-serif;
+    font-size: .9rem;
+    line-height: 1.55;
+}
+
+.rules-note summary {
+    cursor: pointer;
+    color: var(--primary);
+    text-align: center;
+}
+
+.rules-note p { padding: 10px 12px 0; }
+
 .card.danger {
     border-color: var(--accent);
     color: var(--accent);
@@ -301,7 +330,7 @@ body {
     }
 
     .btn {
-        padding: 12px 25px;
-        font-size: 1rem;
+        padding: 12px 18px;
+        font-size: 0.95rem;
     }
 }

@@ -1,49 +1,30 @@
-# bobu-website
+# Bobu Website
 
-A Next.js (App Router) site featuring "BobuOS" — a fake desktop OS homepage — plus a portfolio, CV, projects, and ecommerce section built with Material UI.
+A static Next.js portfolio with BobuOS, a collection of playable games, a CV, and an ecommerce concept preview. The app and build tooling use TypeScript and Bun.
 
-## Getting Started
+## Development
 
-Install dependencies:
-
-```bash
-npm install
+```sh
+bun install
+bun run dev
 ```
 
-Run the development server:
+Useful checks:
 
-```bash
-npm run dev
+```sh
+bun run lint
+bun run check
+bun run check:projects
+bun run check:browser-games
+bun run check:ports
+bun run check:assets
+bun run test
+bun run build
+bun run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`bun run build` exports the site to `out/`. `bun run start` serves that static export locally on port 3000. For GitHub Pages, the deployment workflow builds with `NEXT_PUBLIC_BASE_PATH=/bobu-website`.
 
-## Available Scripts
+TypeScript project sources under `projects/typescript/` are typechecked with `bun run check:projects`; `bun run check:ports` runs dependency-free smoke checks. Kalaha Q-learning can be run with `bun run train:kalaha -- 1000`, or PPO with `bun run train:kalaha:ppo -- v2 1` (profile, iterations, optional output path).
 
-```bash
-npm run dev      # Start the Next.js dev server (localhost:3000)
-npm run build    # Create a production build
-npm run start    # Serve the production build
-npm run lint     # Run ESLint
-npm test         # Run the Jest test suite
-```
-
-Run a single test file or a matching test name:
-
-```bash
-npx jest tests/HomePage.test.tsx
-npx jest -t "renders navbar"
-```
-
-There is no dedicated typecheck script; run `npx tsc --noEmit` if needed.
-
-## Deployment
-
-Changes pushed to `main` are picked up by the configured deployment workflow (see `.github/workflows/`). Confirm the active deployment target (GitHub Pages vs. Vercel) before changing `next.config.ts` or the workflow files — see `.claude/CLAUDE.md` for details.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Historical Python, superseded JavaScript, Python bytecode, and the empty Rust scaffold are preserved under `projects/legacy-source-archive/` and are not included in the published site. Browser game JavaScript in `public/` is generated from TypeScript sources with Bun.

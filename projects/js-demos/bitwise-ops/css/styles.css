@@ -27,9 +27,10 @@ body {
 }
 
 .btn-home {
-    position: fixed;
-    top: 20px;
-    left: 20px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1rem;
     background: var(--purple);
     color: var(--text-light);
     border: 2px solid var(--purple-light);
@@ -39,7 +40,6 @@ body {
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.2s ease;
-    z-index: 1000;
 }
 
 .btn-home:hover {
@@ -305,6 +305,10 @@ body {
 .code-display pre {
     margin: 0;
     border-radius: 8px;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.65);
+    color: #e2e8f0;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     overflow-x: auto;
 }
 
@@ -373,17 +377,24 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    body { padding: 1rem; }
+
     .title {
         font-size: 2rem;
     }
+
+    .input-group { grid-template-columns: minmax(0, 1fr); }
+    .input-field { min-width: 0; }
 
     .operations-grid {
         grid-template-columns: 1fr;
     }
 
+    .bit-row { gap: 0.15rem; }
+    .bit-label { min-width: 32px; font-size: 0.85rem; }
     .bit-box {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+        width: min(8vw, 30px);
+        height: min(8vw, 30px);
+        font-size: 1rem;
     }
 }

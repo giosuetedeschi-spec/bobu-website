@@ -5,16 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Next.js dev server (localhost:3000)
-npm run build    # Production build
-npm run start    # Serve production build
-npm run lint     # ESLint (eslint-config-next core-web-vitals + typescript)
-npm test         # Jest (all tests)
-npx jest tests/HomePage.test.tsx        # Run a single test file
-npx jest -t "renders navbar"            # Run tests matching a name
+bun run dev
+bun run build
+bun run start
+bun run lint
+bun run check
+bun run test
 ```
 
-There is no typecheck script; use `npx tsc --noEmit` if needed. `postbuild` runs `touch out/.nojekyll` (only meaningful when a static export exists in `out/`).
+`bun run build` exports static pages to `out/`; `bun run start` serves that export locally.
 
 ## Architecture
 
@@ -32,16 +31,15 @@ Tailwind has been removed (no `postcss.config.mjs`, no `tailwindcss`/`@tailwindc
 ### Games and WASM runtimes
 
 - `public/games/*` and `public/projects/js-demos/*` hold standalone, pre-built game bundles (static HTML/JS, or Python sources) served as static assets and loaded via iframe.
-- Python games (Kalaha, Sudoku) run in-browser via **Pyodide** — `PyodideRunner` fetches the raw `.py` and executes it, capturing stdout into a terminal-like UI.
-- Rust games (Breakout) compile to WASM via Bevy.
-- `next.config.ts` sets COOP/COEP headers on `/games/:path*` — required for WASM threading/`SharedArrayBuffer`; don't remove them without checking whether a game depends on them. It also sets `images.unoptimized: true`.
+- Kalaha and Sudoku now run as interactive TypeScript games on their Next.js routes; the older Python demos remain as reference sources.
+- Breakout is a TypeScript Canvas game. The old Rust/Bevy source remains under `projects/rust-app`.
+- Static export does not support response headers, and deployed game code does not use `SharedArrayBuffer`. `next.config.ts` emits trailing-slash routes for GitHub Pages and keeps `images.unoptimized: true`.
 - Top-level `projects/` (js-demos, python-scripts, rust-app) and `_references/` are source/reference material, excluded from the TS build in `tsconfig.json`. There's no automated sync script found between `projects/` and the built bundles in `public/` — treat `public/` as the deployed source of truth and `projects/` as drafts/history.
 
 ### Deployment — two workflows, possibly inconsistent
 
-- `.github/workflows/deploy.yml` runs `npm run build` and publishes `out/` to GitHub Pages — this requires Next's static export (`output: 'export'`).
-- `.github/workflows/vercel-deploy.yml` deploys to Vercel instead.
-- Recent history (`revert: remove static export for Vercel deploy`) shows `output: 'export'` was added then removed from `next.config.ts` to make Vercel deploys work. Since static export is currently off, `npm run build` will not produce an `out/` directory, meaning the GitHub Pages workflow is presently non-functional. Confirm which target is actually the live site before changing `next.config.ts` or either workflow.
+- `.github/workflows/deploy.yml` builds with Bun and publishes the static export to GitHub Pages.
+- `.github/workflows/ci.yml` runs lint, typecheck, tests, and the static export build with Bun.
 
 ### Testing
 

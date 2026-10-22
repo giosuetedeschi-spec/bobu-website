@@ -7,8 +7,6 @@
     <meta name="description" content="Interactive Bitwise Operations - Learn binary operations visually">
     <title>Bitwise Operations Interactive</title>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Prism.js for code highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 </head>
 
 <body>
@@ -50,8 +48,8 @@
                     <button class="op-btn" data-op="or">OR (|)</button>
                     <button class="op-btn" data-op="xor">XOR (^)</button>
                     <button class="op-btn" data-op="not">NOT (~)</button>
-                    <button class="op-btn" data-op="lshift">Left Shift (<<)< /button>
-                            <button class="op-btn" data-op="rshift">Right Shift (>>)</button>
+                    <button class="op-btn" data-op="lshift">Left Shift (&lt;&lt;)</button>
+                    <button class="op-btn" data-op="rshift">Right Shift (&gt;&gt;)</button>
                 </div>
 
                 <!-- Visualization Area -->
@@ -72,8 +70,8 @@
 
                 <!-- Code Display -->
                 <div id="code-display" class="code-display hidden">
-                    <h3>JavaScript Code</h3>
-                    <pre><code class="language-javascript" id="code-content"></code></pre>
+                    <h3>TypeScript Code</h3>
+                    <pre><code class="language-typescript" id="code-content"></code></pre>
                 </div>
             </div>
         </div>
@@ -125,15 +123,13 @@
                 <!-- Code Display for Arithmetic -->
                 <div id="arith-code-display" class="code-display hidden">
                     <h3>Binary Arithmetic Algorithm</h3>
-                    <pre><code class="language-javascript" id="arith-code-content"></code></pre>
+                    <pre><code class="language-typescript" id="arith-code-content"></code></pre>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 

@@ -1,14 +1,34 @@
 {
-  "name": "setup_temp",
+  "name": "bobu-website",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun@1.4.2",
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jest-environment-jsdom",
+    "testMatch": ["**/tests/**/*.test.tsx"],
+    "moduleNameMapper": {
+      "\\.css$": "<rootDir>/__mocks__/globals.css.ts",
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.ts"]
+  },
   "scripts": {
+    "predev": "bun run scripts/build-browser-games.ts",
     "dev": "next dev",
+    "prebuild": "bun run scripts/build-browser-games.ts",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "jest",
-    "postbuild": "test -d out && touch out/.nojekyll || true"
+    "start": "bun run scripts/serve.ts",
+    "lint": "bun run scripts/lint.ts",
+    "test": "jest --runInBand",
+    "check": "tsc --noEmit",
+    "check:projects": "tsc --noEmit -p tsconfig.projects.json",
+    "check:ports": "bun run scripts/check-sudoku-port.ts && bun run scripts/check-game-ports.ts && bun run scripts/check-other-ports.ts && bun run scripts/check-flip7-rules.ts && bun run scripts/check-bitwise-ops.ts && bun run scripts/check-snake-controls.ts",
+    "check:browser-games": "tsc --noEmit -p tsconfig.browser-games.json",
+    "check:assets": "bun run scripts/audit-static-assets.ts",
+    "train:kalaha": "bun run projects/typescript/kalaha/ai_training/train.ts",
+    "train:kalaha:ppo": "bun run projects/typescript/kalaha/ai_training/train-ppo.ts",
+    "postbuild": "bun run scripts/create-nojekyll.ts && bun run scripts/audit-static-assets.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

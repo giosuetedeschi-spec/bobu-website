@@ -1,35 +1,22 @@
-# Flip 7 - Prototype
+﻿# Flip 7 solo score challenge
 
-Flip 7 is a fast-paced "push-your-luck" card game. This folder contains the functional prototype designed for a neon-noir aesthetic.
+This folder contains the HTML/CSS shell for the website's solo score challenge. Its rules and card distribution follow the Flip 7 deck; play is adapted for one player aiming for 200 points, while the original tabletop game is multiplayer.
 
-## 🃏 Playing the Game
-**IMPORTANT**: Due to the use of ES Modules for code organization, you **cannot** simply double-click `index.html`. Browsers block modules over the `file://` protocol for security.
+## Run from this website
 
-To run the game:
-1. Open a terminal in this folder.
-2. Run a local server. For example: `npx serve .` or use the "Live Server" extension in VS Code.
-3. Open the provided `localhost` URL in your browser.
+From the repository root, run `bun run dev`, then open `/progetti/flip-7`. The site build compiles the TypeScript game modules into browser JavaScript under `public/`; no dependencies are needed for this game.
 
-## 📖 Rules
-1. **The Turn**: Flip a card. Choose to **Stay** or **Flip** again.
-2. **The Bust**: If you flip a number already in your hand, you lose all points for that round.
-3. **Flip 7 Bonus**: Flipping 7 unique cards earns a massive jackpot (+50 pts).
-4. **Special Cards**:
-    - **Freeze**: Ends your turn and banks points immediately.
-    - **Double**: Doubles your round score.
-    - **Plus 3**: Adds 3 points.
-    - **Flip 3**: Forces 3 more flips.
+## Rules in this version
 
-## 🛠 Project Structure
-The code is refactored into a modular structure for readability and easy integration:
-- `index.html`: UI Structure.
-- `style.css`: Neon visuals and animations.
-- `game.js`: Entry point.
-- `src/constants.js`: Card distribution and score settings.
-- `src/engine.js`: The `Flip7Game` logic engine.
-- `src/ui.js`: DOM binding and rendering logic.
+- Number cards 0 through 12 are included with a count matching their value (one zero).
+- Flip or bank your hand. A duplicate number busts and banks zero, unless Second Chance discards both duplicate copies.
+- Seven distinct number cards immediately end the hand and add 15 points.
+- Freeze banks the hand. Flip Three makes three further draws. Only one Second Chance can be held.
+- Plus cards add points after x2 is applied; x2 doubles number points only.
+- Bank hands across turns to reach 200 points. This solo version adapts the multiplayer rules for a single player.
 
-## 🎯 Implementation Choices
-- **Modular Classes**: The game engine is a standalone class, making it easy to port to React by swapping the `ui.js` module for a React component.
-- **Neon Aesthetic**: Uses CSS custom properties and standard animations for a "premium" feel without heavy libraries.
-- **Deck Distribution**: Uses a pyramid distribution (1x12, 2x11 ... 12x1) to balance risk.
+## Source
+
+- `index.html`, `style.css`: standalone game view and styling.
+- `../../browser-game-sources/external/projects/js-demos/flip-7/`: active TypeScript source compiled by `scripts/build-browser-games.ts`.
+- `public/projects/js-demos/flip-7/`: generated browser files. Edit TypeScript sources, not generated files.

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "strict": true,
+    "moduleDetection": "force"
+  },
+  "include": ["projects/browser-game-sources/**/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -12,22 +12,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+      - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: bun run lint
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: bun run check
+
+      - name: Typecheck migrated projects
+        run: bun run check:projects
+
+      - name: Typecheck browser games
+        run: bun run check:browser-games
+
+      - name: Game logic smoke checks
+        run: bun run check:ports
 
       - name: Test
-        run: npm test -- --ci
+        run: bun run test --ci
 
       - name: Build
-        run: npm run build
+        run: bun run build

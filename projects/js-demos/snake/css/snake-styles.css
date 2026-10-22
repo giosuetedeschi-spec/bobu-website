@@ -34,9 +34,13 @@ body {
 #game-container {
     position: relative;
     margin: 2rem;
+    max-width: 100%;
 }
 
 #game-canvas {
+    display: block;
+    width: min(800px, calc(100vw - 24px));
+    height: auto;
     border: 3px solid var(--purple);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(147, 51, 234, 0.4);

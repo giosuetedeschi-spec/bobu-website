@@ -1,0 +1,110 @@
+[
+  {
+    "source": "external/games/bitwise-ops/js/main.ts",
+    "output": "public/games/bitwise-ops/js/main.js"
+  },
+  {
+    "source": "external/games/snake/js/constants.ts",
+    "output": "public/games/snake/js/constants.js"
+  },
+  {
+    "source": "external/games/snake/js/entities.ts",
+    "output": "public/games/snake/js/entities.js"
+  },
+  {
+    "source": "external/games/snake/js/main.ts",
+    "output": "public/games/snake/js/main.js"
+  },
+  {
+    "source": "external/games/snake/js/scenes.ts",
+    "output": "public/games/snake/js/scenes.js"
+  },
+  {
+    "source": "external/projects/js-demos/bitwise-ops/js/main.ts",
+    "output": "public/projects/js-demos/bitwise-ops/js/main.js"
+  },
+  {
+    "source": "external/projects/js-demos/flip-7/game.ts",
+    "output": "public/projects/js-demos/flip-7/game.js"
+  },
+  {
+    "source": "external/projects/js-demos/flip-7/src/constants.ts",
+    "output": "public/projects/js-demos/flip-7/src/constants.js"
+  },
+  {
+    "source": "external/projects/js-demos/flip-7/src/engine.ts",
+    "output": "public/projects/js-demos/flip-7/src/engine.js"
+  },
+  {
+    "source": "external/projects/js-demos/flip-7/src/ui.ts",
+    "output": "public/projects/js-demos/flip-7/src/ui.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-generator/src/algorithms/backtracker.ts",
+    "output": "public/projects/js-demos/maze-generator/src/algorithms/backtracker.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-generator/src/algorithms/division.ts",
+    "output": "public/projects/js-demos/maze-generator/src/algorithms/division.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-generator/src/algorithms/prims.ts",
+    "output": "public/projects/js-demos/maze-generator/src/algorithms/prims.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-generator/src/main.ts",
+    "output": "public/projects/js-demos/maze-generator/src/main.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-generator/src/renderer.ts",
+    "output": "public/projects/js-demos/maze-generator/src/renderer.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/astar.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/astar.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/bfs.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/bfs.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/dfs.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/dfs.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/algorithms/generator.ts",
+    "output": "public/projects/js-demos/maze-solver/src/algorithms/generator.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/main.ts",
+    "output": "public/projects/js-demos/maze-solver/src/main.js"
+  },
+  {
+    "source": "external/projects/js-demos/maze-solver/src/renderer.ts",
+    "output": "public/projects/js-demos/maze-solver/src/renderer.js"
+  },
+  {
+    "source": "inline/abalone.ts",
+    "output": "public/games/abalone/game.js"
+  },
+  {
+    "source": "inline/azul.ts",
+    "output": "public/games/azul/game.js"
+  },
+  {
+    "source": "inline/flappy-bird.ts",
+    "output": "public/games/flappy-bird/game.js"
+  },
+  {
+    "source": "inline/mastermind.ts",
+    "output": "public/games/mastermind/game.js"
+  },
+  {
+    "source": "inline/pong.ts",
+    "output": "public/games/pong/game.js"
+  },
+  {
+    "source": "inline/tris.ts",
+    "output": "public/games/tris/game.js"
+  }
+]
