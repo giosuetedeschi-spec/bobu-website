@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1456,3 +1457,57 @@ if (/[?&]selftest=1/.test(location.search)) {
 </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abalone</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#12161e;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;overflow:hidden}
+#header{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;width:100%;max-width:900px}
+h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#status{font-size:0.9rem;color:#94a3b8}
+#turn-indicator{padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600}
+.turn-black{background:#1e293b;color:#e2e8f0;border:1px solid #334155}
+.turn-white{background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0}
+#canvas-container{position:relative;margin:10px}
+canvas{display:block;border-radius:12px;cursor:pointer}
+#info-bar{display:flex;gap:20px;padding:8px 16px;background:#1e293b;border-radius:8px;margin-top:8px;font-size:0.8rem;color:#94a3b8}
+#info-bar span strong{color:#e2e8f0}
+#message{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 20px;background:rgba(0,0,0,0.7);border-radius:20px;font-size:0.85rem;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity 0.3s}
+#message.show{opacity:1}
+@media(max-width:480px){
+  #header{flex-direction:column;gap:8px;padding:8px 12px}
+  #header>div{justify-content:center;flex-wrap:wrap;gap:8px!important}
+  h1{font-size:1.15rem}
+  #status{font-size:.75rem}
+  #turn-indicator{font-size:.7rem;padding:4px 9px}
+}
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>ABALONE</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span id="status">Your turn (Black)</span>
+    <span id="turn-indicator" class="turn-black">BLACK</span>
+  </div>
+</div>
+<div id="canvas-container">
+  <canvas id="game"></canvas>
+  <div id="message"></div>
+</div>
+<div id="info-bar">
+  <span>Black: <strong id="black-count">14</strong></span>
+  <span>White: <strong id="white-count">14</strong></span>
+  <span>Black out: <strong id="black-out">0</strong></span>
+  <span>White out: <strong id="white-out">0</strong></span>
+</div>
+
+<script src="./game.js"></script>
+</body>
+</html>
+>>>>>>> 54630ec (fix: complete browser game implementations and ports)

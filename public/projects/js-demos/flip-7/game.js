@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Flip 7 — bootstrap.
  *
@@ -202,3 +203,12 @@ window.__GAME__ = {
 
 paint();
 pump();
+=======
+import { Flip7Game } from "./src/engine.js";
+import { setupUI } from "./src/ui.js";
+document.addEventListener("DOMContentLoaded", () => {
+  const game = new Flip7Game;
+  setupUI(game);
+  game.updateUI("Welcome Flipper. Press FLIP to start.");
+});
+>>>>>>> 54630ec (fix: complete browser game implementations and ports)

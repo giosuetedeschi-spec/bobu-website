@@ -8,6 +8,6 @@ describe('GameIframePage', () => {
     render(<GameIframePage title="Test Game" tag="Test Tag" src="/games/test/index.html" />);
     expect(screen.getByText('Test Game')).toBeInTheDocument();
     expect(screen.getByText('Test Tag')).toBeInTheDocument();
-    expect(screen.getByTitle('Game')).toHaveAttribute('src', '/games/test/index.html');
+    expect(screen.getByTitle('Test Game game')).toHaveAttribute('src', '/games/test/index.html');
   });
 });

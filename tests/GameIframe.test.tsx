@@ -5,7 +5,7 @@ import { GameIframe } from '@/components/games/GameIframe';
 
 describe('GameIframe', () => {
   it('renders an iframe pointed at the given src', () => {
-    render(<GameIframe src="/games/snake/index.html" />);
-    expect(screen.getByTitle('Game')).toHaveAttribute('src', '/games/snake/index.html');
+    render(<GameIframe src="/games/snake/index.html" title="Snake" />);
+    expect(screen.getByTitle('Snake game')).toHaveAttribute('src', '/games/snake/index.html');
   });
 });

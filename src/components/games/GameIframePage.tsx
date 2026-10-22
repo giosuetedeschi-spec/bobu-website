@@ -6,7 +6,7 @@ export function GameIframePage({ title, tag, src }: { title: string; tag: string
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <GamePageHeader title={title} tag={tag} />
-      <GameIframe src={src} />
+      <GameIframe src={src} title={title} />
     </Container>
   );
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Maze renderer.
  *
@@ -137,5 +138,37 @@ export class Renderer {
       ctx.fill();
       ctx.shadowBlur = 0;
     }
+=======
+export class Renderer {
+  ctx;
+  cols;
+  rows;
+  cellW = 0;
+  cellH = 0;
+  constructor(ctx, cols, rows) {
+    this.ctx = ctx;
+    this.cols = cols;
+    this.rows = rows;
+  }
+  reset(w, h) {
+    this.cellW = w / this.cols;
+    this.cellH = h / this.rows;
+    this.ctx.fillStyle = "#6b705c";
+    this.ctx.fillRect(0, 0, w, h);
+  }
+  draw(grid) {
+    grid.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell === 0) {
+          this.ctx.fillStyle = "#6b705c";
+        } else if (cell === 1) {
+          this.ctx.fillStyle = "#fcefe3";
+        } else if (cell === 2) {
+          this.ctx.fillStyle = "#b5838d";
+        }
+        this.ctx.fillRect(Math.floor(x * this.cellW), Math.floor(y * this.cellH), Math.ceil(this.cellW), Math.ceil(this.cellH));
+      });
+    });
+>>>>>>> 54630ec (fix: complete browser game implementations and ports)
   }
 }

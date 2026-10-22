@@ -4,9 +4,12 @@ import { render, screen } from '@testing-library/react';
 import SudokuPage from '@/app/progetti/sudoku/page';
 
 describe('SudokuPage', () => {
-  it('renders the game title and description', () => {
+  it('renders an editable puzzle and game actions', () => {
     render(<SudokuPage />);
-    expect(screen.getByText('Sudoku Solver')).toBeInTheDocument();
-    expect(screen.getByText(/Python Sudoku solver/i)).toBeInTheDocument();
+    expect(screen.getByText('Sudoku')).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Sudoku puzzle' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New puzzle' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Visualizzatore del risolutore' })).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Sudoku per il risolutore' })).toBeInTheDocument();
   });
 });
