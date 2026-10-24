@@ -71,7 +71,7 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     games: [
       { id: "abalone", label: "Abalone", icon: "circle-dot", action: "open", contentType: "game", payload: "/games/abalone/index.html", folder: "Board", status: "Playable" },
       { id: "azul", label: "Azul", icon: "grid-3x3", action: "open", contentType: "game", payload: "/games/azul/index.html", folder: "Board", status: "Playable" },
-      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/progetti/kalaha", folder: "Board", status: "Playable" },
+      { id: "kalaha", label: "Kalaha", icon: "circle-dot", action: "open", contentType: "game", payload: "/progetti/kalaha/", folder: "Board", status: "Playable" },
       { id: "tris", label: "Tris", icon: "hash", action: "open", contentType: "game", payload: "/games/tris/index.html", folder: "Board", status: "Playable" },
     ],
   },
@@ -80,7 +80,7 @@ const GAME_FOLDERS: { name: string; icon: string; games: DesktopIcon[] }[] = [
     icon: "puzzle",
     games: [
       { id: "mastermind", label: "Mastermind", icon: "hash", action: "open", contentType: "game", payload: "/games/mastermind/index.html", folder: "Puzzle", status: "Playable" },
-      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/progetti/sudoku", folder: "Puzzle", status: "Playable" },
+      { id: "sudoku", label: "Sudoku", icon: "grid-3x3", action: "open", contentType: "game", payload: "/progetti/sudoku/", folder: "Puzzle", status: "Playable" },
       { id: "bitwise", label: "Bitwise Ops", icon: "binary", action: "open", contentType: "game", payload: "/projects/js-demos/bitwise-ops/index.html", folder: "Puzzle", status: "Demo" },
     ],
   },
@@ -799,6 +799,14 @@ export default function Home() {
   }, [openApp]);
 
   const wallClass = { lofi: styles.wallLofi, debian: styles.wallDebian, kali: styles.wallKali }[wallpaper] || "";
+  const wallpaperImages: Record<string, string> = {
+    lofi: `${basePath}/assets/wallpapers/lofi-cat.jpg`,
+    debian: `${basePath}/assets/wallpapers/debian-emerald.svg`,
+    kali: `${basePath}/assets/wallpapers/kali-dragon.jpg`,
+  };
+  const wallStyle: React.CSSProperties = wallpaper === "gradient"
+    ? { backgroundImage: "linear-gradient(135deg, #0f0f23 0%, #1a1040 50%, #0a1628 100%)" }
+    : { backgroundImage: `url(${wallpaperImages[wallpaper]})` };
 
   // Phone-sized viewports get a dedicated tap-driven card instead of the
   // drag/hover-dependent desktop OS. All hooks above run unconditionally first.
@@ -810,6 +818,7 @@ export default function Home() {
       data-wallpaper={wallpaper}
       data-window-count={windows.length}
       className={`${styles.desktopRoot} ${wallClass}`}
+      style={wallStyle}
       onContextMenu={(e) => {
         if (e.target === e.currentTarget) {
           e.preventDefault();
