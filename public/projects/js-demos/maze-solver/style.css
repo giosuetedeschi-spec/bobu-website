@@ -135,7 +135,8 @@ main {
   border: 1px solid var(--line);
 }
 
-#canvas { display: block; width: 100%; height: 100%; }
+#canvas { display: block; width: min(100%, calc(100dvh - 145px)); height: auto; aspect-ratio: 1; border-radius: var(--radius); box-shadow: 0 20px 70px rgba(0, 0, 0, .4); }
+main { grid-template-columns: 1fr; place-items: center; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(8, 12, 24, .55); overflow: hidden; }
 
 #toast {
   position: absolute;
@@ -268,4 +269,11 @@ td.best { color: #34d399; }
 
 @media (max-height: 560px) {
   .legend { display: none; }
+}
+
+@media (max-width: 560px) {
+  header { align-items: flex-start; }
+  .controls { width: 100%; }
+  select { min-width: 145px; }
+  #canvas { width: min(100%, calc(100dvh - 190px)); height: auto; }
 }

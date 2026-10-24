@@ -21,7 +21,7 @@ function buildCenterTable(r = 4) {
 const CENTER_T = buildCenterTable(4);
 const BORDER_CELLS = new Set(CELL_LIST.filter((c) => CENTER_T[c[0] + "," + c[1]] === 0).map((c) => c[0] + "," + c[1]));
 const POS_BLACK = [[0, -4], [1, -4], [2, -4], [3, -4], [4, -4], [-1, -3], [0, -3], [1, -3], [2, -3], [3, -3], [-1, -2], [0, -2], [1, -2], [2, -2]];
-const POS_WHITE = [[-4, 2], [-3, 2], [-2, 2], [1, 2], [2, 2], [-4, 3], [-3, 3], [-2, 3], [-1, 3], [-4, 4], [-3, 4], [-2, 4], [-1, 4], [0, 4]];
+const POS_WHITE = POS_BLACK.map(([q, r]) => [-q, -r]);
 let state = {};
 let blackOut = 0, whiteOut = 0;
 let currentPlayer = BLACK;

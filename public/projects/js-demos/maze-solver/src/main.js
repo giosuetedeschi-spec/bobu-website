@@ -9,16 +9,24 @@ const btnSolve = document.getElementById("btn-solve");
 const btnClear = document.getElementById("btn-clear");
 const btnNewMaze = document.getElementById("btn-new-maze");
 const algoSelect = document.getElementById("algo-select");
+let visibleGrid = [];
+let visibleCurrent = null;
 function resize() {
   const parent = canvas.parentElement;
   if (!parent)
     throw new Error("Maze canvas must be inside a sized parent element.");
-  const size = Math.min(parent.clientWidth, parent.clientHeight) - 40;
-  canvas.width = size;
-  canvas.height = size;
+  const width = Math.max(1, Math.round(Math.min(parent.clientWidth, parent.clientHeight)));
+  const height = width;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  if (canvas.width === width && canvas.height === height)
+    return;
+  canvas.width = width;
+  canvas.height = height;
+  renderer.reset(width, height);
+  if (visibleGrid.length)
+    renderer.draw(visibleGrid, visibleCurrent);
 }
-window.addEventListener("resize", resize);
-resize();
 const COLS = 31;
 const ROWS = 31;
 let grid = [];
@@ -27,7 +35,9 @@ function generateNewMaze() {
   renderer.reset(canvas.width, canvas.height);
   const generator = new RecursiveBacktracker(COLS, ROWS);
   grid = generator.generate();
-  renderer.draw(grid);
+  visibleGrid = grid;
+  visibleCurrent = null;
+  renderer.draw(visibleGrid);
 }
 async function solve() {
   btnSolve.disabled = true;
@@ -49,13 +59,31 @@ async function solve() {
     default:
       solver = new DFS(grid, COLS, ROWS);
   }
-  for await (const state of solver.run(start, end)) {
-    renderer.draw(state.grid, state.current);
-    await new Promise((r) => setTimeout(r, 10));
+  let lastPaint = 0;
+  try {
+    for await (const state of solver.run(start, end)) {
+      visibleGrid = state.grid.map((row) => [...row]);
+      visibleCurrent = state.current;
+      const now = performance.now();
+      if (now - lastPaint >= 20) {
+        renderer.draw(visibleGrid, visibleCurrent);
+        lastPaint = now;
+        await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      }
+    }
+    renderer.draw(visibleGrid, visibleCurrent);
+  } finally {
+    btnSolve.disabled = false;
   }
-  btnSolve.disabled = false;
 }
 btnNewMaze.addEventListener("click", generateNewMaze);
 btnSolve.addEventListener("click", solve);
-btnClear.addEventListener("click", () => renderer.draw(grid));
+btnClear.addEventListener("click", () => {
+  visibleGrid = grid.map((row) => [...row]);
+  visibleCurrent = null;
+  renderer.draw(visibleGrid);
+});
+new ResizeObserver(resize).observe(canvas.parentElement);
+window.addEventListener("resize", resize);
+resize();
 generateNewMaze();

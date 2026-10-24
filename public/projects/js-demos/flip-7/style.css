@@ -47,16 +47,6 @@ body {
     .controls { gap: 10px; }
 }
 
-@media (max-width: 600px) {
-    .background-effect { position: fixed; }
-    .game-header { gap: 12px; }
-    .logo { font-size: 1.6rem; letter-spacing: -1px; }
-    .stats-container { gap: 10px; }
-    .stat-box .value { font-size: 1.25rem; }
-    .card-container { padding: 12px 4px; gap: 6px; }
-    .controls { gap: 10px; }
-}
-
 @keyframes rotate {
     0% {
         transform: rotate(0deg);

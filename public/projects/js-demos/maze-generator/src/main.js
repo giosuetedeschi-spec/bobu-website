@@ -15,21 +15,28 @@ function resize() {
   const parent = canvas.parentElement;
   if (!parent)
     throw new Error("Maze canvas must be inside a sized parent element.");
-  const size = Math.min(parent.clientWidth, parent.clientHeight) - 40;
-  canvas.width = size;
-  canvas.height = size;
+  const width = Math.max(1, Math.round(Math.min(parent.clientWidth, parent.clientHeight)));
+  const height = width;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  if (canvas.width === width && canvas.height === height)
+    return;
+  canvas.width = width;
+  canvas.height = height;
+  renderer.reset(width, height);
+  if (lastGrid.length)
+    renderer.draw(lastGrid);
 }
-window.addEventListener("resize", resize);
-resize();
 const COLS = 41;
 const ROWS = 41;
 const renderer = new Renderer(ctx, COLS, ROWS);
 let lastGrid = [];
 async function generate() {
   btnGenerate.disabled = true;
+  lastGrid = [];
   renderer.reset(canvas.width, canvas.height);
   const algo = algoSelect.value;
-  const speed = 51 - parseInt(speedRange.value);
+  const delay = Math.round((50 - Number(speedRange.value)) * 0.6);
   let generator;
   switch (algo) {
     case "backtracker":
@@ -44,12 +51,26 @@ async function generate() {
     default:
       generator = new RecursiveBacktracker(COLS, ROWS);
   }
-  for await (const state of generator.run()) {
-    renderer.draw(state);
-    lastGrid = state.map((row) => [...row]);
-    await new Promise((r) => setTimeout(r, speed));
+  let step = 0;
+  let lastPaint = 0;
+  try {
+    for (const state of generator.run()) {
+      step++;
+      const now = performance.now();
+      if (step % 12 !== 0 && step !== 1)
+        continue;
+      if (now - lastPaint < delay && step !== 1)
+        continue;
+      lastGrid = state.map((row) => [...row]);
+      renderer.draw(lastGrid);
+      lastPaint = now;
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    lastGrid = generator.grid.map((row) => [...row]);
+    renderer.draw(lastGrid);
+  } finally {
+    btnGenerate.disabled = false;
   }
-  btnGenerate.disabled = false;
 }
 function downloadFile(content, filename, type) {
   const blob = new Blob([content], { type });
@@ -89,6 +110,9 @@ btnPng.addEventListener("click", () => {
 });
 btnGenerate.addEventListener("click", generate);
 renderer.reset(canvas.width, canvas.height);
+new ResizeObserver(resize).observe(canvas.parentElement);
+window.addEventListener("resize", resize);
+resize();
 const preview = new RecursiveBacktracker(COLS, ROWS);
 let previewGrid = [];
 for (const state of preview.run())

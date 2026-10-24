@@ -19,20 +19,20 @@ export class Renderer {
     }
 
     draw(grid: number[][], current: Point | null = null, _pathNodes: Point[] = []): void {
-        this.ctx.fillStyle = '#37474f';
+        this.ctx.fillStyle = '#101827';
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         grid.forEach((row, y) => {
             row.forEach((cell, x) => {
-                let color = '#37474f';
-                if (cell === 1) color = '#ffffff';
-                else if (cell === 3) color = 'rgba(2, 136, 209, 0.3)';
-                else if (cell === 4) color = '#ffb74d';
+                let color = '#111b2d';
+                if (cell === 1) color = '#e7f4f2';
+                else if (cell === 3) color = '#4e9bb8';
+                else if (cell === 4) color = '#f3c969';
 
                 this.ctx.fillStyle = color;
 
                 if (current && current.x === x && current.y === y) {
-                    this.ctx.fillStyle = '#ff5252';
+                    this.ctx.fillStyle = '#f472b6';
                 }
 
                 if (cell !== 0) {
@@ -46,10 +46,10 @@ export class Renderer {
             });
         });
 
-        this.ctx.fillStyle = '#4caf50';
+        this.ctx.fillStyle = '#62d6c8';
         this.ctx.fillRect(Math.floor(1 * this.cellW), Math.floor(1 * this.cellH), this.cellW, this.cellH);
 
-        this.ctx.fillStyle = '#f44336';
+        this.ctx.fillStyle = '#f472b6';
         this.ctx.fillRect(Math.floor((this.cols - 2) * this.cellW), Math.floor((this.rows - 2) * this.cellH), this.cellW, this.cellH);
     }
 }

@@ -28,7 +28,7 @@ const BORDER_CELLS=new Set(CELL_LIST.filter(c=>CENTER_T[c[0]+","+c[1]]===0).map(
 
 // Initial positions
 const POS_BLACK: Axial[]=[[0,-4],[1,-4],[2,-4],[3,-4],[4,-4],[-1,-3],[0,-3],[1,-3],[2,-3],[3,-3],[-1,-2],[0,-2],[1,-2],[2,-2]];
-const POS_WHITE: Axial[]=[[-4,2],[-3,2],[-2,2],[1,2],[2,2],[-4,3],[-3,3],[-2,3],[-1,3],[-4,4],[-3,4],[-2,4],[-1,4],[0,4]];
+const POS_WHITE: Axial[]=POS_BLACK.map(([q,r]): Axial=>[-q,-r]);
 
 // Game state
 let state: Record<string, number> = {};

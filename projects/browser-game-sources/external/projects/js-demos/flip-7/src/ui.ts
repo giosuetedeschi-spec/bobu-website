@@ -54,14 +54,15 @@ export function setupUI(game: Flip7Game): void {
       message.textContent = "You win! 200 points reached.";
       flip.disabled = true;
       stay.disabled = true;
-      reset.classList.remove("hidden");
+      reset.disabled = false;
       reset.textContent = "PLAY AGAIN";
     },
     toggleControls: (canFlip, canStay, showReset) => {
       flip.disabled = !canFlip;
       stay.disabled = !canStay;
-      reset.classList.toggle("hidden", !showReset);
-      if (showReset) reset.textContent = game.totalScore >= WIN_SCORE ? "PLAY AGAIN" : "NEXT TURN";
+      reset.classList.remove("hidden");
+      reset.disabled = false;
+      if (showReset) reset.textContent = game.totalScore >= WIN_SCORE ? "PLAY AGAIN" : "NEW GAME";
     },
   };
 
@@ -75,7 +76,7 @@ export function setupUI(game: Flip7Game): void {
   stay.addEventListener("click", () => game.stay());
   reset.addEventListener("click", () => {
     cards.replaceChildren();
-    if (game.totalScore >= WIN_SCORE) { game.newGame(); game.flipCard(); }
-    else { game.startTurn(); game.flipCard(); }
+    game.newGame();
+    reset.textContent = "NEW GAME";
   });
 }
